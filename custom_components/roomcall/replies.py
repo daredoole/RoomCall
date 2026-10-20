@@ -53,7 +53,9 @@ async def notify_call(
         body += f": “{text}”"
     data: dict[str, Any] = {"tag": "roomcall", "group": "roomcall"}
     if dashboard_path:
-        uri = reply_uri(dashboard_path, record.from_room)
+        # Reply to the caller's room when it is a room; otherwise to everywhere.
+        reply_to = record.from_room if record.from_room in room_names else None
+        uri = reply_uri(dashboard_path, reply_to)
         data |= {"url": uri, "clickAction": uri}
         data["actions"] = [{"action": "URI", "title": "Reply", "uri": uri}]
     if record.priority == "urgent":

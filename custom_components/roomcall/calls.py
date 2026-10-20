@@ -10,10 +10,21 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.components.ffmpeg import get_ffmpeg_manager
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.util import dt as dt_util
 
-from .const import ALL_ROOMS, PRIORITY_NORMAL
-from .core import CallRecord, call_finished, fan_out, friendly, resolve, to_speech_pcm
+from .const import ALL_ROOMS, API_CLIP, PRIORITY_NORMAL
+from .core import (
+    CallRecord,
+    TranscodeError,
+    call_finished,
+    fan_out,
+    friendly,
+    mp3_seconds,
+    resolve,
+    to_playable,
+    to_speech_pcm,
+)
 from .policy import DoNotDisturbError, person_area, plan
 from .replies import notify_call, transcribe
 
@@ -125,6 +136,58 @@ async def place_call(hass: HomeAssistant, data: RoomCallData, request: CallReque
         except Exception:
             _LOGGER.exception("RoomCall could not send call notifications")
     return record
+
+
+async def place_recorded_call(
+    hass: HomeAssistant,
+    data: RoomCallData,
+    recording: bytes,
+    content_type: str,
+    *,
+    targets: list[str],
+    people: list[str] | None = None,
+    priority: str = PRIORITY_NORMAL,
+    from_label: str | None = None,
+    volume: float | None = None,
+    caller_user_id: str | None = None,
+) -> tuple[CallRecord, bytes, str]:
+    """Convert a voice recording (chime in front) and play it as a call."""
+    try:
+        audio, playable_type = await to_playable(
+            get_ffmpeg_manager(hass).binary,
+            recording,
+            content_type,
+            data.gain_db,
+            data.chime_style,
+            data.chime_url,
+        )
+    except TranscodeError as err:
+        raise CallError(f"Could not convert recording: {err}", 422) from err
+    clip_id = data.clips.add(audio, playable_type)
+    ext = "mp3" if playable_type == "audio/mpeg" else "wav"
+    try:
+        base = get_url(hass, allow_internal=True, allow_external=True, prefer_external=False)
+    except NoURLAvailableError as err:
+        raise CallError("Set an internal URL under Settings > System > Network", 500) from err
+    is_mp3 = playable_type == "audio/mpeg"
+    record = await place_call(
+        hass,
+        data,
+        CallRequest(
+            targets=targets,
+            people=people,
+            media_id=f"{base}{API_CLIP.format(clip=f'{clip_id}.{ext}')}",
+            kind="talk",
+            priority=priority,
+            from_room=from_label,
+            volume=volume,
+            audio=audio if is_mp3 else None,
+            recording=recording,
+            caller_user_id=caller_user_id,
+            seconds=mp3_seconds(audio) if is_mp3 else None,
+        ),
+    )
+    return record, audio, playable_type
 
 
 async def _transcript(hass: HomeAssistant, data: RoomCallData, request: CallRequest) -> str | None:

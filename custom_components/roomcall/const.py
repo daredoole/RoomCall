@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "roomcall"
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 
 CONF_SPEAKERS = "speakers"
 CONF_VOLUME = "volume"
@@ -27,6 +27,11 @@ CONF_QUIET_START = "start"
 CONF_QUIET_END = "end"
 CONF_QUIET_VOLUME = "volume"
 CONF_QUIET_SKIP_AREAS = "skip_areas"
+
+SECTION_HOMEKIT = "homekit"
+CONF_HOMEKIT_ENABLED = "enabled"
+CONF_HOMEKIT_PORT = "port"
+DEFAULT_HOMEKIT_PORT = 21099
 
 SECTION_REPLY = "replies"
 CONF_NOTIFY = "notify"

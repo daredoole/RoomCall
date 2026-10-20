@@ -21,6 +21,10 @@ Track progress and vote on the [GitHub issues](https://github.com/daredoole/Room
 - [x] Staggered delivery and retries ([#24](https://github.com/daredoole/RoomCall/issues/24))
 - [x] Siri, Apple Watch and CarPlay through Shortcuts ([#14](https://github.com/daredoole/RoomCall/issues/14))
 
+## v0.4 — Apple Home ✅
+
+- [x] Rooms as cameras in the Home app with a talk button ([#15](https://github.com/daredoole/RoomCall/issues/15))
+
 ## Next
 
 - [ ] **Hands-free talk-back** from rooms with only a Sonos: a small mic station (Atom Echo,
@@ -28,6 +32,5 @@ Track progress and vote on the [GitHub issues](https://github.com/daredoole/Room
       ([#11](https://github.com/daredoole/RoomCall/issues/11))
 - [ ] **Live streaming** while you talk, for sub-second delay ([#13](https://github.com/daredoole/RoomCall/issues/13))
 - [ ] **Doorbell bridge**: answer the door from any room or your watch ([#21](https://github.com/daredoole/RoomCall/issues/21))
-- [ ] **HomeKit intercom**: rooms as two-way-audio cameras in the Home app ([#15](https://github.com/daredoole/RoomCall/issues/15))
 - [ ] Brand icon in Home Assistant and the default HACS store ([#25](https://github.com/daredoole/RoomCall/issues/25))
 - [ ] Per-room chimes and voicemail for rooms where nobody answered

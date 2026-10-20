@@ -84,6 +84,17 @@
               "dashboard_path": "For example /home-hub/home. Adds a Reply button that opens the card aimed back at the caller's room.",
               "stt_engine": "Optional. Adds the spoken words to notifications and call history."
             }
+          },
+          "homekit": {
+            "name": "Apple Home",
+            "description": "Show each room in the Apple Home app as a camera with a talk button. Hold the microphone in Home, on your Apple Watch or in Control Center to talk in that room.",
+            "data": {
+              "enabled": "Add rooms to Apple Home",
+              "port": "HomeKit port"
+            },
+            "data_description": {
+              "port": "Change only if another HomeKit bridge already uses it."
+            }
           }
         }
       }
