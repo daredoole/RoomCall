@@ -4,7 +4,7 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## 0.1.1 — unreleased
+## 0.1.1 — 2026-10-20
 
 - Walkie-talkie chirp before push-to-talk clips and (with Chime TTS) typed messages;
   new **Play a chime first** option.
