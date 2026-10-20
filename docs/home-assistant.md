@@ -126,6 +126,29 @@ tablet's card gets `room: kitchen`).
     replies come from a phone or tablet. Mic stations next to each speaker are on the
     [roadmap](roadmap.md).
 
+## AV receivers and TV boxes
+
+Speakers that support *announce* (Sonos, Google/Nest, HomePod) mix the call over your music.
+Others — AV receivers through HEOS, Android TV / Google TV boxes such as onn through Cast — have
+to stop what they're doing to play the call. RoomCall puts them back afterwards:
+
+| Before the call | After the call |
+|---|---|
+| Receiver on the TV input | Switched back to the TV input, same volume |
+| Receiver off | Turned back off |
+| TV box in Netflix, YouTube… | The same app reopened (where you were in it is up to the app) |
+
+RoomCall finds the receiver's input and the box's foreground app through the other media players
+for the same device model in the same room: the receiver's `denonavr` entity and the box's
+**Android TV Remote** entity. Add both integrations for the best result, and pick the HEOS entity
+(receiver) or Cast entity (TV box) as the RoomCall speaker.
+
+!!! tip "Receiver plus TV box in one room"
+    If the TV box plays through the receiver, add only the receiver as a speaker. The call then
+    interrupts the sound for a few seconds while the picture keeps going.
+
+Turn this off under Configure → Delivery → *Put speakers back after a call*.
+
 ## Do Not Disturb and quiet hours
 
 - `switch.roomcall_do_not_disturb`: while on, normal calls are refused and urgent calls still play.

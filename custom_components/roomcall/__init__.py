@@ -41,6 +41,7 @@ from .const import (
     CONF_QUIET_START,
     CONF_QUIET_VOLUME,
     CONF_REPLY_PATH,
+    CONF_RESTORE,
     CONF_RETRY,
     CONF_SPEAKERS,
     CONF_STAGGER_MS,
@@ -51,6 +52,7 @@ from .const import (
     DEFAULT_CHIME,
     DEFAULT_CHIME_STYLE,
     DEFAULT_GAIN_DB,
+    DEFAULT_RESTORE,
     DEFAULT_RETRY,
     DEFAULT_STAGGER_MS,
     DEFAULT_URGENT_VOLUME,
@@ -105,6 +107,7 @@ class RoomCallData:
     chime_url: str | None = None
     stagger_ms: int = DEFAULT_STAGGER_MS
     retry: bool = DEFAULT_RETRY
+    restore: bool = DEFAULT_RESTORE
     urgent_volume: float = DEFAULT_URGENT_VOLUME
     quiet: QuietHours = field(default_factory=QuietHours)
     notify: list[str] = field(default_factory=list)
@@ -145,6 +148,7 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         chime_url=(chime.get(CONF_CHIME_URL) or "").strip() or None,
         stagger_ms=int(delivery.get(CONF_STAGGER_MS, DEFAULT_STAGGER_MS)),
         retry=bool(delivery.get(CONF_RETRY, DEFAULT_RETRY)),
+        restore=bool(delivery.get(CONF_RESTORE, DEFAULT_RESTORE)),
         urgent_volume=float(delivery.get(CONF_URGENT_VOLUME, DEFAULT_URGENT_VOLUME)),
         quiet=QuietHours(
             start=_time(quiet.get(CONF_QUIET_START)),

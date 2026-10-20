@@ -29,6 +29,7 @@ from .const import (
     CONF_QUIET_START,
     CONF_QUIET_VOLUME,
     CONF_REPLY_PATH,
+    CONF_RESTORE,
     CONF_RETRY,
     CONF_SPEAKERS,
     CONF_STAGGER_MS,
@@ -38,6 +39,7 @@ from .const import (
     CONF_VOLUME,
     DEFAULT_CHIME,
     DEFAULT_CHIME_STYLE,
+    DEFAULT_RESTORE,
     DEFAULT_RETRY,
     DEFAULT_STAGGER_MS,
     DEFAULT_URGENT_VOLUME,
@@ -118,7 +120,7 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
     return vol.Schema(
         {
             **_main_fields(hass, current),
-            vol.Required(SECTION_CHIME): section(
+            vol.Required(SECTION_CHIME, default=dict(chime)): section(
                 vol.Schema(
                     {
                         vol.Required(CONF_CHIME_STYLE, default=style): selector.SelectSelector(
@@ -134,7 +136,7 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(SECTION_DELIVERY): section(
+            vol.Required(SECTION_DELIVERY, default=dict(delivery)): section(
                 vol.Schema(
                     {
                         vol.Required(
@@ -153,6 +155,9 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                             CONF_RETRY, default=delivery.get(CONF_RETRY, DEFAULT_RETRY)
                         ): selector.BooleanSelector(),
                         vol.Required(
+                            CONF_RESTORE, default=delivery.get(CONF_RESTORE, DEFAULT_RESTORE)
+                        ): selector.BooleanSelector(),
+                        vol.Required(
                             CONF_URGENT_VOLUME,
                             default=delivery.get(CONF_URGENT_VOLUME, DEFAULT_URGENT_VOLUME),
                         ): _volume_slider(),
@@ -160,7 +165,7 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(SECTION_QUIET): section(
+            vol.Required(SECTION_QUIET, default=dict(quiet)): section(
                 vol.Schema(
                     {
                         vol.Optional(
@@ -180,7 +185,7 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(SECTION_REPLY): section(
+            vol.Required(SECTION_REPLY, default=dict(replies)): section(
                 vol.Schema(
                     {
                         vol.Optional(

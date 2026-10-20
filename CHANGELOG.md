@@ -4,6 +4,16 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.3.0 — 2026-10-20
+
+- **AV receivers and TV boxes**: speakers that can't announce (Denon/Marantz through HEOS,
+  Android TV / Google TV boxes such as onn through Cast) are put back after a call: input
+  source, volume, power and the app that was open are restored, using the receiver's
+  `denonavr` entity or the box's Android TV Remote entity in the same room. Overlapping calls
+  share one snapshot. New option: Delivery → Put speakers back after a call (on).
+- Brand icon shipped with the integration (`brand/`), shown in Home Assistant 2026.3+.
+- Options sections keep their saved values when a section is left out.
+
 ## 0.2.0 — 2026-10-20
 
 - **Reply from notifications**: each call can notify chosen phones (skipping the caller's own)

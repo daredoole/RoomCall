@@ -346,6 +346,12 @@ async def _play_once(
         await hass.services.async_call(domain, service, data, blocking=True)
 
 
+def supports_announce(hass: HomeAssistant, entity_id: str) -> bool:
+    state = hass.states.get(entity_id)
+    features = state.attributes.get("supported_features", 0) if state else 0
+    return bool(features & MediaPlayerEntityFeature.MEDIA_ANNOUNCE)
+
+
 async def _play_one(
     hass: HomeAssistant,
     entity_id: str,
@@ -355,9 +361,34 @@ async def _play_one(
     *,
     delay: float = 0.0,
     retry: bool = False,
+    restore: bool = False,
+    seconds: float | None = None,
 ) -> Delivery:
     if delay:
         await asyncio.sleep(delay)
+    guard = None
+    if restore and not supports_announce(hass, entity_id):
+        from .restore import Guard  # imported here to avoid an import cycle
+
+        guard = Guard(hass, entity_id)
+        guard.start()
+    try:
+        return await _attempt(hass, entity_id, media_id, volume, chime_message, retry)
+    finally:
+        if guard is not None:
+            hass.async_create_background_task(
+                guard.finish(seconds), f"roomcall restore {entity_id}"
+            )
+
+
+async def _attempt(
+    hass: HomeAssistant,
+    entity_id: str,
+    media_id: str,
+    volume: float | None,
+    chime_message: dict[str, Any] | None,
+    retry: bool,
+) -> Delivery:
     started = time.perf_counter()
     attempts = 0
     error: str | None = None
@@ -396,6 +427,8 @@ async def fan_out(
     retry: bool = False,
     volumes: dict[str, float | None] | None = None,
     record: CallRecord | None = None,
+    restore: bool = False,
+    seconds: float | None = None,
 ) -> CallRecord:
     """Play on every speaker, starting each ``stagger`` seconds after the previous one.
 
@@ -412,6 +445,8 @@ async def fan_out(
                 chime_message,
                 delay=i * stagger,
                 retry=retry,
+                restore=restore,
+                seconds=seconds,
             )
             for i, e in enumerate(entity_ids)
         )

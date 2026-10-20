@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "roomcall"
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 CONF_SPEAKERS = "speakers"
 CONF_VOLUME = "volume"
@@ -20,6 +20,7 @@ SECTION_DELIVERY = "delivery"
 CONF_STAGGER_MS = "stagger_ms"
 CONF_RETRY = "retry"
 CONF_URGENT_VOLUME = "urgent_volume"
+CONF_RESTORE = "restore"
 
 SECTION_QUIET = "quiet_hours"
 CONF_QUIET_START = "start"
@@ -38,6 +39,7 @@ DEFAULT_CHIME_STYLE = "chirp"
 DEFAULT_STAGGER_MS = 250
 DEFAULT_RETRY = True
 DEFAULT_URGENT_VOLUME = 0.8
+DEFAULT_RESTORE = True
 
 ALL_ROOMS = "all"
 

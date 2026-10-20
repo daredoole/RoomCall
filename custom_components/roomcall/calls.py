@@ -45,6 +45,7 @@ class CallRequest:
     audio: bytes | None = None  # MP3 kept for replay
     recording: bytes | None = None  # original upload, for speech-to-text
     caller_user_id: str | None = None
+    seconds: float | None = None  # clip length, when known
 
 
 def _targets(hass: HomeAssistant, data: RoomCallData, request: CallRequest) -> list[str]:
@@ -98,6 +99,8 @@ async def place_call(hass: HomeAssistant, data: RoomCallData, request: CallReque
         chime_message=request.chime_message,
         stagger=data.stagger_ms / 1000,
         retry=data.retry,
+        restore=data.restore,
+        seconds=request.seconds,
         volumes=routing.volumes,
         record=record,
     )
