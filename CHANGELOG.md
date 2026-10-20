@@ -4,6 +4,11 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.1.2 — 2026-10-20
+
+- Fix push-to-talk from iPhone/Safari behind a reverse proxy: the upload was read only up
+  to the first network chunk, so ffmpeg failed with "Error opening input: End of file".
+
 ## 0.1.1 — 2026-10-20
 
 - Walkie-talkie chirp before push-to-talk clips and (with Chime TTS) typed messages;

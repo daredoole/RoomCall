@@ -27,6 +27,21 @@ def _data(request: web.Request) -> RoomCallData:
     return request.app[KEY_HASS].data[DOMAIN]
 
 
+async def _read_body(request: web.Request) -> bytes:
+    """Read the whole upload, stopping just past the size limit.
+
+    ``StreamReader.read(n)`` returns as soon as any data is buffered, so behind a reverse
+    proxy (which forwards the body in pieces) a single read only gets the first chunk.
+    """
+    body = bytearray()
+    while len(body) <= MAX_UPLOAD_BYTES:
+        chunk = await request.content.read(MAX_UPLOAD_BYTES + 1 - len(body))
+        if not chunk:
+            break
+        body += chunk
+    return bytes(body)
+
+
 class RoomsView(HomeAssistantView):
     url = API_ROOMS
     name = "api:roomcall:rooms"
@@ -50,7 +65,7 @@ class TalkView(HomeAssistantView):
         entity_ids = resolve(hass, data.speakers, [target])
         if not entity_ids:
             return self.json_message(f"No speakers for {target!r}", 404)
-        body = await request.content.read(MAX_UPLOAD_BYTES + 1)
+        body = await _read_body(request)
         if not body:
             return self.json_message("Empty recording", 400)
         if len(body) > MAX_UPLOAD_BYTES:
