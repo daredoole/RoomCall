@@ -41,6 +41,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.13"
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: uv venv && uv pip install pytest-homeassistant-custom-component ha-ffmpeg
       - run: uv run pytest tests_ha -q -p no:cacheprovider
 
