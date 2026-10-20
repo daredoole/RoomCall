@@ -16,7 +16,7 @@ jobs:
           package=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
           echo "tag=$tag manifest=$manifest package=$package"
           test "$tag" = "$manifest" && test "$tag" = "$package"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
       - run: uv build
       - name: Zip the Home Assistant integration for HACS
         run: cd custom_components/roomcall && zip -r "$GITHUB_WORKSPACE/dist/roomcall.zip" . -x '__pycache__/*'
