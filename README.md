@@ -20,6 +20,7 @@
   <a href="https://github.com/daredoole/RoomCall/actions/workflows/validate.yml"><img src="https://github.com/daredoole/RoomCall/actions/workflows/validate.yml/badge.svg" alt="HACS and hassfest validation"></a>
   <a href="https://daredoole.github.io/RoomCall/"><img src="https://img.shields.io/badge/docs-online-4f8cff" alt="Documentation"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/daredoole/RoomCall" alt="MIT license"></a>
+  <a href="https://github.com/sponsors/daredoole"><img src="https://img.shields.io/github/sponsors/daredoole?logo=githubsponsors&label=Sponsor&color=EA4AAA" alt="GitHub Sponsors"></a>
   <a href="https://buymeacoffee.com/daredoole"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy me a coffee"></a>
 </p>
 
@@ -183,6 +184,8 @@ See [Getting started](https://daredoole.github.io/RoomCall/getting-started/).
 
 RoomCall is free and MIT-licensed. If it's useful in your home, you can sponsor its development:
 
+<a href="https://github.com/sponsors/daredoole"><img src="https://img.shields.io/badge/Sponsor%20on%20GitHub-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="Sponsor on GitHub" height="42"></a>
+&nbsp;
 <a href="https://buymeacoffee.com/daredoole"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=daredoole&button_colour=FFDD00&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="42"></a>
 
 Sponsorship never buys feature priority, private support or early access to security fixes.
