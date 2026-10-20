@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1720">
+<title>RoomCall</title>
+<style>
+  :root {
+    --bg: #0f1720; --panel: #17212c; --line: #263342; --text: #e8eef5; --muted: #8a9bb0;
+    --accent: #4f8cff; --live: #ff4d5e; --ok: #34c77b; --radius: 18px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f4f6fa; --panel: #ffffff; --line: #dde3ec; --text: #142030; --muted: #5b6b80; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100dvh; background: var(--bg); color: var(--text);
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; align-items: center; padding: 20px 16px 32px;
+  }
+  header { width: 100%; max-width: 520px; display: flex; justify-content: space-between; align-items: baseline; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.02em; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .rooms {
+    width: 100%; max-width: 520px; display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 8px;
+  }
+  .room {
+    border: 1px solid var(--line); background: var(--panel); color: var(--text);
+    padding: 10px 14px; border-radius: 999px; font: inherit; cursor: pointer;
+  }
+  .room[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .talk-wrap { flex: 1; display: grid; place-items: center; width: 100%; padding: 24px 0; }
+  #talk {
+    width: min(64vw, 260px); aspect-ratio: 1; border-radius: 50%; border: 0;
+    background: radial-gradient(circle at 35% 30%, #6fa2ff, var(--accent));
+    color: #fff; font-family: inherit; font-size: 22px; font-weight: 600; letter-spacing: -0.01em;
+    cursor: pointer; touch-action: none;
+    box-shadow: 0 18px 50px rgba(79, 140, 255, 0.35); transition: transform 0.08s ease;
+    user-select: none; -webkit-user-select: none;
+  }
+  #talk.live {
+    background: radial-gradient(circle at 35% 30%, #ff7d89, var(--live));
+    box-shadow: 0 0 0 calc(var(--level, 0) * 40px) rgba(255, 77, 94, 0.25), 0 18px 50px rgba(255, 77, 94, 0.35);
+    transform: scale(0.97);
+  }
+  #talk:disabled { opacity: 0.5; cursor: progress; }
+  #status { min-height: 1.4em; text-align: center; margin-top: 4px; }
+  .log { width: 100%; max-width: 520px; margin-top: 12px; display: grid; gap: 6px; }
+  .log div { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; font-size: 14px; }
+  .ok { color: var(--ok); } .err { color: var(--live); }
+</style>
+</head>
+<body>
+<header>
+  <h1>RoomCall</h1>
+  <span class="muted" id="count">finding speakers…</span>
+</header>
+
+<div class="rooms" id="rooms" role="group" aria-label="Broadcast to"></div>
+
+<div class="talk-wrap">
+  <button id="talk" type="button" aria-label="Hold to talk">Hold to talk</button>
+</div>
+<div id="status" class="muted">Pick a room, then hold the button and speak.</div>
+<div class="log" id="log" aria-live="polite"></div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const token = params.get("token");
+const headers = token ? { "X-RoomCall-Token": token } : {};
+const talk = document.getElementById("talk");
+const statusEl = document.getElementById("status");
+let target = "all";
+let recorder = null, chunks = [], stream = null, analyser = null, raf = 0, startedAt = 0;
+
+function setStatus(text, cls = "muted") { statusEl.textContent = text; statusEl.className = cls; }
+
+async function loadRooms() {
+  const res = await fetch("api/rooms", { headers });
+  if (!res.ok) { setStatus(`Cannot load rooms (${res.status})`, "err"); return; }
+  const rooms = await res.json();
+  const box = document.getElementById("rooms");
+  box.replaceChildren();
+  const total = rooms.reduce((n, r) => n + r.speakers.length, 0);
+  document.getElementById("count").textContent = `${total} speaker${total === 1 ? "" : "s"}`;
+  for (const name of ["all", ...rooms.map(r => r.name)]) {
+    const b = document.createElement("button");
+    b.className = "room"; b.type = "button";
+    b.textContent = name === "all" ? "Everywhere" : name;
+    b.setAttribute("aria-pressed", String(name === target));
+    b.onclick = () => { target = name; box.querySelectorAll(".room").forEach(x => x.setAttribute("aria-pressed", String(x === b))); };
+    box.append(b);
+  }
+}
+
+function meter() {
+  const data = new Uint8Array(analyser.fftSize);
+  const tick = () => {
+    analyser.getByteTimeDomainData(data);
+    let peak = 0; for (const v of data) peak = Math.max(peak, Math.abs(v - 128));
+    talk.style.setProperty("--level", (peak / 128).toFixed(2));
+    raf = requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+async function start(e) {
+  e.preventDefault();
+  if (recorder) return;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+  } catch (err) { setStatus("Microphone blocked. Use HTTPS or localhost and allow the mic.", "err"); return; }
+  const ctx = new AudioContext();
+  analyser = ctx.createAnalyser(); analyser.fftSize = 512;
+  ctx.createMediaStreamSource(stream).connect(analyser);
+  recorder = new MediaRecorder(stream);
+  chunks = [];
+  recorder.ondataavailable = ev => ev.data.size && chunks.push(ev.data);
+  recorder.onstop = () => send(ctx);
+  recorder.start();
+  startedAt = performance.now();
+  talk.classList.add("live"); talk.textContent = "Release to send";
+  setStatus(`Talking to ${target === "all" ? "everywhere" : target}…`);
+  meter();
+}
+
+function stop(e) {
+  e.preventDefault();
+  if (!recorder || recorder.state !== "recording") return;
+  recorder.stop();
+  cancelAnimationFrame(raf);
+  stream.getTracks().forEach(t => t.stop());
+  talk.classList.remove("live"); talk.textContent = "Hold to talk";
+}
+
+async function send(ctx) {
+  ctx.close();
+  const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+  recorder = null;
+  if (performance.now() - startedAt < 300) { setStatus("Too short — hold the button while you talk."); return; }
+  talk.disabled = true; setStatus("Sending…");
+  const t0 = performance.now();
+  try {
+    const res = await fetch(`api/talk?target=${encodeURIComponent(target)}`, {
+      method: "POST", headers: { ...headers, "Content-Type": blob.type }, body: blob,
+    });
+    const body = await res.json().catch(() => ({ results: [] }));
+    const ms = Math.round(performance.now() - t0);
+    const line = document.createElement("div");
+    const ok = (body.results || []).filter(r => r.ok).map(r => r.speaker);
+    const bad = (body.results || []).filter(r => !r.ok).map(r => `${r.speaker} (${r.error})`);
+    line.innerHTML = `<b>${target === "all" ? "Everywhere" : target}</b> · ${ms} ms<br>` +
+      (ok.length ? `<span class="ok">✓ ${ok.join(", ")}</span> ` : "") +
+      (bad.length ? `<span class="err">✕ ${bad.join(", ")}</span>` : "");
+    document.getElementById("log").prepend(line);
+    setStatus(res.ok ? "Delivered." : "Some speakers did not play it.", res.ok ? "ok" : "err");
+  } catch (err) {
+    setStatus(`Send failed: ${err}`, "err");
+  } finally { talk.disabled = false; }
+}
+
+talk.addEventListener("pointerdown", start);
+for (const ev of ["pointerup", "pointerleave", "pointercancel"]) talk.addEventListener(ev, stop);
+document.addEventListener("keydown", e => { if (e.code === "Space" && !e.repeat) start(e); });
+document.addEventListener("keyup", e => { if (e.code === "Space") stop(e); });
+loadRooms();
+</script>
+</body>
+</html>

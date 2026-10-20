@@ -1,0 +1,80 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "roomcall"
+version = "0.1.1"
+description = "Push-to-talk home intercom for the speakers you already own: Sonos, AirPlay and Chromecast."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+authors = [{ name = "daredoole" }]
+keywords = ["intercom", "sonos", "airplay", "chromecast", "home-assistant", "push-to-talk"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Framework :: AsyncIO",
+  "Intended Audience :: End Users/Desktop",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Home Automation",
+  "Topic :: Multimedia :: Sound/Audio",
+]
+dependencies = [
+  "aiohttp>=3.10",
+  "zeroconf>=0.136",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+sonos = ["soco>=0.30"]
+airplay = ["pyatv>=0.16"]
+cast = ["pychromecast>=14"]
+all = ["roomcall[sonos,airplay,cast]"]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.24",
+  "pytest-aiohttp>=1.0",
+  "ruff>=0.7",
+  "mypy>=1.13",
+  "types-PyYAML",
+]
+docs = ["mkdocs-material>=9.5"]
+
+[project.scripts]
+roomcall = "roomcall.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/daredoole/RoomCall"
+Documentation = "https://daredoole.github.io/RoomCall/"
+Issues = "https://github.com/daredoole/RoomCall/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/roomcall"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "ASYNC", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["roomcall"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["soco.*", "pyatv.*", "pychromecast.*", "zeroconf.*"]
+ignore_missing_imports = true

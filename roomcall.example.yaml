@@ -1,0 +1,32 @@
+# Copy to roomcall.yaml and adjust. Every key is optional.
+
+# Address the server listens on.
+host: 0.0.0.0
+port: 8765
+
+# URL speakers use to download each message. Must be reachable from the speakers'
+# network/VLAN. Auto-detected from this machine's LAN IP when omitted.
+# public_url: http://192.168.1.20:8765
+
+# Require this token on /api/* (header X-RoomCall-Token or ?token=). Recommended
+# if the server is reachable by anything you do not trust.
+# token: change-me
+
+# Fixed announcement volume (0.0–1.0). Omit to keep each speaker's current volume.
+# volume: 0.4
+
+# Boost (or cut) recordings in decibels before sending.
+gain_db: 0
+
+discovery_timeout: 4
+
+# Group speakers into rooms by speaker name or id. Ungrouped speakers are their own room.
+rooms:
+  Downstairs: [Basement, Kitchen Hub]
+  Upstairs: [Office]
+
+# Speakers that mDNS cannot see (e.g. on another VLAN without a reflector).
+speakers:
+  # - name: Garage HomePod
+  #   kind: airplay
+  #   host: 192.168.1.40

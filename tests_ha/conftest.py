@@ -1,0 +1,73 @@
+"""Fixtures for the Home Assistant integration tests (pytest-homeassistant-custom-component)."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import custom_components
+import pytest
+from homeassistant.core import HomeAssistant
+from homeassistant.core_config import async_process_ha_core_config
+from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+DOMAIN = "roomcall"
+
+# The harness ships its own (empty) custom_components package; expose ours through it.
+_OURS = str(Path(__file__).resolve().parents[1] / "custom_components")
+if _OURS not in custom_components.__path__:
+    custom_components.__path__.append(_OURS)
+
+
+@pytest.fixture(autouse=True)
+def auto_enable_custom_integrations(enable_custom_integrations):
+    yield
+
+
+@pytest.fixture
+async def house(hass: HomeAssistant) -> dict[str, str]:
+    """Two areas, three speakers: two in the kitchen, one in the basement."""
+    await async_process_ha_core_config(hass, {"internal_url": "http://ha.local:8123"})
+    areas = ar.async_get(hass)
+    kitchen = areas.async_create("Kitchen")
+    basement = areas.async_create("Basement")
+    registry = er.async_get(hass)
+    speakers = {
+        "media_player.kitchen_sonos": kitchen.id,
+        "media_player.kitchen_hub": kitchen.id,
+        "media_player.basement_sonos": basement.id,
+    }
+    for entity_id, area_id in speakers.items():
+        entry = registry.async_get_or_create(
+            "media_player",
+            "test",
+            entity_id.split(".")[1],
+            suggested_object_id=entity_id.split(".")[1],
+        )
+        registry.async_update_entity(entry.entity_id, area_id=area_id)
+        hass.states.async_set(
+            entity_id,
+            "idle",
+            {"friendly_name": entity_id.split(".")[1].title(), "supported_features": 1048576 | 512},
+        )
+    return {"kitchen": kitchen.id, "basement": basement.id}
+
+
+@pytest.fixture
+async def setup_roomcall(hass: HomeAssistant, house: dict[str, str]) -> MockConfigEntry:
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "speakers": [
+                "media_player.kitchen_sonos",
+                "media_player.kitchen_hub",
+                "media_player.basement_sonos",
+            ],
+            "volume": 0.4,
+        },
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    return entry

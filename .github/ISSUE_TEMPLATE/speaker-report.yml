@@ -1,0 +1,22 @@
+name: Speaker compatibility report
+description: Tell us how RoomCall works (or doesn't) with your speaker
+labels: [compatibility]
+body:
+  - type: input
+    id: model
+    attributes: { label: Speaker model and firmware, placeholder: "Sonos Era 100, S2 17.2" }
+    validations: { required: true }
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Detected as
+      options: [sonos, airplay, cast, not detected]
+    validations: { required: true }
+  - type: input
+    id: delay
+    attributes: { label: Approximate delay after releasing the button, placeholder: "1.2 s" }
+  - type: textarea
+    id: details
+    attributes:
+      label: What happened?
+      description: Include the output of `roomcall discover` and any errors from `roomcall serve -v`.

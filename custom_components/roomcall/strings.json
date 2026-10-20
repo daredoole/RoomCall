@@ -1,0 +1,73 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "RoomCall intercom",
+        "description": "Choose the speakers that should play intercom messages. Rooms come from each speaker's Home Assistant area. Pick one entity per physical speaker so messages are not played twice.",
+        "data": {
+          "speakers": "Speakers",
+          "volume": "Announcement volume",
+          "gain_db": "Microphone boost (dB)",
+          "tts_engine": "Text-to-speech engine for messages",
+          "chime": "Play a chime first"
+        },
+        "data_description": {
+          "volume": "Leave empty to keep each speaker's current volume. Supported by Sonos.",
+          "gain_db": "Raise this if phone recordings sound quiet.",
+          "chime": "A short walkie-talkie chirp before every message so people know a call is coming."
+        }
+      }
+    },
+    "error": {
+      "no_speakers": "Select at least one speaker."
+    },
+    "abort": {
+      "single_instance_allowed": "RoomCall is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "RoomCall speakers",
+        "data": {
+          "speakers": "Speakers",
+          "volume": "Announcement volume",
+          "gain_db": "Microphone boost (dB)",
+          "tts_engine": "Text-to-speech engine for messages",
+          "chime": "Play a chime first"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_call": {
+        "name": "Last call"
+      }
+    }
+  },
+  "services": {
+    "broadcast": {
+      "name": "Broadcast",
+      "description": "Speak a message or play an audio URL in one or more rooms through RoomCall speakers.",
+      "fields": {
+        "areas": {
+          "name": "Rooms",
+          "description": "Areas to broadcast to. Leave empty for every RoomCall speaker."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Text spoken with the configured text-to-speech engine."
+        },
+        "media_url": {
+          "name": "Media URL",
+          "description": "Audio file URL or media-source ID to play instead of a message."
+        },
+        "volume": {
+          "name": "Volume",
+          "description": "Announcement volume (Sonos)."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+site_name: RoomCall
+site_description: Push-to-talk intercom for Sonos, AirPlay and Chromecast speakers.
+site_url: https://daredoole.github.io/RoomCall/
+repo_url: https://github.com/daredoole/RoomCall
+repo_name: daredoole/RoomCall
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: blue
+      toggle: { icon: material/weather-sunny, name: Light mode }
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: blue
+      toggle: { icon: material/weather-night, name: Dark mode }
+  features:
+    - navigation.instant
+    - navigation.sections
+    - content.code.copy
+    - search.highlight
+  logo: assets/logo.svg
+  favicon: assets/logo.png
+
+nav:
+  - Home: index.md
+  - Home Assistant: home-assistant.md
+  - Standalone server:
+      - Getting started: getting-started.md
+      - Configuration: configuration.md
+  - How it works: how-it-works.md
+  - HTTP API: api.md
+  - Troubleshooting: troubleshooting.md
+  - Roadmap: roadmap.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed: { alternate_style: true }

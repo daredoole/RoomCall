@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f8cff"/>
+      <stop offset="1" stop-color="#2155d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- microphone -->
+  <rect x="196" y="104" width="96" height="176" rx="48" fill="#fff"/>
+  <path d="M156 236a88 88 0 0 0 176 0" fill="none" stroke="#fff" stroke-width="28" stroke-linecap="round"/>
+  <path d="M244 324v60M196 400h96" stroke="#fff" stroke-width="28" stroke-linecap="round"/>
+  <!-- sound waves -->
+  <path d="M362 176a110 110 0 0 1 0 128" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="24" stroke-linecap="round"/>
+  <path d="M404 136a170 170 0 0 1 0 208" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="24" stroke-linecap="round"/>
+</svg>

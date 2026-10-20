@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check versions match the tag
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          manifest=$(jq -r .version custom_components/roomcall/manifest.json)
+          package=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
+          echo "tag=$tag manifest=$manifest package=$package"
+          test "$tag" = "$manifest" && test "$tag" = "$package"
+      - uses: astral-sh/setup-uv@v6
+      - run: uv build
+      - name: Zip the Home Assistant integration for HACS
+        run: cd custom_components/roomcall && zip -r "$GITHUB_WORKSPACE/dist/roomcall.zip" . -x '__pycache__/*'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  github-release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+
+  pypi:
+    # Requires a PyPI "trusted publisher" for this repo + the `pypi` environment.
+    # Enable by setting the repository variable PUBLISH_PYPI=true.
+    if: vars.PUBLISH_PYPI == 'true'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Keep only Python packages
+        run: rm -f dist/roomcall.zip
+      - uses: pypa/gh-action-pypi-publish@release/v1

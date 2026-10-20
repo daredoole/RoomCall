@@ -1,0 +1,135 @@
+<!doctype html>
+<!--
+  Renders custom:roomcall-card outside Home Assistant with a fake `hass` object, so the docs
+  screenshots show the real card without a live instance. Used by scripts/ha_screenshots.py.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RoomCall card harness</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
+<style>
+  :root {
+    --primary-color: #03a9f4; --text-primary-color: #fff; --error-color: #db4437;
+    --success-color: #43a047; --ha-card-border-radius: 12px;
+    font-family: Roboto, "Segoe UI", system-ui, sans-serif;
+  }
+  :root[data-scheme="dark"] {
+    --primary-background-color: #111111; --card-background-color: #1c1c1c;
+    --primary-text-color: #e1e1e1; --secondary-text-color: #9b9b9b; --divider-color: #2f2f2f;
+    --app-header-background-color: #101e24;
+  }
+  :root[data-scheme="light"] {
+    --primary-background-color: #fafafa; --card-background-color: #fff;
+    --primary-text-color: #212121; --secondary-text-color: #727272; --divider-color: #e0e0e0;
+    --app-header-background-color: #03a9f4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--primary-background-color); color: var(--primary-text-color); }
+  header {
+    height: 56px; display: flex; align-items: center; gap: 24px; padding: 0 16px;
+    background: var(--app-header-background-color); color: #fff; font-size: 20px;
+  }
+  header .mdi { font-size: 24px; }
+  header .tabs { display: flex; gap: 22px; font-size: 14px; text-transform: uppercase; opacity: 0.85; }
+  header .tabs b { border-bottom: 2px solid #fff; padding-bottom: 14px; margin-bottom: -16px; }
+  main { padding: 16px; display: grid; gap: 16px; }
+  main.desktop { grid-template-columns: 1fr 1.25fr 1fr; max-width: 1180px; margin: 0 auto; align-items: start; }
+  .tile {
+    background: var(--card-background-color); border: 1px solid var(--divider-color);
+    border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+  }
+  .tile .mdi { font-size: 22px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; }
+  .tile small { display: block; color: var(--secondary-text-color); font-size: 13px; }
+  .col { display: grid; gap: 12px; }
+  .heading { font-size: 15px; font-weight: 500; color: var(--secondary-text-color); margin: 4px 2px -4px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="mdi mdi-menu"></span>
+  <span class="title">Home</span>
+  <span class="tabs"></span>
+</header>
+<main></main>
+<script src="roomcall-card.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  document.documentElement.dataset.scheme = params.get("scheme") || "dark";
+  const desktop = params.get("layout") === "desktop";
+
+  // Minimal stand-ins for Home Assistant's own elements.
+  customElements.define("ha-card", class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" }).innerHTML = `<style>:host{display:block;
+        background:var(--card-background-color);border:1px solid var(--divider-color);
+        border-radius:var(--ha-card-border-radius);color:var(--primary-text-color)}</style><slot></slot>`;
+    }
+  });
+  customElements.define("ha-icon", class extends HTMLElement {
+    static get observedAttributes() { return ["icon"]; }
+    connectedCallback() { this._draw(); }
+    attributeChangedCallback() { this._draw(); }
+    _draw() {
+      const root = this.shadowRoot || this.attachShadow({ mode: "open" });
+      const name = (this.getAttribute("icon") || "").replace("mdi:", "");
+      root.innerHTML = `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
+        <style>:host{display:inline-flex}i{font-size:var(--mdc-icon-size,24px);line-height:1}</style>
+        <i class="mdi mdi-${name}"></i>`;
+    }
+  });
+
+  const ROOMS = [
+    { area_id: "basement", name: "Basement", icon: "mdi:stairs-down", speakers: ["Basement"] },
+    { area_id: "office", name: "Office", icon: "mdi:desk", speakers: ["Office"] },
+    { area_id: "garage", name: "Garage", icon: "mdi:garage", speakers: ["Garage AirPlay"] },
+    { area_id: "kitchen", name: "Kitchen", icon: "mdi:silverware-fork-knife", speakers: ["Kitchen Hub"] },
+    { area_id: "living_room", name: "Living Room", icon: "mdi:sofa", speakers: ["Living Room"] },
+  ];
+  const hass = {
+    async callApi(method, path) {
+      return { rooms: ROOMS, speakers: 5 };
+    },
+    async fetchWithAuth(url) {
+      await new Promise((r) => setTimeout(r, 400));
+      const target = new URL(url, location.href).searchParams.get("target");
+      const hit = ROOMS.filter((r) => target === "all" || r.area_id === target);
+      return new Response(JSON.stringify({
+        target, ok: true, seconds: 3.2,
+        results: hit.flatMap((r) => r.speakers.map((s) => ({ speaker: s, ok: true }))),
+      }), { headers: { "Content-Type": "application/json" } });
+    },
+  };
+
+  const tile = (icon, color, name, state) =>
+    `<div class="tile"><span class="mdi mdi-${icon}" style="color:${color};background:color-mix(in srgb, ${color} 18%, transparent)"></span>
+     <div>${name}<small>${state}</small></div></div>`;
+
+  const main = document.querySelector("main");
+  const card = document.createElement("roomcall-card");
+  card.setConfig({ title: "Intercom", default_room: "kitchen" });
+  card.hass = hass;
+  if (desktop) {
+    document.querySelector(".tabs").innerHTML = "<b>Home</b><span>Rooms</span><span>Media</span><span>Energy</span>";
+    main.className = "desktop";
+    main.innerHTML = `
+      <div class="col"><div class="heading">Media</div>
+        ${tile("speaker", "#ab47bc", "Basement", "Playing · Lo-fi beats")}
+        ${tile("speaker", "#ab47bc", "Office", "Idle")}
+        ${tile("cast", "#ab47bc", "Kitchen Hub", "Idle")}</div>
+      <div class="col center"></div>
+      <div class="col"><div class="heading">House</div>
+        ${tile("garage", "#4caf50", "Garage door", "Closed")}
+        ${tile("thermometer", "#ff9800", "Living room", "71 °F · 44 %")}
+        ${tile("lightbulb-group", "#ffc107", "Lights", "3 on")}</div>`;
+    main.querySelector(".center").append(card);
+  } else {
+    main.append(card);
+    main.insertAdjacentHTML("beforeend",
+      tile("account-voice", "#03a9f4", "RoomCall Last call", "Kitchen · just now"));
+  }
+</script>
+</body>
+</html>

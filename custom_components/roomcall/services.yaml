@@ -1,0 +1,23 @@
+broadcast:
+  fields:
+    areas:
+      example: ["kitchen", "living_room"]
+      selector:
+        area:
+          multiple: true
+    message:
+      example: "Dinner is ready"
+      selector:
+        text:
+          multiline: true
+    media_url:
+      example: "http://homeassistant.local:8123/local/chime.mp3"
+      selector:
+        text:
+    volume:
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.05
+          mode: slider
