@@ -1,31 +1,33 @@
 # Roadmap
 
+Track progress and vote on the [GitHub issues](https://github.com/daredoole/RoomCall/issues).
+
 ## v0.1 — Push-to-talk ✅
 
-- [x] mDNS discovery of Sonos, AirPlay and Cast speakers (standalone server)
-- [x] Rooms, groups and "everywhere"
-- [x] Browser hold-to-talk with level meter and delivery report
-- [x] HTTP API, CLI, demo mode, token auth
 - [x] Native Home Assistant integration: config flow, rooms from areas, `roomcall.broadcast`
-- [x] Push-to-talk dashboard card, announce mode, walkie-talkie chirp, silent-mic detection
+- [x] Push-to-talk card, announce mode, walkie-talkie chirp, silent-mic detection
+- [x] Standalone server with mDNS discovery of Sonos, AirPlay and Cast speakers
 
-## v0.2 — Talk back
+## v0.2 — A real intercom ✅
 
-Sonos, HomePod and Nest microphones are reserved for their own assistants, so replies come from
-devices RoomCall can listen to:
+- [x] Reply from phone notifications ([#12](https://github.com/daredoole/RoomCall/issues/12))
+- [x] Call a person wherever they are ([#16](https://github.com/daredoole/RoomCall/issues/16))
+- [x] Do Not Disturb and quiet hours ([#17](https://github.com/daredoole/RoomCall/issues/17))
+- [x] Urgent calls ([#18](https://github.com/daredoole/RoomCall/issues/18))
+- [x] Call history with replay ([#19](https://github.com/daredoole/RoomCall/issues/19))
+- [x] Speech-to-text transcripts ([#20](https://github.com/daredoole/RoomCall/issues/20))
+- [x] Chime choice and custom chimes ([#22](https://github.com/daredoole/RoomCall/issues/22))
+- [x] Compact and kiosk card layouts ([#23](https://github.com/daredoole/RoomCall/issues/23))
+- [x] Staggered delivery and retries ([#24](https://github.com/daredoole/RoomCall/issues/24))
+- [x] Siri, Apple Watch and CarPlay through Shortcuts ([#14](https://github.com/daredoole/RoomCall/issues/14))
 
-- [ ] **Reply from a phone or tablet** — every call sends a notification with a *Reply* button
-      that opens the card already pointed at the caller's room
-- [ ] **Voice satellites as room stations** — Home Assistant Voice / ESPHome devices chirp after a
-      call and record a short reply for the caller
-- [ ] Doorbells with two-way audio (via go2rtc)
+## Next
 
-## v0.3 — HomeKit
-
-- [ ] Expose each room as a HomeKit camera with two-way audio, so the Home app's talk button
-      broadcasts to that room
-
-## Later
-
-- [ ] Streaming while you talk (lower perceived delay)
-- [ ] Container image and Home Assistant add-on for the standalone server
+- [ ] **Hands-free talk-back** from rooms with only a Sonos: a small mic station (Atom Echo,
+      ESP32-S3, Home Assistant Voice) opens for a few seconds after each call
+      ([#11](https://github.com/daredoole/RoomCall/issues/11))
+- [ ] **Live streaming** while you talk, for sub-second delay ([#13](https://github.com/daredoole/RoomCall/issues/13))
+- [ ] **Doorbell bridge**: answer the door from any room or your watch ([#21](https://github.com/daredoole/RoomCall/issues/21))
+- [ ] **HomeKit intercom**: rooms as two-way-audio cameras in the Home app ([#15](https://github.com/daredoole/RoomCall/issues/15))
+- [ ] Brand icon in Home Assistant and the default HACS store ([#25](https://github.com/daredoole/RoomCall/issues/25))
+- [ ] Per-room chimes and voicemail for rooms where nobody answered

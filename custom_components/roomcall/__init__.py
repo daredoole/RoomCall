@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from datetime import time
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 
 import voluptuous as vol
@@ -15,40 +17,80 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.network import NoURLAvailableError
+from homeassistant.util import dt as dt_util
 
+from . import chimes
+from .calls import CallError, CallRequest, place_call
 from .const import (
-    ALL_ROOMS,
+    API_CHIME,
     ATTR_MEDIA_URL,
     ATTR_MESSAGE,
+    ATTR_PRIORITY,
     ATTR_TARGET_AREAS,
+    ATTR_TARGET_PEOPLE,
     ATTR_VOLUME,
     CARD_FILENAME,
     CONF_CHIME,
+    CONF_CHIME_STYLE,
+    CONF_CHIME_URL,
     CONF_GAIN_DB,
+    CONF_NOTIFY,
+    CONF_QUIET_END,
+    CONF_QUIET_SKIP_AREAS,
+    CONF_QUIET_START,
+    CONF_QUIET_VOLUME,
+    CONF_REPLY_PATH,
+    CONF_RETRY,
     CONF_SPEAKERS,
+    CONF_STAGGER_MS,
+    CONF_STT_ENGINE,
     CONF_TTS_ENGINE,
+    CONF_URGENT_VOLUME,
     CONF_VOLUME,
     DEFAULT_CHIME,
+    DEFAULT_CHIME_STYLE,
     DEFAULT_GAIN_DB,
+    DEFAULT_RETRY,
+    DEFAULT_STAGGER_MS,
+    DEFAULT_URGENT_VOLUME,
     DOMAIN,
-    MESSAGE_CHIME,
+    PRIORITIES,
+    PRIORITY_NORMAL,
+    SECTION_CHIME,
+    SECTION_DELIVERY,
+    SECTION_QUIET,
+    SECTION_REPLY,
     SERVICE_BROADCAST,
     URL_STATIC,
+    VERSION,
 )
-from .core import CallRecord, ClipStore, fan_out, resolve
-from .http import ClipView, RoomsView, TalkView
+from .core import ClipStore, History
+from .http import (
+    ChimeView,
+    ClipView,
+    HistoryClipView,
+    HistoryView,
+    RoomsView,
+    TalkView,
+    base_url,
+)
+from .policy import QuietHours
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.SWITCH]
+_KEPT = f"{DOMAIN}_kept"
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 BROADCAST_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_TARGET_AREAS): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(ATTR_TARGET_PEOPLE): cv.entity_ids,
         vol.Exclusive(ATTR_MESSAGE, "content"): cv.string,
         vol.Exclusive(ATTR_MEDIA_URL, "content"): cv.string,
         vol.Optional(ATTR_VOLUME): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+        vol.Optional(ATTR_PRIORITY, default=PRIORITY_NORMAL): vol.In(PRIORITIES),
     }
 )
 
@@ -59,61 +101,132 @@ class RoomCallData:
     volume: float | None
     gain_db: float
     tts_engine: str | None
-    chime: bool = DEFAULT_CHIME
+    chime_style: str | None = DEFAULT_CHIME_STYLE  # None = no chime
+    chime_url: str | None = None
+    stagger_ms: int = DEFAULT_STAGGER_MS
+    retry: bool = DEFAULT_RETRY
+    urgent_volume: float = DEFAULT_URGENT_VOLUME
+    quiet: QuietHours = field(default_factory=QuietHours)
+    notify: list[str] = field(default_factory=list)
+    reply_path: str | None = None
+    stt_engine: str | None = None
+    dnd: bool = False
+    entry_id: str | None = None
     clips: ClipStore = field(default_factory=ClipStore)
-    last_call: CallRecord | None = None
+    history: History = field(default_factory=History)
+    chime_cache: dict[str, bytes] = field(default_factory=dict)
 
 
-def _options(entry: ConfigEntry) -> dict:
-    return {**entry.data, **entry.options}
+def _time(value: Any) -> time | None:
+    if not value:
+        return None
+    return dt_util.parse_time(str(value))
+
+
+def _float(value: Any) -> float | None:
+    return float(value) if value not in (None, "") else None
+
+
+def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
+    """Build runtime settings from the entry (sections are nested dicts)."""
+    chime = opts.get(SECTION_CHIME) or {}
+    delivery = opts.get(SECTION_DELIVERY) or {}
+    quiet = opts.get(SECTION_QUIET) or {}
+    replies = opts.get(SECTION_REPLY) or {}
+    style = chime.get(CONF_CHIME_STYLE)
+    if style is None:  # entries from 0.1.x only had an on/off switch
+        style = DEFAULT_CHIME_STYLE if opts.get(CONF_CHIME, DEFAULT_CHIME) else chimes.OFF
+    return RoomCallData(
+        speakers=list(opts.get(CONF_SPEAKERS, [])),
+        volume=_float(opts.get(CONF_VOLUME)),
+        gain_db=float(opts.get(CONF_GAIN_DB, DEFAULT_GAIN_DB)),
+        tts_engine=opts.get(CONF_TTS_ENGINE) or None,
+        chime_style=None if style == chimes.OFF else style,
+        chime_url=(chime.get(CONF_CHIME_URL) or "").strip() or None,
+        stagger_ms=int(delivery.get(CONF_STAGGER_MS, DEFAULT_STAGGER_MS)),
+        retry=bool(delivery.get(CONF_RETRY, DEFAULT_RETRY)),
+        urgent_volume=float(delivery.get(CONF_URGENT_VOLUME, DEFAULT_URGENT_VOLUME)),
+        quiet=QuietHours(
+            start=_time(quiet.get(CONF_QUIET_START)),
+            end=_time(quiet.get(CONF_QUIET_END)),
+            volume=_float(quiet.get(CONF_QUIET_VOLUME)),
+            skip_areas=list(quiet.get(CONF_QUIET_SKIP_AREAS) or []),
+        ),
+        notify=list(replies.get(CONF_NOTIFY) or []),
+        reply_path=(replies.get(CONF_REPLY_PATH) or "").strip() or None,
+        stt_engine=replies.get(CONF_STT_ENGINE) or None,
+    )
+
+
+def _message_chime(hass: HomeAssistant, data: RoomCallData) -> str | None:
+    """Chime TTS ``chime_path`` that matches the push-to-talk chime."""
+    if data.chime_url:
+        return data.chime_url
+    if data.chime_style is None:
+        return None
+    try:
+        return f"{base_url(hass)}{API_CHIME.format(style=data.chime_style)}.mp3"
+    except NoURLAvailableError:
+        return None
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register HTTP views, the dashboard card and the broadcast action once."""
-    hass.http.register_view(TalkView())
-    hass.http.register_view(RoomsView())
-    hass.http.register_view(ClipView())
+    for view in (TalkView, RoomsView, ClipView, ChimeView, HistoryView, HistoryClipView):
+        hass.http.register_view(view())
     await hass.http.async_register_static_paths(
         [StaticPathConfig(URL_STATIC, str(Path(__file__).parent / "frontend"), False)]
     )
     if "frontend" in hass.config.components:
-        add_extra_js_url(hass, f"{URL_STATIC}/{CARD_FILENAME}?v=0.1.2")
+        add_extra_js_url(hass, f"{URL_STATIC}/{CARD_FILENAME}?v={VERSION}")
 
     async def _broadcast(call: ServiceCall) -> ServiceResponse:
         data: RoomCallData | None = hass.data.get(DOMAIN)
         if data is None:
             raise ServiceValidationError("RoomCall is not set up")
-        targets = call.data.get(ATTR_TARGET_AREAS) or [ALL_ROOMS]
         chime_message: dict[str, str] | None = None
-        entity_ids = resolve(hass, data.speakers, targets)
-        if not entity_ids:
-            raise ServiceValidationError(f"No RoomCall speakers in {', '.join(targets)}")
-        if message := call.data.get(ATTR_MESSAGE):
+        message = call.data.get(ATTR_MESSAGE)
+        if message:
             engine = data.tts_engine or next(iter(hass.states.async_entity_ids("tts")), None)
             if engine is None:
                 raise ServiceValidationError("No text-to-speech engine is available")
             media_id = f"media-source://tts/{engine}?message={quote(message)}&cache=true"
             kind = "message"
-            if data.chime and "chime_tts" in hass.config.components:
+            chime_path = _message_chime(hass, data)
+            if chime_path and "chime_tts" in hass.config.components:
                 chime_message = {
                     "message": message,
                     "tts_platform": engine,
-                    "chime_path": MESSAGE_CHIME,
+                    "chime_path": chime_path,
                 }
         elif media_url := call.data.get(ATTR_MEDIA_URL):
             media_id, kind = media_url, "media"
         else:
             raise ServiceValidationError("Provide either message or media_url")
-        record = await fan_out(
-            hass,
-            entity_ids,
-            media_id,
-            call.data.get(ATTR_VOLUME, data.volume),
-            target=", ".join(targets),
-            kind=kind,
-            chime_message=chime_message,
-        )
-        return {"ok": record.ok, "results": [r.as_dict() for r in record.results]}
+        try:
+            record = await place_call(
+                hass,
+                data,
+                CallRequest(
+                    targets=list(call.data.get(ATTR_TARGET_AREAS) or []),
+                    people=call.data.get(ATTR_TARGET_PEOPLE),
+                    media_id=media_id,
+                    kind=kind,
+                    priority=call.data[ATTR_PRIORITY],
+                    volume=call.data.get(ATTR_VOLUME),
+                    message=message,
+                    chime_message=chime_message,
+                    caller_user_id=call.context.user_id,
+                ),
+            )
+        except CallError as err:
+            raise ServiceValidationError(str(err)) from err
+        return {
+            "ok": record.ok,
+            "id": record.call_id,
+            "results": [r.as_dict() for r in record.results],
+            "skipped": record.skipped,
+        }
 
     hass.services.async_register(
         DOMAIN,
@@ -126,26 +239,17 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    opts = _options(entry)
-    volume = opts.get(CONF_VOLUME)
-    hass.data[DOMAIN] = RoomCallData(
-        speakers=list(opts.get(CONF_SPEAKERS, [])),
-        volume=float(volume) if volume not in (None, "") else None,
-        gain_db=float(opts.get(CONF_GAIN_DB, DEFAULT_GAIN_DB)),
-        tts_engine=opts.get(CONF_TTS_ENGINE) or None,
-        chime=bool(opts.get(CONF_CHIME, DEFAULT_CHIME)),
-    )
-    entry.async_on_unload(entry.add_update_listener(_reload))
+    data = settings_from_options({**entry.data, **entry.options})
+    if kept := hass.data.pop(_KEPT, None):  # history and Do Not Disturb survive a reload
+        data.history, data.dnd = kept
+    data.entry_id = entry.entry_id
+    hass.data[DOMAIN] = data
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
-async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    await hass.config_entries.async_reload(entry.entry_id)
-
-
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unloaded:
-        hass.data.pop(DOMAIN, None)
+    if unloaded and (data := hass.data.pop(DOMAIN, None)) is not None:
+        hass.data[_KEPT] = (data.history, data.dnd)
     return unloaded

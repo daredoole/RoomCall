@@ -198,7 +198,7 @@ async def test_message_uses_chime_tts_when_available(
         DOMAIN, "broadcast", {"areas": [house["basement"]], "message": "Hi"}, blocking=True
     )
     assert not play_calls
-    assert chime_calls[0].data["chime_path"] == "chirp"
+    assert chime_calls[0].data["chime_path"] == "http://ha.local:8123/api/roomcall/chime/chirp.mp3"
     assert chime_calls[0].data["message"] == "Hi"
     assert chime_calls[0].data["announce"] is True
     assert chime_calls[0].data["volume_level"] == 0.4

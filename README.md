@@ -41,11 +41,23 @@ no intercom at all. RoomCall turns **every speaker Home Assistant already contro
 intercom, organised by your Home Assistant **areas**.
 
 - 🎙️ **Hold to talk** from the Home Assistant app or any browser — a dashboard card, no extra app.
-- 🏠 **Rooms are your areas** — talk to one room or the whole house.
-- 📻 **Walkie-talkie chirp** before every message so people know a call is coming.
-- 🔉 **Announce mode** — Sonos lowers the music for your message instead of stopping it.
-- 🗣️ **Automations too** — `roomcall.broadcast` speaks text (TTS) or plays audio in any area.
+- 🏠 **Rooms are your areas** — talk to one room, the whole house, or **a person** wherever they are.
+- ↩️ **Reply** — every call can notify your phones with a Reply button aimed back at the caller.
+- 🌙 **Do Not Disturb, quiet hours and urgent calls** — quieter nights, skipped bedrooms, and an override when it matters.
+- 🕘 **Call history** with replay and speech-to-text transcripts.
+- 📻 **Pick a chime** (walkie-talkie, ding, doorbell…) or bring your own.
+- 🔉 **Announce mode** — Sonos lowers the music instead of stopping it, and speakers are staggered so none drop the call.
+- 🗣️ **Automations and Siri** — `roomcall.broadcast` from automations, Shortcuts, Apple Watch and CarPlay.
+- 🖥️ **Kiosk and compact layouts** for wall tablets and busy dashboards.
 - 🔒 **Local only** — audio goes from your phone to Home Assistant to the speaker. No cloud, no account.
+
+<p align="center">
+  <img src="docs/assets/ha-card-reply.png" alt="Replying from a notification" width="200">
+  &nbsp;
+  <img src="docs/assets/ha-card-compact.png" alt="Compact layout" width="200">
+  &nbsp;
+  <img src="docs/assets/ha-card-kiosk.png" alt="Kiosk layout for a wall tablet" width="200">
+</p>
 
 ## Requirements
 
@@ -54,7 +66,7 @@ intercom, organised by your Home Assistant **areas**.
 | Home Assistant | 2025.6 or newer |
 | Speakers | Any `media_player` that can play an MP3 URL: Sonos, Google Cast / Nest, AirPlay, … |
 | Microphone | Open the dashboard over **HTTPS** (Nabu Casa, a reverse proxy, Tailscale) or in the Home Assistant mobile app. Browsers block the mic on plain `http://`. |
-| Optional | [Chime TTS](https://github.com/nimroddolev/chime_tts) — typed messages then get the chirp too |
+| Optional | [Chime TTS](https://github.com/nimroddolev/chime_tts) (typed messages get the chime too), a speech-to-text engine (transcripts), room presence such as [Bermuda](https://github.com/agittins/bermuda) (call a person) |
 
 ## Install
 
@@ -113,9 +125,18 @@ data:
   volume: 0.4                  # optional
 ```
 
+```yaml
+action: roomcall.broadcast
+data:
+  people: [person.alex]        # wherever Alex is right now
+  message: Your ride is here
+  priority: urgent             # ignores Do Not Disturb and quiet hours
+```
+
 Play an audio file instead of text with `media_url:`. The action returns which speakers played
 the message, and `sensor.roomcall_last_call` records every call. More examples in the
-[Home Assistant guide](https://daredoole.github.io/RoomCall/home-assistant/).
+[Home Assistant guide](https://daredoole.github.io/RoomCall/home-assistant/), and
+"Hey Siri, intercom basement" in [Siri and Shortcuts](https://daredoole.github.io/RoomCall/siri-shortcuts/).
 
 ## Options
 
@@ -125,9 +146,15 @@ the message, and `sensor.roomcall_last_call` records every call. More examples i
 |---|---|---|
 | Speakers | announce-capable players | Which media players are part of the intercom |
 | Announcement volume | speaker's current volume | Fixed volume for calls (Sonos) |
-| Play a chime first | on | Walkie-talkie chirp before each message |
 | Microphone boost | 0 dB | Raise if phone recordings sound quiet |
 | Text-to-speech engine | your default | Used for typed messages |
+| Chime | walkie-talkie chirp | Chirp, ding, double beep, rising, doorbell, none — or your own file |
+| Delivery | 250 ms apart, retry on | Stops Sonos speakers from dropping simultaneous calls |
+| Quiet hours | off | Quieter calls and skipped rooms overnight |
+| Notifications and replies | off | Phones to notify, Reply button, speech-to-text |
+
+Card options (`room`, `people`, `history`, `layout: compact | kiosk`) are in the
+[guide](https://daredoole.github.io/RoomCall/home-assistant/#3-add-the-push-to-talk-card).
 
 ## How it works
 
@@ -151,8 +178,9 @@ A call plays about 1–2 seconds after you let go (AirPlay adds ~2 s of bufferin
 <summary><b>Can people talk back through the speaker?</b></summary>
 
 Not through Sonos, HomePod or Nest speakers — their microphones are reserved for their own voice
-assistants. Talk-back needs a device RoomCall can listen to (a phone or tablet, or a Home Assistant
-voice satellite); it's next on the [roadmap](https://daredoole.github.io/RoomCall/roadmap/).
+assistants. Today people reply from their phone: the call notification has a **Reply** button that
+opens the card aimed back at the caller. Hands-free mic stations next to each speaker are next on
+the [roadmap](https://daredoole.github.io/RoomCall/roadmap/).
 </details>
 
 <details>

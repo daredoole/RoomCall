@@ -29,6 +29,7 @@ theme:
 nav:
   - Home: index.md
   - Home Assistant: home-assistant.md
+  - Siri and Shortcuts: siri-shortcuts.md
   - Standalone server:
       - Getting started: getting-started.md
       - Configuration: configuration.md

@@ -35,13 +35,14 @@ def serve(route: Route) -> None:
     route.fulfill(body=file.read_bytes(), content_type=content_type)
 
 
-def open_card(page: Page, layout: str, scheme: str) -> None:
+def open_card(page: Page, layout: str, scheme: str, extra: str = "") -> None:
     page.route(f"{ORIGIN}/**", serve)
-    page.goto(f"{ORIGIN}/harness.html?layout={layout}&scheme={scheme}")
+    page.goto(f"{ORIGIN}/harness.html?layout={layout}&scheme={scheme}{extra}")
     page.wait_for_function(
-        "document.querySelector('roomcall-card')?.shadowRoot?.querySelectorAll('.room').length > 3"
+        "document.querySelector('roomcall-card')?.shadowRoot"
+        "?.querySelectorAll('.rooms .chip').length > 3"
     )
-    page.wait_for_timeout(600)  # icon font
+    page.wait_for_timeout(700)  # icon font
 
 
 def main() -> int:
@@ -50,18 +51,29 @@ def main() -> int:
         browser = p.chromium.launch(
             args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"]
         )
+        phone = {"width": 390, "height": 844}
         shots = [
-            ("ha-card-mobile.png", {"width": 390, "height": 720}, "mobile", "dark"),
-            ("ha-card-mobile-light.png", {"width": 390, "height": 720}, "mobile", "light"),
-            ("ha-dashboard-desktop.png", {"width": 1280, "height": 620}, "desktop", "dark"),
+            ("ha-card-mobile.png", phone, "mobile", "dark", ""),
+            ("ha-card-mobile-light.png", phone, "mobile", "light", ""),
+            ("ha-card-reply.png", phone, "mobile", "dark", "&roomcall=basement"),
+            ("ha-card-dnd.png", phone, "mobile", "dark", "&dnd=on"),
+            (
+                "ha-card-compact.png",
+                {"width": 390, "height": 420},
+                "mobile",
+                "dark",
+                "&card=compact",
+            ),
+            ("ha-card-kiosk.png", {"width": 800, "height": 1180}, "mobile", "dark", "&card=kiosk"),
+            ("ha-dashboard-desktop.png", {"width": 1280, "height": 760}, "desktop", "dark", ""),
         ]
-        for name, viewport, layout, scheme in shots:
+        for name, viewport, layout, scheme, extra in shots:
             page = browser.new_page(viewport=viewport, device_scale_factor=2)
-            open_card(page, layout, scheme)
+            open_card(page, layout, scheme, extra)
             page.screenshot(path=OUT / name)
             page.close()
 
-        page = browser.new_page(viewport={"width": 390, "height": 720}, device_scale_factor=2)
+        page = browser.new_page(viewport=phone, device_scale_factor=2)
         page.context.grant_permissions(["microphone"], origin=ORIGIN)
         open_card(page, "mobile", "dark")
         talk = page.locator("roomcall-card").locator("button.talk")
