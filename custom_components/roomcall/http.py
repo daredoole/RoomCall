@@ -136,6 +136,7 @@ class TalkView(HomeAssistantView):
                     audio=audio if content_type == "audio/mpeg" else None,
                     recording=body,
                     caller_user_id=user.id if user else None,
+                    seconds=mp3_seconds(audio) if content_type == "audio/mpeg" else None,
                 ),
             )
         except CallError as err:

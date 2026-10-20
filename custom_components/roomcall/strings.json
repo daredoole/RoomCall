@@ -54,10 +54,12 @@
             "data": {
               "stagger_ms": "Delay between speakers",
               "retry": "Retry a speaker that fails",
-              "urgent_volume": "Urgent call volume"
+              "urgent_volume": "Urgent call volume",
+              "restore": "Put speakers back after a call"
             },
             "data_description": {
-              "stagger_ms": "Some speakers (several Sonos in one home) drop announcements that arrive at the same moment. A short offset fixes it."
+              "stagger_ms": "Some speakers (several Sonos in one home) drop announcements that arrive at the same moment. A short offset fixes it.",
+              "restore": "For speakers that can't announce (AV receivers, TV boxes): restore input, volume, power and the app that was open."
             }
           },
           "quiet_hours": {
