@@ -77,7 +77,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         [StaticPathConfig(URL_STATIC, str(Path(__file__).parent / "frontend"), False)]
     )
     if "frontend" in hass.config.components:
-        add_extra_js_url(hass, f"{URL_STATIC}/{CARD_FILENAME}?v=0.1.1")
+        add_extra_js_url(hass, f"{URL_STATIC}/{CARD_FILENAME}?v=0.1.2")
 
     async def _broadcast(call: ServiceCall) -> ServiceResponse:
         data: RoomCallData | None = hass.data.get(DOMAIN)

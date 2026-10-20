@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
+import shutil
+import subprocess
+import tempfile
 import wave
+from pathlib import Path
 
+import pytest
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -110,6 +116,58 @@ async def test_talk_uploads_plays_and_serves_clip(
     # Chime is on by default, so the WAV is re-encoded to MP3 with the chirp prepended.
     assert audio[:3] == b"ID3" or audio[:2] in (b"\xff\xfb", b"\xff\xf3", b"\xff\xf2")
     assert body["seconds"] and body["seconds"] > 0.3
+
+
+def _iphone_mp4() -> bytes:
+    """AAC in MP4 with the index (moov atom) at the end, as Safari's MediaRecorder writes it."""
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg is None:
+        pytest.skip("ffmpeg not installed")
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "rec.mp4"
+        subprocess.run(
+            [
+                ffmpeg,
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-f",
+                "lavfi",
+                "-t",
+                "1",
+                "-i",
+                "sine=frequency=440:sample_rate=44100",
+                "-c:a",
+                "aac",
+                str(out),
+            ],
+            check=True,
+        )
+        data = out.read_bytes()
+    assert data.rfind(b"moov") > data.find(b"mdat")  # index after the audio
+    return data
+
+
+async def test_talk_accepts_iphone_mp4(
+    hass: HomeAssistant, setup_roomcall, house, hass_client
+) -> None:
+    async_mock_service(hass, "media_player", "play_media")
+    client = await hass_client()
+    data = _iphone_mp4()
+
+    async def chunks():  # a reverse proxy forwards the upload in pieces
+        for i in range(0, len(data), 1024):
+            yield data[i : i + 1024]
+            await asyncio.sleep(0)
+
+    resp = await client.post(
+        f"/api/roomcall/talk?target={house['basement']}",
+        data=chunks(),
+        headers={"Content-Type": "audio/mp4"},
+    )
+    body = await resp.json()
+    assert resp.status == 200, body
+    assert body["seconds"] > 0.8
 
 
 async def test_talk_requires_auth(hass: HomeAssistant, setup_roomcall, hass_client_no_auth) -> None:
