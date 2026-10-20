@@ -3,18 +3,16 @@
     "step": {
       "user": {
         "title": "RoomCall intercom",
-        "description": "Choose the speakers that should play intercom messages. Rooms come from each speaker's Home Assistant area. Pick one entity per physical speaker so messages are not played twice.",
+        "description": "Choose the speakers that should play intercom messages. Rooms come from each speaker's Home Assistant area. Pick one entity per physical speaker so messages are not played twice. Chimes, quiet hours and notifications are under Configure afterwards.",
         "data": {
           "speakers": "Speakers",
           "volume": "Announcement volume",
           "gain_db": "Microphone boost (dB)",
-          "tts_engine": "Text-to-speech engine for messages",
-          "chime": "Play a chime first"
+          "tts_engine": "Text-to-speech engine for messages"
         },
         "data_description": {
           "volume": "Leave empty to keep each speaker's current volume. Supported by Sonos.",
-          "gain_db": "Raise this if phone recordings sound quiet.",
-          "chime": "A short walkie-talkie chirp before every message so people know a call is coming."
+          "gain_db": "Raise this if phone recordings sound quiet."
         }
       }
     },
@@ -28,14 +26,79 @@
   "options": {
     "step": {
       "init": {
-        "title": "RoomCall speakers",
+        "title": "RoomCall",
         "data": {
           "speakers": "Speakers",
           "volume": "Announcement volume",
           "gain_db": "Microphone boost (dB)",
-          "tts_engine": "Text-to-speech engine for messages",
-          "chime": "Play a chime first"
+          "tts_engine": "Text-to-speech engine for messages"
+        },
+        "data_description": {
+          "volume": "Leave empty to keep each speaker's current volume. Supported by Sonos.",
+          "gain_db": "Raise this if phone recordings sound quiet."
+        },
+        "sections": {
+          "chime_options": {
+            "name": "Chime",
+            "description": "The sound played before every call.",
+            "data": {
+              "style": "Chime",
+              "custom_url": "Custom chime file or URL"
+            },
+            "data_description": {
+              "custom_url": "An MP3/WAV URL or a path such as /config/www/chime.mp3. Overrides the chime above."
+            }
+          },
+          "delivery": {
+            "name": "Delivery",
+            "data": {
+              "stagger_ms": "Delay between speakers",
+              "retry": "Retry a speaker that fails",
+              "urgent_volume": "Urgent call volume"
+            },
+            "data_description": {
+              "stagger_ms": "Some speakers (several Sonos in one home) drop announcements that arrive at the same moment. A short offset fixes it."
+            }
+          },
+          "quiet_hours": {
+            "name": "Quiet hours",
+            "description": "During quiet hours calls play quieter and skip the rooms you choose. Urgent calls ignore quiet hours and Do Not Disturb.",
+            "data": {
+              "start": "Start",
+              "end": "End",
+              "volume": "Volume during quiet hours",
+              "skip_areas": "Rooms to skip during quiet hours"
+            }
+          },
+          "replies": {
+            "name": "Notifications and replies",
+            "data": {
+              "notify": "Phones to notify about calls",
+              "dashboard_path": "Dashboard with the RoomCall card",
+              "stt_engine": "Speech-to-text engine for transcripts"
+            },
+            "data_description": {
+              "notify": "Each call sends a notification. The caller's own phones are skipped.",
+              "dashboard_path": "For example /home-hub/home. Adds a Reply button that opens the card aimed back at the caller's room.",
+              "stt_engine": "Optional. Adds the spoken words to notifications and call history."
+            }
+          }
         }
+      }
+    },
+    "error": {
+      "no_speakers": "Select at least one speaker."
+    }
+  },
+  "selector": {
+    "chime_style": {
+      "options": {
+        "chirp": "Walkie-talkie chirp",
+        "ding": "Ding",
+        "double": "Double beep",
+        "rising": "Rising tones",
+        "doorbell": "Doorbell",
+        "off": "No chime"
       }
     }
   },
@@ -44,16 +107,25 @@
       "last_call": {
         "name": "Last call"
       }
+    },
+    "switch": {
+      "do_not_disturb": {
+        "name": "Do Not Disturb"
+      }
     }
   },
   "services": {
     "broadcast": {
       "name": "Broadcast",
-      "description": "Speak a message or play an audio URL in one or more rooms through RoomCall speakers.",
+      "description": "Speak a message or play an audio URL in rooms, or wherever a person is.",
       "fields": {
         "areas": {
           "name": "Rooms",
-          "description": "Areas to broadcast to. Leave empty for every RoomCall speaker."
+          "description": "Areas to broadcast to. Leave empty (and no people) for every RoomCall speaker."
+        },
+        "people": {
+          "name": "People",
+          "description": "Play in the room each person is in right now (needs room presence, for example Bermuda)."
         },
         "message": {
           "name": "Message",
@@ -66,6 +138,10 @@
         "volume": {
           "name": "Volume",
           "description": "Announcement volume (Sonos)."
+        },
+        "priority": {
+          "name": "Priority",
+          "description": "Urgent calls play louder and ignore Do Not Disturb and quiet hours."
         }
       }
     }

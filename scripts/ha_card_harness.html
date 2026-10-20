@@ -88,16 +88,32 @@
     { area_id: "kitchen", name: "Kitchen", icon: "mdi:silverware-fork-knife", speakers: ["Kitchen Hub"] },
     { area_id: "living_room", name: "Living Room", icon: "mdi:sofa", speakers: ["Living Room"] },
   ];
+  const ago = (min) => new Date(Date.now() - min * 60000).toISOString();
+  const HISTORY = [
+    { id: "a1", at: ago(2), from: "kitchen", target: "basement", kind: "talk", priority: "normal", ok: true,
+      text: "Dinner's ready, come on up", has_audio: true },
+    { id: "a2", at: ago(25), from: "office", target: "all", kind: "talk", priority: "urgent", ok: true,
+      text: "Who left the garage open?", has_audio: true },
+    { id: "a3", at: ago(70), from: null, target: "living_room", kind: "message", priority: "normal", ok: true,
+      text: "Laundry is done", has_audio: false },
+  ];
+  const states = { "switch.roomcall_do_not_disturb": { state: params.get("dnd") === "on" ? "on" : "off" } };
   const hass = {
+    states,
     async callApi(method, path) {
-      return { rooms: ROOMS, speakers: 5 };
+      if (path === "roomcall/history") return { calls: HISTORY };
+      return {
+        rooms: ROOMS, speakers: 5, dnd: false, dnd_entity: "switch.roomcall_do_not_disturb",
+        people: [{ entity_id: "person.alex", name: "Alex" }, { entity_id: "person.sam", name: "Sam" }],
+      };
     },
+    async callService() {},
     async fetchWithAuth(url) {
       await new Promise((r) => setTimeout(r, 400));
       const target = new URL(url, location.href).searchParams.get("target");
       const hit = ROOMS.filter((r) => target === "all" || r.area_id === target);
       return new Response(JSON.stringify({
-        target, ok: true, seconds: 3.2,
+        target, ok: true, seconds: 3.2, skipped: {},
         results: hit.flatMap((r) => r.speakers.map((s) => ({ speaker: s, ok: true }))),
       }), { headers: { "Content-Type": "application/json" } });
     },
@@ -109,7 +125,8 @@
 
   const main = document.querySelector("main");
   const card = document.createElement("roomcall-card");
-  card.setConfig({ title: "Intercom", default_room: "kitchen" });
+  const layout = params.get("card") || "default";
+  card.setConfig({ title: "Intercom", default_room: "kitchen", room: "kitchen", layout });
   card.hass = hass;
   if (desktop) {
     document.querySelector(".tabs").innerHTML = "<b>Home</b><span>Rooms</span><span>Media</span><span>Energy</span>";
@@ -125,10 +142,16 @@
         ${tile("thermometer", "#ff9800", "Living room", "71 °F · 44 %")}
         ${tile("lightbulb-group", "#ffc107", "Lights", "3 on")}</div>`;
     main.querySelector(".center").append(card);
+  } else if (layout === "kiosk") {
+    document.querySelector("header").style.display = "none";
+    main.style.height = "100vh";
+    main.append(card);
   } else {
     main.append(card);
-    main.insertAdjacentHTML("beforeend",
-      tile("account-voice", "#03a9f4", "RoomCall Last call", "Kitchen · just now"));
+    if (layout === "compact") {
+      main.insertAdjacentHTML("beforeend",
+        tile("lightbulb-group", "#ffc107", "Lights", "3 on") + tile("garage", "#4caf50", "Garage door", "Closed"));
+    }
   }
 </script>
 </body>

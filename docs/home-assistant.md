@@ -41,15 +41,23 @@ rooms are Home Assistant areas.
 
 Or go to **Settings → Devices & services → Add integration → RoomCall**.
 
+Pick your speakers. Everything else is under **Configure** on the integration:
+
 | Option | Default | What it does |
 |---|---|---|
 | Speakers | announce-capable players | Media players that make up the intercom |
 | Announcement volume | speaker's current volume | Fixed volume for calls (Sonos) |
-| Play a chime first | on | Walkie-talkie chirp before each message |
 | Microphone boost | 0 dB | Raise if phone recordings sound quiet |
 | Text-to-speech engine | your default | Used by `roomcall.broadcast` messages |
-
-Change any of these later with **Configure** on the integration.
+| **Chime** → chime | Walkie-talkie chirp | Chirp, ding, double beep, rising tones, doorbell, or none |
+| **Chime** → custom file or URL | — | Your own sound, e.g. `/config/www/chime.mp3`; overrides the chime |
+| **Delivery** → delay between speakers | 250 ms | Stops several Sonos in one home from dropping the same announcement |
+| **Delivery** → retry | on | Tries a failed speaker once more after a second |
+| **Delivery** → urgent call volume | 0.8 | Volume for urgent calls |
+| **Quiet hours** → start / end / volume / rooms to skip | off | Quieter calls at night that skip bedrooms |
+| **Notifications and replies** → phones | none | Phones notified about each call (not the caller's own) |
+| **Notifications and replies** → dashboard | — | Path of the dashboard with the card; adds a **Reply** button |
+| **Notifications and replies** → speech-to-text | none | Adds what was said to notifications and history |
 
 !!! tip "One entity per speaker"
     A physical speaker often has several media players (native Sonos plus Music Assistant, Cast
@@ -69,23 +77,73 @@ dashboard → **Add card** → **RoomCall**, or paste:
 type: custom:roomcall-card
 title: Intercom
 # optional:
-default_room: kitchen          # area id preselected
+room: kitchen                  # where this card is; replies come back here
+default_room: basement         # room preselected
 rooms: [kitchen, living_room]  # limit the room buttons
+people: true                   # person buttons (true, false, or a list of person entities)
+history: 3                     # recent calls to show (0 to hide)
+layout: default                # default, compact or kiosk
 ```
 
 <div class="grid" markdown>
-![Pick a room](assets/ha-card-mobile.png){ width="240" }
+![Pick a room or a person](assets/ha-card-mobile.png){ width="240" }
 ![Hold to talk](assets/ha-card-talking.png){ width="240" }
 ![Delivered](assets/ha-card-delivered.png){ width="240" }
 </div>
 
-Hold the button, talk, release. The card plays a short chirp then your message in the chosen
-room and reports which speakers played it. If your microphone records silence (wrong input
+Hold the button, talk, release. The card plays the chime and then your message in the chosen
+room, and reports which speakers played it. If your microphone records silence (wrong input
 selected), the card says so instead of sending an empty clip.
+
+- **Urgent** (top right) plays the next call at the urgent volume and ignores Do Not Disturb
+  and quiet hours.
+- **Bell** toggles **Do Not Disturb**: only urgent calls play while it's on.
+- **People** buttons call whoever you tap in the room they're in (see [Call a person](#call-a-person)).
+- **Recent calls** can be replayed in the browser, and **Reply** aims the card back at the caller.
+
+### Layouts
+
+<div class="grid" markdown>
+![Compact](assets/ha-card-compact.png){ width="240" }
+![Kiosk for a wall tablet](assets/ha-card-kiosk.png){ width="240" }
+![Reply mode](assets/ha-card-reply.png){ width="240" }
+</div>
+
+`compact` fits a single row of a dashboard. `kiosk` is a big button for a wall tablet.
+
+## Replies
+
+With phones and a dashboard path set, every call sends a notification such as
+**Kitchen → Basement: "dinner's ready"** with a **Reply** button. Tapping it opens your dashboard
+with the card already aimed back at the caller's room, so you just hold and talk. The caller's own
+phones are skipped.
+
+For replies to know where a call came from, set `room:` on each card (for example the kitchen
+tablet's card gets `room: kitchen`).
+
+!!! note "Why the speaker can't hear your reply"
+    Sonos, HomePod and Nest speaker microphones are reserved for their own voice assistants, so
+    replies come from a phone or tablet. Mic stations next to each speaker are on the
+    [roadmap](roadmap.md).
+
+## Do Not Disturb and quiet hours
+
+- `switch.roomcall_do_not_disturb`: while on, normal calls are refused and urgent calls still play.
+  Turn it on in your bedtime routine.
+- **Quiet hours** (Configure → Quiet hours): calls play at the quiet volume and skip the rooms you
+  pick (for example the kids' rooms). The card tells you which rooms were skipped.
+
+## Call a person
+
+`people: [person.alex]` in the action, or a person button on the card, plays wherever that
+person is right now. RoomCall follows the person's device trackers to a room-presence sensor
+(any `sensor.*_area` on the same device, as [Bermuda](https://github.com/agittins/bermuda)
+creates), or uses a tracker or sensor whose state is an area name. If it can't tell where they
+are, the call is refused instead of playing in the wrong room.
 
 ## `roomcall.broadcast` action
 
-Speak a message (text-to-speech) or play an audio URL in one or more areas:
+Speak a message (text-to-speech) or play an audio URL in rooms or wherever people are:
 
 ```yaml
 action: roomcall.broadcast
@@ -98,11 +156,19 @@ data:
 ```yaml
 action: roomcall.broadcast
 data:
+  people: [person.alex]
+  message: Your ride is here
+  priority: urgent             # louder, ignores Do Not Disturb and quiet hours
+```
+
+```yaml
+action: roomcall.broadcast
+data:
   areas: garage
   media_url: http://homeassistant.local:8123/local/chime.mp3
 ```
 
-With [Chime TTS](https://github.com/nimroddolev/chime_tts) installed, messages get the same chirp
+With [Chime TTS](https://github.com/nimroddolev/chime_tts) installed, messages get the same chime
 as push-to-talk. The action returns which speakers played the message, so scripts can react:
 
 ```yaml
@@ -115,15 +181,27 @@ as push-to-talk. The action returns which speakers played the message, so script
       data: { message: "Basement speaker missed the laundry call" }
 ```
 
-## Sensor
+Siri, Apple Watch and CarPlay can call this too — see [Siri and Shortcuts](siri-shortcuts.md).
 
-`sensor.roomcall_last_call` holds the time of the last broadcast, with attributes `target`,
-`kind` (`talk`, `message`, `media`), `delivered` and `failed`.
+## Entities
+
+- `sensor.roomcall_last_call`: time of the last call, with attributes `target`, `from`, `kind`
+  (`talk`, `message`, `media`), `priority`, `delivered`, `failed`, `skipped`, `text`, and
+  `history` (the last 10 calls).
+- `switch.roomcall_do_not_disturb`: see above.
 
 ## How playback works
 
-Recordings are converted to MP3 with Home Assistant's ffmpeg (with the chirp in front), kept in
+Recordings are converted to MP3 with Home Assistant's ffmpeg (with the chime in front), kept in
 memory for two minutes behind an unguessable URL, and handed to each speaker with
-`media_player.play_media`. Speakers that support it get `announce: true`, so Sonos lowers the
-music instead of stopping it. Uploads require a logged-in Home Assistant user; the clip URL is
-unauthenticated because speakers cannot log in, which is why it is random and short-lived.
+`media_player.play_media`, a short moment apart. Speakers that support it get `announce: true`,
+so Sonos lowers the music instead of stopping it.
+
+Uploads, history and replays require a signed-in Home Assistant user. Clip and chime URLs are
+unauthenticated because speakers cannot sign in, which is why clips are random and short-lived.
+The last 20 calls are kept in memory for 24 hours for replay; they are not written to disk.
+
+!!! warning "Keep the internal URL on plain http"
+    Speakers download clips from Home Assistant's internal URL. If you put Home Assistant behind
+    a reverse proxy with a home-made certificate for the microphone, leave the **internal URL** on
+    `http://<ip>:8123`: Sonos and Cast speakers can't trust a home-made certificate.

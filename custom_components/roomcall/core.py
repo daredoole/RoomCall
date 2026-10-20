@@ -6,6 +6,7 @@ import asyncio
 import logging
 import secrets
 import time
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -29,11 +30,20 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.util import dt as dt_util
 
-from .const import ALL_ROOMS, CLIP_TTL_SECONDS, SIGNAL_CALL_FINISHED
+from . import chimes
+from .const import (
+    ALL_ROOMS,
+    CLIP_TTL_SECONDS,
+    HISTORY_SIZE,
+    HISTORY_TTL_SECONDS,
+    PRIORITY_NORMAL,
+    SIGNAL_CALL_FINISHED,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 PLAYABLE = {"audio/mpeg": "mp3", "audio/mp3": "mp3", "audio/wav": "wav", "audio/x-wav": "wav"}
+RETRY_DELAY_SECONDS = 1.0
 
 
 class TranscodeError(Exception):
@@ -54,6 +64,7 @@ class Delivery:
     ok: bool
     elapsed_ms: int
     error: str | None = None
+    attempts: int = 1
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -62,6 +73,7 @@ class Delivery:
             "ok": self.ok,
             "elapsed_ms": self.elapsed_ms,
             "error": self.error,
+            "attempts": self.attempts,
         }
 
 
@@ -71,10 +83,33 @@ class CallRecord:
     kind: str
     results: list[Delivery]
     at: Any = field(default_factory=dt_util.utcnow)
+    call_id: str = field(default_factory=lambda: secrets.token_hex(6))
+    from_room: str | None = None
+    priority: str = PRIORITY_NORMAL
+    skipped: dict[str, str] = field(default_factory=dict)
+    transcript: str | None = None
+    message: str | None = None
+    has_audio: bool = False
 
     @property
     def ok(self) -> bool:
         return bool(self.results) and all(r.ok for r in self.results)
+
+    def summary(self) -> dict[str, Any]:
+        return {
+            "id": self.call_id,
+            "at": self.at.isoformat(),
+            "from": self.from_room,
+            "target": self.target,
+            "kind": self.kind,
+            "priority": self.priority,
+            "ok": self.ok,
+            "delivered": [r.name for r in self.results if r.ok],
+            "failed": {r.name: r.error for r in self.results if not r.ok},
+            "skipped": self.skipped,
+            "text": self.transcript or self.message,
+            "has_audio": self.has_audio,
+        }
 
 
 class ClipStore:
@@ -103,8 +138,34 @@ class ClipStore:
             del self._clips[clip_id]
 
 
+class History:
+    """Recent calls, newest first, with their audio kept for replay."""
+
+    def __init__(self, size: int = HISTORY_SIZE, ttl: float = HISTORY_TTL_SECONDS) -> None:
+        self._size = size
+        self._audio = ClipStore(ttl=ttl, max_clips=size)
+        self._records: OrderedDict[str, tuple[CallRecord, str | None]] = OrderedDict()
+
+    def add(self, record: CallRecord, audio: bytes | None = None) -> None:
+        clip_id = self._audio.add(audio, "audio/mpeg") if audio else None
+        record.has_audio = clip_id is not None
+        self._records[record.call_id] = (record, clip_id)
+        self._records.move_to_end(record.call_id, last=False)
+        while len(self._records) > self._size:
+            self._records.popitem(last=True)
+
+    def records(self) -> list[CallRecord]:
+        return [record for record, _ in self._records.values()]
+
+    def audio(self, call_id: str) -> Clip | None:
+        entry = self._records.get(call_id)
+        if entry is None or entry[1] is None:
+            return None
+        return self._audio.get(entry[1])
+
+
 def speaker_area(hass: HomeAssistant, entity_id: str) -> str | None:
-    """Area of a speaker entity, falling back to its device's area."""
+    """Area of an entity, falling back to its device's area."""
     entry = er.async_get(hass).async_get(entity_id)
     if entry is None:
         return None
@@ -130,96 +191,124 @@ def rooms(hass: HomeAssistant, speakers: list[str]) -> list[dict[str, Any]]:
                 "area_id": area_id,
                 "name": area.name if area else area_id,
                 "icon": area.icon if area else None,
-                "speakers": [_friendly(hass, e) for e in members],
+                "speakers": [friendly(hass, e) for e in members],
             }
         )
     return sorted(out, key=lambda r: r["name"].lower())
 
 
+def area_id_for(hass: HomeAssistant, value: str) -> str | None:
+    """Area id for an area id, name or alias (case-insensitive)."""
+    areas = ar.async_get(hass)
+    if areas.async_get_area(value):
+        return value
+    if area := areas.async_get_area_by_name(value):
+        return area.id
+    lowered = value.strip().lower()
+    for area in areas.async_list_areas():
+        if area.name.lower() == lowered or lowered in (a.lower() for a in area.aliases):
+            return area.id
+    return None
+
+
 def resolve(hass: HomeAssistant, speakers: list[str], targets: list[str]) -> list[str]:
-    """Speaker entity ids for area ids, area names, or ``all``."""
+    """Speaker entity ids for area ids, area names, speaker entity ids, or ``all``."""
     if not targets or ALL_ROOMS in targets:
         return list(speakers)
-    areas = ar.async_get(hass)
     wanted: set[str] = set()
     for target in targets:
-        if areas.async_get_area(target):
-            wanted.add(target)
-        elif area := areas.async_get_area_by_name(target):
-            wanted.add(area.id)
-        elif target in speakers:
+        if target in speakers:
             wanted.add(f"entity:{target}")
+        elif area_id := area_id_for(hass, target):
+            wanted.add(area_id)
     return [e for e in speakers if speaker_area(hass, e) in wanted or f"entity:{e}" in wanted]
 
 
-def _friendly(hass: HomeAssistant, entity_id: str) -> str:
+def friendly(hass: HomeAssistant, entity_id: str) -> str:
     state = hass.states.get(entity_id)
     return state.name if state else entity_id
 
 
-# Walkie-talkie style two-tone "chirp" (C6 then E6) prepended to push-to-talk clips.
-_CHIME_FILTER = (
-    "[1:a][2:a]concat=n=2:v=0:a=1,volume=0.35,apad=pad_dur=0.12[chime];"
-    "[0:a]aresample=44100,aformat=channel_layouts=mono,volume={gain}dB[voice];"
-    "[chime][voice]concat=n=2:v=0:a=1[out]"
-)
+def _encode_args() -> list[str]:
+    return ["-ac", "1", "-ar", "44100", "-codec:a", "libmp3lame", "-b:a", "128k", "-f", "mp3"]
 
 
-async def to_playable(
-    ffmpeg_binary: str, data: bytes, content_type: str, gain_db: float, chime: bool = False
-) -> tuple[bytes, str]:
-    """Return ``(audio, content_type)`` playable by every speaker (MP3/WAV)."""
-    base = content_type.split(";", 1)[0].strip().lower()
-    if base in PLAYABLE and not gain_db and not chime:
-        return data, "audio/mpeg" if PLAYABLE[base] == "mp3" else "audio/wav"
-    if chime:
-        graph = [
-            "-f",
-            "lavfi",
-            "-t",
-            "0.12",
-            "-i",
-            "sine=frequency=1047:sample_rate=44100",
-            "-f",
-            "lavfi",
-            "-t",
-            "0.2",
-            "-i",
-            "sine=frequency=1319:sample_rate=44100",
-            "-filter_complex",
-            _CHIME_FILTER.format(gain=gain_db),
-            "-map",
-            "[out]",
-        ]
-    else:
-        graph = ["-af", f"volume={gain_db}dB"]
+async def _run_ffmpeg(ffmpeg_binary: str, args: list[str], data: bytes | None) -> bytes:
     proc = await asyncio.create_subprocess_exec(
         ffmpeg_binary,
         "-hide_banner",
         "-loglevel",
         "error",
-        "-i",
-        "pipe:0",
-        *graph,
-        "-ac",
-        "1",
-        "-ar",
-        "44100",
-        "-codec:a",
-        "libmp3lame",
-        "-b:a",
-        "128k",
-        "-f",
-        "mp3",
-        "pipe:1",
-        stdin=asyncio.subprocess.PIPE,
+        *args,
+        stdin=asyncio.subprocess.PIPE if data is not None else asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
     out, err = await proc.communicate(data)
     if proc.returncode != 0 or not out:
         raise TranscodeError(err.decode(errors="replace").strip() or "ffmpeg produced no audio")
+    return out
+
+
+async def to_playable(
+    ffmpeg_binary: str,
+    data: bytes,
+    content_type: str,
+    gain_db: float,
+    chime: str | None = None,
+    chime_url: str | None = None,
+) -> tuple[bytes, str]:
+    """Return ``(audio, content_type)`` playable by every speaker (MP3/WAV).
+
+    ``chime`` is a built-in style from :mod:`chimes`; ``chime_url`` (a file or URL ffmpeg can
+    read) takes precedence over it. Either is prepended to the recording.
+    """
+    base = content_type.split(";", 1)[0].strip().lower()
+    if chime_url:
+        inputs = ["-i", chime_url]
+        graph = chimes.chime_filter(1, 1, from_file=True)
+    elif chime in chimes.STYLES:
+        inputs = chimes.tone_inputs(chime)
+        graph = chimes.chime_filter(1, len(chimes.STYLES[chime]))
+    else:
+        inputs, graph = [], ""
+    if base in PLAYABLE and not gain_db and not graph:
+        return data, "audio/mpeg" if PLAYABLE[base] == "mp3" else "audio/wav"
+    if graph:
+        voice = f"[0:a]aresample=44100,aformat=channel_layouts=mono,volume={gain_db}dB[voice]"
+        args = [
+            "-i",
+            "pipe:0",
+            *inputs,
+            "-filter_complex",
+            f"{graph};{voice};[chime][voice]concat=n=2:v=0:a=1[out]",
+            "-map",
+            "[out]",
+        ]
+    else:
+        args = ["-i", "pipe:0", "-af", f"volume={gain_db}dB"]
+    out = await _run_ffmpeg(ffmpeg_binary, [*args, *_encode_args(), "pipe:1"], data)
     return out, "audio/mpeg"
+
+
+async def render_chime(ffmpeg_binary: str, style: str) -> bytes:
+    """A built-in chime on its own as MP3, for previews and Chime TTS."""
+    if style not in chimes.STYLES:
+        raise TranscodeError(f"Unknown chime {style!r}")
+    args = [
+        *chimes.tone_inputs(style),
+        "-filter_complex",
+        chimes.chime_filter(0, len(chimes.STYLES[style])),
+        "-map",
+        "[chime]",
+    ]
+    return await _run_ffmpeg(ffmpeg_binary, [*args, *_encode_args(), "pipe:1"], None)
+
+
+async def to_speech_pcm(ffmpeg_binary: str, data: bytes) -> bytes:
+    """16 kHz mono 16-bit PCM, the format speech-to-text engines expect."""
+    args = ["-i", "pipe:0", "-ac", "1", "-ar", "16000", "-f", "s16le", "pipe:1"]
+    return await _run_ffmpeg(ffmpeg_binary, args, data)
 
 
 def mp3_seconds(audio: bytes, bitrate_kbps: int = 128) -> float:
@@ -227,14 +316,13 @@ def mp3_seconds(audio: bytes, bitrate_kbps: int = 128) -> float:
     return round(len(audio) * 8 / (bitrate_kbps * 1000), 1)
 
 
-async def _play_one(
+async def _play_once(
     hass: HomeAssistant,
     entity_id: str,
     media_id: str,
     volume: float | None,
-    chime_message: dict[str, Any] | None = None,
-) -> Delivery:
-    started = time.perf_counter()
+    chime_message: dict[str, Any] | None,
+) -> None:
     state = hass.states.get(entity_id)
     features = state.attributes.get("supported_features", 0) if state else 0
     announce = bool(features & MediaPlayerEntityFeature.MEDIA_ANNOUNCE)
@@ -254,20 +342,44 @@ async def _play_one(
             data[ATTR_MEDIA_ANNOUNCE] = True
         if volume is not None:
             data[ATTR_MEDIA_EXTRA] = {"volume": round(volume * 100)}
-    try:
-        async with asyncio.timeout(30):
-            await hass.services.async_call(domain, service, data, blocking=True)
-    except Exception as err:
-        _LOGGER.warning("RoomCall could not play on %s: %s", entity_id, err)
-        return Delivery(
-            entity_id,
-            _friendly(hass, entity_id),
-            False,
-            round((time.perf_counter() - started) * 1000),
-            str(err) or type(err).__name__,
-        )
+    async with asyncio.timeout(30):
+        await hass.services.async_call(domain, service, data, blocking=True)
+
+
+async def _play_one(
+    hass: HomeAssistant,
+    entity_id: str,
+    media_id: str,
+    volume: float | None,
+    chime_message: dict[str, Any] | None,
+    *,
+    delay: float = 0.0,
+    retry: bool = False,
+) -> Delivery:
+    if delay:
+        await asyncio.sleep(delay)
+    started = time.perf_counter()
+    attempts = 0
+    error: str | None = None
+    for attempt in range(2 if retry else 1):
+        if attempt:
+            await asyncio.sleep(RETRY_DELAY_SECONDS)
+        attempts += 1
+        try:
+            await _play_once(hass, entity_id, media_id, volume, chime_message)
+        except Exception as err:
+            error = str(err) or type(err).__name__
+            _LOGGER.warning("RoomCall could not play on %s (try %d): %s", entity_id, attempts, err)
+            continue
+        error = None
+        break
     return Delivery(
-        entity_id, _friendly(hass, entity_id), True, round((time.perf_counter() - started) * 1000)
+        entity_id,
+        friendly(hass, entity_id),
+        error is None,
+        round((time.perf_counter() - started) * 1000),
+        error,
+        attempts,
     )
 
 
@@ -280,10 +392,36 @@ async def fan_out(
     target: str,
     kind: str,
     chime_message: dict[str, Any] | None = None,
+    stagger: float = 0.0,
+    retry: bool = False,
+    volumes: dict[str, float | None] | None = None,
+    record: CallRecord | None = None,
 ) -> CallRecord:
+    """Play on every speaker, starting each ``stagger`` seconds after the previous one.
+
+    Several Sonos speakers in one household can drop an announcement that arrives at the
+    same moment as another one, so a small offset makes delivery reliable.
+    """
     results = await asyncio.gather(
-        *(_play_one(hass, e, media_id, volume, chime_message) for e in entity_ids)
+        *(
+            _play_one(
+                hass,
+                e,
+                media_id,
+                (volumes or {}).get(e, volume),
+                chime_message,
+                delay=i * stagger,
+                retry=retry,
+            )
+            for i, e in enumerate(entity_ids)
+        )
     )
-    record = CallRecord(target=target, kind=kind, results=list(results))
-    async_dispatcher_send(hass, SIGNAL_CALL_FINISHED, record)
+    if record is None:
+        record = CallRecord(target=target, kind=kind, results=list(results))
+    else:
+        record.results = list(results)
     return record
+
+
+def call_finished(hass: HomeAssistant, record: CallRecord) -> None:
+    async_dispatcher_send(hass, SIGNAL_CALL_FINISHED, record)

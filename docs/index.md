@@ -14,9 +14,12 @@ talk, and your voice plays in the room you picked — on Sonos, AirPlay and Goog
 ## What you get
 
 - **Hold-to-talk card** for any dashboard, in the Home Assistant app or browser.
-- **Rooms are your areas** — talk to one room or everywhere at once.
-- **Walkie-talkie chirp** before each message, and **announce mode** so Sonos ducks the music.
-- **`roomcall.broadcast`** for automations: text-to-speech or audio files, per area.
+- **Rooms are your areas** — talk to one room, everywhere, or a person wherever they are.
+- **Reply** from a phone notification, straight back to the caller's room.
+- **Do Not Disturb, quiet hours and urgent calls.**
+- **Call history** with replay and transcripts.
+- **Chimes** before each message, and **announce mode** so Sonos ducks the music.
+- **`roomcall.broadcast`** for automations, Siri, Apple Watch and CarPlay.
 - **Local only** — no cloud, no accounts; audio never leaves your network.
 
 [Set it up in Home Assistant →](home-assistant.md){ .md-button .md-button--primary }

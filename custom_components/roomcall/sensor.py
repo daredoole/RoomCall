@@ -1,4 +1,4 @@
-"""Sensor that reports the most recent RoomCall broadcast."""
+"""Sensor that reports the most recent RoomCall broadcast and recent call history."""
 
 from __future__ import annotations
 
@@ -14,6 +14,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN, SIGNAL_CALL_FINISHED
 from .core import CallRecord
 
+HISTORY_ATTRIBUTE_SIZE = 10
+
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
@@ -26,6 +28,8 @@ class LastCallSensor(SensorEntity):
     _attr_translation_key = "last_call"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_icon = "mdi:account-voice"
+    # The history list changes every call; keep it out of the recorder.
+    _unrecorded_attributes = frozenset({"history"})
 
     def __init__(self, entry: ConfigEntry) -> None:
         self._attr_unique_id = f"{entry.entry_id}_last_call"
@@ -38,6 +42,8 @@ class LastCallSensor(SensorEntity):
         self._record: CallRecord | None = None
 
     async def async_added_to_hass(self) -> None:
+        records = self.hass.data[DOMAIN].history.records()
+        self._record = records[0] if records else None
         self.async_on_remove(
             async_dispatcher_connect(self.hass, SIGNAL_CALL_FINISHED, self._on_call)
         )
@@ -55,10 +61,17 @@ class LastCallSensor(SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any] | None:
         if self._record is None:
             return None
+        summary = self._record.summary()
+        history = self.hass.data[DOMAIN].history.records()[:HISTORY_ATTRIBUTE_SIZE]
         return {
-            "target": self._record.target,
-            "kind": self._record.kind,
-            "ok": self._record.ok,
-            "delivered": [r.name for r in self._record.results if r.ok],
-            "failed": {r.name: r.error for r in self._record.results if not r.ok},
+            "target": summary["target"],
+            "from": summary["from"],
+            "kind": summary["kind"],
+            "priority": summary["priority"],
+            "ok": summary["ok"],
+            "delivered": summary["delivered"],
+            "failed": summary["failed"],
+            "skipped": summary["skipped"],
+            "text": summary["text"],
+            "history": [r.summary() for r in history],
         }

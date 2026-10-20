@@ -4,6 +4,24 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.2.0 — 2026-10-20
+
+- **Reply from notifications**: each call can notify chosen phones (skipping the caller's own)
+  with a Reply button that opens the card aimed back at the caller's room; cards take `room:`.
+- **Call a person**: `people:` in `roomcall.broadcast` and person buttons on the card play wherever
+  that person is, using room-presence sensors such as Bermuda.
+- **Do Not Disturb** switch, **quiet hours** (lower volume, skipped rooms) and **urgent** calls
+  that override both.
+- **Call history** on the card and the sensor, with replay of the last 20 calls for 24 hours.
+- **Speech-to-text transcripts** in history and notifications.
+- **Chimes**: walkie-talkie, ding, double beep, rising, doorbell, none, or your own file/URL; typed
+  messages use the same chime through Chime TTS.
+- **Delivery**: speakers start 250 ms apart and failed speakers are retried once.
+- **Card layouts**: `compact` and `kiosk`, Urgent and Do Not Disturb toggles, clearer HTTPS hint.
+- Options are grouped into sections. Fix: saving options failed with "Config entry update
+  listeners should not be used with OptionsFlowWithReload".
+- New guide: Siri, Apple Watch and CarPlay with Shortcuts.
+
 ## 0.1.2 — 2026-10-20
 
 - Fix push-to-talk from iPhone/Safari behind a reverse proxy: the upload was read only up
