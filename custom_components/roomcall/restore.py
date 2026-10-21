@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -29,6 +30,10 @@ _LOGGER = logging.getLogger(__name__)
 _IGNORED_PLATFORMS = {"music_assistant", "dlna_dmr"}
 POLL_SECONDS = 0.5
 UNKNOWN_LENGTH_SECONDS = 45.0
+# After a live call ends, receivers still play what they buffered.
+LIVE_TAIL_SECONDS = 5.0
+# Unknown length and never reported "playing": assume a short message took about this long.
+UNSEEN_PLAYING_SECONDS = 12.0
 _ACTIVE = "roomcall_restore_active"
 
 
@@ -99,18 +104,26 @@ def take(hass: HomeAssistant, entity_ids: list[str]) -> list[Snapshot]:
 
 
 async def wait_until_done(hass: HomeAssistant, entity_id: str, seconds: float | None) -> None:
-    """Wait for the call to finish: its length when known, else until playback stops."""
+    """Wait for the call to finish: its length when known, else until playback stops.
+
+    Some players (HEOS receivers) never report "playing" for an announcement. When the length
+    is unknown and the player has not been seen playing, wait a safe minimum instead of
+    trusting "not playing" right away.
+    """
     known = seconds is not None
     minimum = (seconds or 0) + 0.8 if known else 2.0
     deadline = minimum + (8.0 if known else UNKNOWN_LENGTH_SECONDS)
     waited = 0.0
+    seen_playing = False
     while waited < deadline:
         await asyncio.sleep(POLL_SECONDS)
         waited += POLL_SECONDS
-        if waited < minimum:
-            continue
         state = hass.states.get(entity_id)
-        if state is None or state.state != STATE_PLAYING:
+        playing = state is not None and state.state == STATE_PLAYING
+        seen_playing = seen_playing or playing
+        if waited < minimum or playing:
+            continue
+        if known or seen_playing or waited >= UNSEEN_PLAYING_SECONDS:
             return
 
 
@@ -181,10 +194,22 @@ class Guard:
             snaps = take(self._hass, related_players(self._hass, self._entity_id))
             self._active[self._entity_id] = [snaps, 1]
 
-    async def finish(self, seconds: float | None) -> None:
+    async def finish(
+        self, seconds: float | None, until: Callable[[], Awaitable[None]] | None = None
+    ) -> None:
+        """Restore once the call is over.
+
+        ``until`` waits for a live call to end; its length is unknown up front, and some
+        receivers (HEOS) never report "playing", so guessing from their state cut calls off.
+        """
         entry = self._active[self._entity_id]
         try:
-            await wait_until_done(self._hass, self._entity_id, seconds)
+            if until is not None:
+                await until()
+                await asyncio.sleep(LIVE_TAIL_SECONDS)
+                await wait_until_done(self._hass, self._entity_id, 0)
+            else:
+                await wait_until_done(self._hass, self._entity_id, seconds)
         finally:
             entry[1] -= 1
             if entry[1] == 0:

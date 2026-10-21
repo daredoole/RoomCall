@@ -133,6 +133,7 @@ async def place_call(
         retry=data.retry,
         restore=data.restore,
         seconds=request.seconds,
+        until=request.live.wait_done if request.live is not None else None,
         volumes=routing.volumes,
         record=record,
     )

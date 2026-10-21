@@ -7,6 +7,7 @@ import logging
 import secrets
 import time
 from collections import OrderedDict
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -370,6 +371,7 @@ async def _play_one(
     retry: bool = False,
     restore: bool = False,
     seconds: float | None = None,
+    until: Callable[[], Awaitable[None]] | None = None,
 ) -> Delivery:
     if delay:
         await asyncio.sleep(delay)
@@ -384,7 +386,7 @@ async def _play_one(
     finally:
         if guard is not None:
             hass.async_create_background_task(
-                guard.finish(seconds), f"roomcall restore {entity_id}"
+                guard.finish(seconds, until), f"roomcall restore {entity_id}"
             )
 
 
@@ -436,6 +438,7 @@ async def fan_out(
     record: CallRecord | None = None,
     restore: bool = False,
     seconds: float | None = None,
+    until: Callable[[], Awaitable[None]] | None = None,
 ) -> CallRecord:
     """Play on every speaker, starting each ``stagger`` seconds after the previous one.
 
@@ -454,6 +457,7 @@ async def fan_out(
                 retry=retry,
                 restore=restore,
                 seconds=seconds,
+                until=until,
             )
             for i, e in enumerate(entity_ids)
         )

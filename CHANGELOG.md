@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.7.1 — 2026-10-21
+
+- Fix live calls to AV receivers (Denon/HEOS) being cut off: the receiver was switched back to its previous input about 2 s in, because a live call has no known length and HEOS never reports "playing". RoomCall now restores after the live call ends plus a 5 s buffer, and for messages of unknown length waits 12 s when the player never reports playing.
+
 ## 0.7.0 — 2026-10-21
 
 - **Scheduled announcements**: a message at a time of day on chosen weekdays.
