@@ -31,6 +31,7 @@ nav:
   - Home Assistant: home-assistant.md
   - Siri and Shortcuts: siri-shortcuts.md
   - Apple Home intercom: apple-home.md
+  - Blueprints: blueprints.md
   - Standalone server:
       - Getting started: getting-started.md
       - Configuration: configuration.md

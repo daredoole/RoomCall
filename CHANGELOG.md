@@ -4,6 +4,18 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.6.0 — 2026-10-20
+
+- **Visual card editor**: set up the card without YAML; it also previews in the card picker.
+- **Notify entity per room** (`notify.roomcall_<room>`): `notify.send_message` speaks there.
+- **Blueprints** with one-click import: doorbell, appliance finished, bedtime Do Not Disturb,
+  arrivals.
+- **Repairs** for unavailable speakers, a missing local URL and an HTTPS internal URL;
+  **diagnostics** download with what people said redacted.
+- **Translations**: Spanish, German, French and Dutch.
+- Project: OpenSSF Scorecard, coverage gate (≥85%) in CI, SHA-pinned actions, signed build
+  provenance for release files, pre-commit config, animated demo in the README.
+
 ## 0.5.0 — 2026-10-20
 
 - **Live calls**: speakers start playing while you are still talking. The card streams 16 kHz

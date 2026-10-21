@@ -1,0 +1,176 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "RoomCall-Gegensprechanlage",
+        "description": "Wähle die Lautsprecher, die Durchsagen abspielen sollen. Die Räume ergeben sich aus dem Home-Assistant-Bereich jedes Lautsprechers. Wähle pro physischem Lautsprecher nur eine Entität, damit nichts doppelt abgespielt wird. Gong, Ruhezeiten und Benachrichtigungen findest du danach unter Konfigurieren.",
+        "data": {
+          "speakers": "Lautsprecher",
+          "volume": "Lautstärke der Durchsagen",
+          "gain_db": "Mikrofonverstärkung (dB)",
+          "tts_engine": "Text-zu-Sprache für Nachrichten"
+        },
+        "data_description": {
+          "volume": "Leer lassen, um die aktuelle Lautstärke jedes Lautsprechers zu behalten. Von Sonos unterstützt.",
+          "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen."
+        }
+      }
+    },
+    "error": {
+      "no_speakers": "Wähle mindestens einen Lautsprecher."
+    },
+    "abort": {
+      "single_instance_allowed": "RoomCall ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "RoomCall",
+        "data": {
+          "speakers": "Lautsprecher",
+          "volume": "Lautstärke der Durchsagen",
+          "gain_db": "Mikrofonverstärkung (dB)",
+          "tts_engine": "Text-zu-Sprache für Nachrichten"
+        },
+        "data_description": {
+          "volume": "Leer lassen, um die aktuelle Lautstärke jedes Lautsprechers zu behalten. Von Sonos unterstützt.",
+          "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen."
+        },
+        "sections": {
+          "chime_options": {
+            "name": "Gong",
+            "description": "Der Ton vor jeder Durchsage.",
+            "data": {
+              "style": "Gong",
+              "custom_url": "Eigene Gong-Datei oder URL"
+            },
+            "data_description": {
+              "custom_url": "Eine MP3/WAV-URL oder ein Pfad wie /config/www/chime.mp3. Ersetzt den Gong oben."
+            }
+          },
+          "delivery": {
+            "name": "Zustellung",
+            "data": {
+              "stagger_ms": "Verzögerung zwischen Lautsprechern",
+              "retry": "Fehlgeschlagenen Lautsprecher erneut versuchen",
+              "urgent_volume": "Lautstärke für dringende Durchsagen",
+              "restore": "Lautsprecher danach zurücksetzen"
+            },
+            "data_description": {
+              "stagger_ms": "Manche Lautsprecher (mehrere Sonos in einem Haushalt) verwerfen gleichzeitige Durchsagen. Ein kurzer Versatz behebt das.",
+              "restore": "Für Geräte ohne Durchsagemodus (AV-Receiver, TV-Boxen): Eingang, Lautstärke, Ein/Aus und die geöffnete App wiederherstellen."
+            }
+          },
+          "quiet_hours": {
+            "name": "Ruhezeiten",
+            "description": "Während der Ruhezeiten sind Durchsagen leiser und überspringen die gewählten Räume. Dringende Durchsagen ignorieren Ruhezeiten und Nicht stören.",
+            "data": {
+              "start": "Beginn",
+              "end": "Ende",
+              "volume": "Lautstärke in Ruhezeiten",
+              "skip_areas": "In Ruhezeiten übersprungene Räume"
+            }
+          },
+          "replies": {
+            "name": "Benachrichtigungen und Antworten",
+            "data": {
+              "notify": "Zu benachrichtigende Handys",
+              "dashboard_path": "Dashboard mit der RoomCall-Karte",
+              "stt_engine": "Spracherkennung für Abschriften"
+            },
+            "data_description": {
+              "notify": "Jede Durchsage sendet eine Benachrichtigung. Die eigenen Handys des Anrufers werden übersprungen.",
+              "dashboard_path": "Zum Beispiel /home-hub/home. Fügt eine Antworten-Schaltfläche hinzu, die die Karte auf den Raum des Anrufers ausrichtet.",
+              "stt_engine": "Optional. Fügt das Gesprochene zu Benachrichtigungen und Verlauf hinzu."
+            }
+          },
+          "homekit": {
+            "name": "Apple Home",
+            "description": "Zeigt jeden Raum in der Apple-Home-App als Kamera mit Sprechtaste. Nutze das Mikrofon in Home, auf der Apple Watch oder im Kontrollzentrum, um in diesem Raum zu sprechen.",
+            "data": {
+              "enabled": "Räume zu Apple Home hinzufügen",
+              "port": "HomeKit-Port"
+            },
+            "data_description": {
+              "port": "Nur ändern, wenn eine andere HomeKit-Bridge ihn bereits nutzt."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_speakers": "Wähle mindestens einen Lautsprecher."
+    }
+  },
+  "selector": {
+    "chime_style": {
+      "options": {
+        "chirp": "Funkgeräte-Piep",
+        "ding": "Ding",
+        "double": "Doppelpiep",
+        "rising": "Aufsteigende Töne",
+        "doorbell": "Türklingel",
+        "off": "Kein Gong"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_call": {
+        "name": "Letzte Durchsage"
+      }
+    },
+    "switch": {
+      "do_not_disturb": {
+        "name": "Nicht stören"
+      }
+    }
+  },
+  "services": {
+    "broadcast": {
+      "name": "Durchsage",
+      "description": "Spricht eine Nachricht oder spielt eine Audio-URL in Räumen ab – oder dort, wo eine Person gerade ist.",
+      "fields": {
+        "areas": {
+          "name": "Räume",
+          "description": "Bereiche für die Durchsage. Leer lassen (und keine Personen) für alle RoomCall-Lautsprecher."
+        },
+        "people": {
+          "name": "Personen",
+          "description": "Spielt in dem Raum, in dem die Person gerade ist (benötigt Raumerkennung, z. B. Bermuda)."
+        },
+        "message": {
+          "name": "Nachricht",
+          "description": "Text, der mit der eingestellten Sprachausgabe gesprochen wird."
+        },
+        "media_url": {
+          "name": "Medien-URL",
+          "description": "Audiodatei-URL oder Media-Source-ID, die statt einer Nachricht abgespielt wird."
+        },
+        "volume": {
+          "name": "Lautstärke",
+          "description": "Lautstärke der Durchsage (Sonos)."
+        },
+        "priority": {
+          "name": "Priorität",
+          "description": "Dringende Durchsagen sind lauter und ignorieren Nicht stören und Ruhezeiten."
+        }
+      }
+    }
+  },
+  "issues": {
+    "missing_speakers": {
+      "title": "RoomCall-Lautsprecher sind nicht verfügbar",
+      "description": "Diese RoomCall-Lautsprecher sind nicht verfügbar oder existieren nicht mehr: {speakers}. Durchsagen in ihre Räume werden nicht abgespielt. Schalte sie ein oder entferne sie unter Einstellungen → Geräte & Dienste → RoomCall → Konfigurieren."
+    },
+    "https_internal_url": {
+      "title": "Lautsprecher erreichen Home Assistant evtl. nicht",
+      "description": "Die interne URL von Home Assistant ist {url}. Lautsprecher laden jede Durchsage von dort, und die meisten lehnen HTTPS-Zertifikate ab, die nicht von einer öffentlichen Stelle stammen. Wenn Durchsagen als „zugestellt“ gelten, aber stumm bleiben, setze die lokale Netzwerk-URL unter Einstellungen → System → Netzwerk auf http://HOME-ASSISTANT-IP:8123."
+    },
+    "no_internal_url": {
+      "title": "RoomCall braucht eine lokale Netzwerk-URL",
+      "description": "Lautsprecher laden jede Durchsage von Home Assistant, aber es gibt keine interne URL. Lege eine unter Einstellungen → System → Netzwerk fest."
+    }
+  }
+}

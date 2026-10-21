@@ -1,0 +1,176 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Intercomunicador RoomCall",
+        "description": "Elige los altavoces que reproducirán los mensajes del intercomunicador. Las habitaciones salen del área de Home Assistant de cada altavoz. Elige una sola entidad por altavoz físico para que los mensajes no se oigan dos veces. Los tonos, las horas de silencio y las notificaciones están después en Configurar.",
+        "data": {
+          "speakers": "Altavoces",
+          "volume": "Volumen de los avisos",
+          "gain_db": "Ganancia del micrófono (dB)",
+          "tts_engine": "Motor de texto a voz para mensajes"
+        },
+        "data_description": {
+          "volume": "Déjalo vacío para mantener el volumen actual de cada altavoz. Compatible con Sonos.",
+          "gain_db": "Súbela si las grabaciones del teléfono suenan bajas."
+        }
+      }
+    },
+    "error": {
+      "no_speakers": "Elige al menos un altavoz."
+    },
+    "abort": {
+      "single_instance_allowed": "RoomCall ya está configurado."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "RoomCall",
+        "data": {
+          "speakers": "Altavoces",
+          "volume": "Volumen de los avisos",
+          "gain_db": "Ganancia del micrófono (dB)",
+          "tts_engine": "Motor de texto a voz para mensajes"
+        },
+        "data_description": {
+          "volume": "Déjalo vacío para mantener el volumen actual de cada altavoz. Compatible con Sonos.",
+          "gain_db": "Súbela si las grabaciones del teléfono suenan bajas."
+        },
+        "sections": {
+          "chime_options": {
+            "name": "Tono",
+            "description": "El sonido que suena antes de cada llamada.",
+            "data": {
+              "style": "Tono",
+              "custom_url": "Archivo o URL de tono propio"
+            },
+            "data_description": {
+              "custom_url": "Una URL MP3/WAV o una ruta como /config/www/chime.mp3. Sustituye al tono de arriba."
+            }
+          },
+          "delivery": {
+            "name": "Entrega",
+            "data": {
+              "stagger_ms": "Retraso entre altavoces",
+              "retry": "Reintentar un altavoz que falle",
+              "urgent_volume": "Volumen de llamadas urgentes",
+              "restore": "Devolver los altavoces a como estaban"
+            },
+            "data_description": {
+              "stagger_ms": "Algunos altavoces (varios Sonos en una casa) descartan avisos que llegan a la vez. Un pequeño desfase lo soluciona.",
+              "restore": "Para altavoces sin modo aviso (receptores AV, cajas de TV): restaura la entrada, el volumen, el encendido y la app que estaba abierta."
+            }
+          },
+          "quiet_hours": {
+            "name": "Horas de silencio",
+            "description": "En las horas de silencio las llamadas suenan más bajo y omiten las habitaciones que elijas. Las llamadas urgentes ignoran las horas de silencio y No molestar.",
+            "data": {
+              "start": "Inicio",
+              "end": "Fin",
+              "volume": "Volumen en horas de silencio",
+              "skip_areas": "Habitaciones a omitir en horas de silencio"
+            }
+          },
+          "replies": {
+            "name": "Notificaciones y respuestas",
+            "data": {
+              "notify": "Teléfonos a avisar de las llamadas",
+              "dashboard_path": "Panel con la tarjeta RoomCall",
+              "stt_engine": "Motor de voz a texto para transcripciones"
+            },
+            "data_description": {
+              "notify": "Cada llamada envía una notificación. Los teléfonos de quien llama se omiten.",
+              "dashboard_path": "Por ejemplo /home-hub/home. Añade un botón Responder que abre la tarjeta apuntando a la habitación de quien llamó.",
+              "stt_engine": "Opcional. Añade lo dicho a las notificaciones y al historial."
+            }
+          },
+          "homekit": {
+            "name": "Apple Casa",
+            "description": "Muestra cada habitación en la app Casa de Apple como una cámara con botón para hablar. Usa el micrófono en Casa, en el Apple Watch o en el Centro de control para hablar en esa habitación.",
+            "data": {
+              "enabled": "Añadir habitaciones a Apple Casa",
+              "port": "Puerto de HomeKit"
+            },
+            "data_description": {
+              "port": "Cámbialo solo si otro puente HomeKit ya lo usa."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_speakers": "Elige al menos un altavoz."
+    }
+  },
+  "selector": {
+    "chime_style": {
+      "options": {
+        "chirp": "Pitido de walkie-talkie",
+        "ding": "Ding",
+        "double": "Doble pitido",
+        "rising": "Tonos ascendentes",
+        "doorbell": "Timbre",
+        "off": "Sin tono"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_call": {
+        "name": "Última llamada"
+      }
+    },
+    "switch": {
+      "do_not_disturb": {
+        "name": "No molestar"
+      }
+    }
+  },
+  "services": {
+    "broadcast": {
+      "name": "Difundir",
+      "description": "Di un mensaje o reproduce una URL de audio en habitaciones, o donde esté una persona.",
+      "fields": {
+        "areas": {
+          "name": "Habitaciones",
+          "description": "Áreas donde difundir. Déjalo vacío (y sin personas) para todos los altavoces de RoomCall."
+        },
+        "people": {
+          "name": "Personas",
+          "description": "Suena en la habitación donde está cada persona ahora (requiere presencia por habitación, por ejemplo Bermuda)."
+        },
+        "message": {
+          "name": "Mensaje",
+          "description": "Texto leído con el motor de texto a voz configurado."
+        },
+        "media_url": {
+          "name": "URL multimedia",
+          "description": "URL de archivo de audio o ID de media-source para reproducir en lugar de un mensaje."
+        },
+        "volume": {
+          "name": "Volumen",
+          "description": "Volumen del aviso (Sonos)."
+        },
+        "priority": {
+          "name": "Prioridad",
+          "description": "Las llamadas urgentes suenan más fuerte e ignoran No molestar y las horas de silencio."
+        }
+      }
+    }
+  },
+  "issues": {
+    "missing_speakers": {
+      "title": "Hay altavoces de RoomCall no disponibles",
+      "description": "Estos altavoces de RoomCall no están disponibles o ya no existen: {speakers}. Las llamadas a sus habitaciones no sonarán. Enciéndelos o quítalos en Ajustes → Dispositivos y servicios → RoomCall → Configurar."
+    },
+    "https_internal_url": {
+      "title": "Puede que los altavoces no lleguen a Home Assistant",
+      "description": "La URL interna de Home Assistant es {url}. Los altavoces descargan cada llamada desde ella, y la mayoría rechaza certificados HTTPS que no son de una autoridad pública. Si las llamadas dicen «entregada» pero no suenan, pon la URL de red local en Ajustes → Sistema → Red como http://IP-DE-HOME-ASSISTANT:8123."
+    },
+    "no_internal_url": {
+      "title": "RoomCall necesita una URL de red local",
+      "description": "Los altavoces descargan cada llamada desde Home Assistant, pero no hay URL interna. Configura una en Ajustes → Sistema → Red."
+    }
+  }
+}

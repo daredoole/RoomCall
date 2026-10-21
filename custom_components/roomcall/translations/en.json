@@ -158,5 +158,19 @@
         }
       }
     }
+  },
+  "issues": {
+    "missing_speakers": {
+      "title": "RoomCall speakers are unavailable",
+      "description": "These RoomCall speakers are unavailable or no longer exist: {speakers}. Calls to their rooms will not play. Turn them on, or remove them under Settings → Devices & services → RoomCall → Configure."
+    },
+    "https_internal_url": {
+      "title": "RoomCall speakers may not reach Home Assistant",
+      "description": "Home Assistant's internal URL is {url}. Speakers download every call from it, and most speakers reject HTTPS certificates that are not from a public authority. If calls report \"delivered\" but stay silent, set the local network URL under Settings → System → Network to http://HOME-ASSISTANT-IP:8123."
+    },
+    "no_internal_url": {
+      "title": "RoomCall needs a local network URL",
+      "description": "Speakers download every call from Home Assistant, but no internal URL is available. Set one under Settings → System → Network."
+    }
   }
 }

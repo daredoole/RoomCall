@@ -1,0 +1,176 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Interphone RoomCall",
+        "description": "Choisissez les enceintes qui diffuseront les messages de l'interphone. Les pièces viennent de la zone Home Assistant de chaque enceinte. Choisissez une seule entité par enceinte physique pour que les messages ne soient pas joués deux fois. Le carillon, les heures calmes et les notifications se règlent ensuite dans Configurer.",
+        "data": {
+          "speakers": "Enceintes",
+          "volume": "Volume des annonces",
+          "gain_db": "Gain du micro (dB)",
+          "tts_engine": "Synthèse vocale pour les messages"
+        },
+        "data_description": {
+          "volume": "Laissez vide pour garder le volume actuel de chaque enceinte. Pris en charge par Sonos.",
+          "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles."
+        }
+      }
+    },
+    "error": {
+      "no_speakers": "Choisissez au moins une enceinte."
+    },
+    "abort": {
+      "single_instance_allowed": "RoomCall est déjà configuré."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "RoomCall",
+        "data": {
+          "speakers": "Enceintes",
+          "volume": "Volume des annonces",
+          "gain_db": "Gain du micro (dB)",
+          "tts_engine": "Synthèse vocale pour les messages"
+        },
+        "data_description": {
+          "volume": "Laissez vide pour garder le volume actuel de chaque enceinte. Pris en charge par Sonos.",
+          "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles."
+        },
+        "sections": {
+          "chime_options": {
+            "name": "Carillon",
+            "description": "Le son joué avant chaque appel.",
+            "data": {
+              "style": "Carillon",
+              "custom_url": "Fichier ou URL de carillon personnalisé"
+            },
+            "data_description": {
+              "custom_url": "Une URL MP3/WAV ou un chemin comme /config/www/chime.mp3. Remplace le carillon ci-dessus."
+            }
+          },
+          "delivery": {
+            "name": "Diffusion",
+            "data": {
+              "stagger_ms": "Décalage entre enceintes",
+              "retry": "Réessayer une enceinte en échec",
+              "urgent_volume": "Volume des appels urgents",
+              "restore": "Remettre les enceintes comme avant"
+            },
+            "data_description": {
+              "stagger_ms": "Certaines enceintes (plusieurs Sonos dans un foyer) ignorent des annonces arrivées au même instant. Un léger décalage règle le problème.",
+              "restore": "Pour les appareils sans mode annonce (amplis AV, boîtiers TV) : rétablit l'entrée, le volume, l'alimentation et l'appli ouverte."
+            }
+          },
+          "quiet_hours": {
+            "name": "Heures calmes",
+            "description": "Pendant les heures calmes, les appels sont plus doux et évitent les pièces choisies. Les appels urgents ignorent les heures calmes et Ne pas déranger.",
+            "data": {
+              "start": "Début",
+              "end": "Fin",
+              "volume": "Volume pendant les heures calmes",
+              "skip_areas": "Pièces à éviter pendant les heures calmes"
+            }
+          },
+          "replies": {
+            "name": "Notifications et réponses",
+            "data": {
+              "notify": "Téléphones à prévenir des appels",
+              "dashboard_path": "Tableau de bord avec la carte RoomCall",
+              "stt_engine": "Reconnaissance vocale pour les transcriptions"
+            },
+            "data_description": {
+              "notify": "Chaque appel envoie une notification. Les téléphones de l'appelant sont ignorés.",
+              "dashboard_path": "Par exemple /home-hub/home. Ajoute un bouton Répondre qui ouvre la carte vers la pièce de l'appelant.",
+              "stt_engine": "Facultatif. Ajoute les paroles aux notifications et à l'historique."
+            }
+          },
+          "homekit": {
+            "name": "Apple Maison",
+            "description": "Affiche chaque pièce dans l'app Maison d'Apple comme une caméra avec bouton pour parler. Utilisez le micro dans Maison, sur l'Apple Watch ou dans le Centre de contrôle pour parler dans cette pièce.",
+            "data": {
+              "enabled": "Ajouter les pièces à Apple Maison",
+              "port": "Port HomeKit"
+            },
+            "data_description": {
+              "port": "À changer seulement si un autre pont HomeKit l'utilise déjà."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_speakers": "Choisissez au moins une enceinte."
+    }
+  },
+  "selector": {
+    "chime_style": {
+      "options": {
+        "chirp": "Bip de talkie-walkie",
+        "ding": "Ding",
+        "double": "Double bip",
+        "rising": "Tons ascendants",
+        "doorbell": "Sonnette",
+        "off": "Pas de carillon"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_call": {
+        "name": "Dernier appel"
+      }
+    },
+    "switch": {
+      "do_not_disturb": {
+        "name": "Ne pas déranger"
+      }
+    }
+  },
+  "services": {
+    "broadcast": {
+      "name": "Diffuser",
+      "description": "Prononce un message ou joue une URL audio dans des pièces, ou là où se trouve une personne.",
+      "fields": {
+        "areas": {
+          "name": "Pièces",
+          "description": "Zones où diffuser. Laissez vide (sans personnes) pour toutes les enceintes RoomCall."
+        },
+        "people": {
+          "name": "Personnes",
+          "description": "Joue dans la pièce où se trouve chaque personne (nécessite la présence par pièce, par exemple Bermuda)."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Texte prononcé avec la synthèse vocale configurée."
+        },
+        "media_url": {
+          "name": "URL du média",
+          "description": "URL d'un fichier audio ou ID media-source à jouer à la place d'un message."
+        },
+        "volume": {
+          "name": "Volume",
+          "description": "Volume de l'annonce (Sonos)."
+        },
+        "priority": {
+          "name": "Priorité",
+          "description": "Les appels urgents sont plus forts et ignorent Ne pas déranger et les heures calmes."
+        }
+      }
+    }
+  },
+  "issues": {
+    "missing_speakers": {
+      "title": "Des enceintes RoomCall sont indisponibles",
+      "description": "Ces enceintes RoomCall sont indisponibles ou n'existent plus : {speakers}. Les appels vers leurs pièces ne seront pas joués. Allumez-les, ou retirez-les dans Paramètres → Appareils et services → RoomCall → Configurer."
+    },
+    "https_internal_url": {
+      "title": "Les enceintes risquent de ne pas joindre Home Assistant",
+      "description": "L'URL interne de Home Assistant est {url}. Les enceintes y téléchargent chaque appel, et la plupart refusent les certificats HTTPS qui ne viennent pas d'une autorité publique. Si les appels sont « livrés » mais restent muets, réglez l'URL du réseau local dans Paramètres → Système → Réseau sur http://IP-HOME-ASSISTANT:8123."
+    },
+    "no_internal_url": {
+      "title": "RoomCall a besoin d'une URL de réseau local",
+      "description": "Les enceintes téléchargent chaque appel depuis Home Assistant, mais aucune URL interne n'est disponible. Définissez-en une dans Paramètres → Système → Réseau."
+    }
+  }
+}
