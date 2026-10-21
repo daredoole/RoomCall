@@ -229,3 +229,62 @@ async def test_overlapping_calls_restore_once_to_the_original_state(hass: HomeAs
     assert [(c.service, c.data.get("source")) for c in calls] == [
         ("select_source", "Living Room TV")
     ]
+
+
+async def test_live_call_restores_only_after_the_call_ends(hass: HomeAssistant, house):
+    """A live call has no known length; restoring early cut Denon calls off."""
+    import asyncio
+
+    from custom_components.roomcall.restore import Guard
+
+    living = ar.async_get(hass).async_create("Living Room").id
+    avr = _player(
+        hass, "denonavr", "denon_avr", living, "Denon", "AVR-X1800H", "on",
+        supported_features=F.SELECT_SOURCE, source="Living Room TV",
+        source_list=["HEOS Music", "Living Room TV"],
+    )  # fmt: skip
+    calls = _record_services(hass)
+    ended = asyncio.Event()
+    guard = Guard(hass, avr)
+    guard.start()
+    hass.states.async_set(avr, "on", {**hass.states.get(avr).attributes, "source": "HEOS Music"})
+    with (
+        patch("custom_components.roomcall.restore.LIVE_TAIL_SECONDS", 0),
+        patch("custom_components.roomcall.restore.POLL_SECONDS", 0.01),
+    ):
+        task = hass.async_create_task(guard.finish(None, ended.wait))
+        await asyncio.sleep(0.3)  # the caller is still talking
+        assert not calls
+        ended.set()
+        await asyncio.wait_for(task, 15)
+    assert [(c.service, c.data.get("source")) for c in calls] == [
+        ("select_source", "Living Room TV")
+    ]
+
+
+async def test_unknown_length_waits_when_player_never_reports_playing(hass: HomeAssistant):
+    from custom_components.roomcall import restore as r
+
+    hass.states.async_set("media_player.heos", "idle")
+    with (
+        patch.object(r, "POLL_SECONDS", 0.01),
+        patch.object(r, "UNSEEN_PLAYING_SECONDS", 0.3),
+    ):
+        start = hass.loop.time()
+        await r.wait_until_done(hass, "media_player.heos", None)
+        assert hass.loop.time() - start >= 0.3  # waited the (patched) safe time
+
+        hass.states.async_set("media_player.heos", "playing")
+
+        async def stop_soon():
+            import asyncio
+
+            await asyncio.sleep(0.05)
+            hass.states.async_set("media_player.heos", "idle")
+
+        hass.async_create_task(stop_soon())
+        start = hass.loop.time()
+        with patch.object(r, "UNKNOWN_LENGTH_SECONDS", 5):
+            await r.wait_until_done(hass, "media_player.heos", None)
+        # Seen playing, then stopped: returns at the 2 s minimum, not after the safe wait.
+        assert hass.loop.time() - start < 2.5
