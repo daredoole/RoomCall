@@ -29,6 +29,11 @@ Track progress and vote on the [GitHub issues](https://github.com/daredoole/Room
 
 - [x] Live calls: speakers play while you talk, from the card and Apple Home ([#13](https://github.com/daredoole/RoomCall/issues/13))
 
+## v0.7 — Announcements and AI ✅
+
+- [x] Scheduled and triggered announcements to rooms, speakers or people
+- [x] Assist / LLM intent and an AI management guide
+
 ## Next
 
 - [ ] **Hands-free talk-back** from rooms with only a Sonos: a small mic station (Atom Echo,

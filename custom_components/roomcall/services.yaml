@@ -11,6 +11,12 @@ broadcast:
         entity:
           domain: person
           multiple: true
+    speakers:
+      example: ["media_player.kitchen"]
+      selector:
+        entity:
+          domain: media_player
+          multiple: true
     message:
       example: "Dinner is ready"
       selector:

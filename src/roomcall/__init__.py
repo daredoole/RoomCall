@@ -1,3 +1,3 @@
 """RoomCall: push-to-talk home intercom for Sonos, AirPlay and Chromecast speakers."""
 
-__version__ = "0.6.2"
+__version__ = "0.7.0"

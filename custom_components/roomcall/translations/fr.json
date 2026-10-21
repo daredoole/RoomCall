@@ -113,6 +113,23 @@
         "doorbell": "Sonnette",
         "off": "Pas de carillon"
       }
+    },
+    "days": {
+      "options": {
+        "mon": "Lundi",
+        "tue": "Mardi",
+        "wed": "Mercredi",
+        "thu": "Jeudi",
+        "fri": "Vendredi",
+        "sat": "Samedi",
+        "sun": "Dimanche"
+      }
+    },
+    "priority": {
+      "options": {
+        "normal": "Normale",
+        "urgent": "Urgent (ignore Ne pas déranger et les heures calmes)"
+      }
     }
   },
   "entity": {
@@ -124,6 +141,14 @@
     "switch": {
       "do_not_disturb": {
         "name": "Ne pas déranger"
+      },
+      "announcement_enabled": {
+        "name": "Activé"
+      }
+    },
+    "button": {
+      "play_announcement": {
+        "name": "Jouer maintenant"
       }
     }
   },
@@ -155,6 +180,10 @@
         "priority": {
           "name": "Priorité",
           "description": "Les appels urgents sont plus forts et ignorent Ne pas déranger et les heures calmes."
+        },
+        "speakers": {
+          "name": "Enceintes",
+          "description": "Lecteurs précis, en plus des pièces et des personnes."
         }
       }
     }
@@ -171,6 +200,130 @@
     "no_internal_url": {
       "title": "RoomCall a besoin d'une URL de réseau local",
       "description": "Les enceintes téléchargent chaque appel depuis Home Assistant, mais aucune URL interne n'est disponible. Définissez-en une dans Paramètres → Système → Réseau."
+    }
+  },
+  "config_subentries": {
+    "scheduled": {
+      "initiate_flow": {
+        "user": "Ajouter une annonce programmée"
+      },
+      "entry_type": "Annonce programmée",
+      "step": {
+        "user": {
+          "title": "Annonce programmée",
+          "description": "Dire quelque chose à une heure donnée, les jours choisis.",
+          "data": {
+            "name": "Nom",
+            "message": "Message",
+            "rooms": "Pièces",
+            "target_speakers": "Enceintes",
+            "people": "Personnes",
+            "priority": "Priorité",
+            "time": "Heure",
+            "days": "Jours"
+          },
+          "data_description": {
+            "message": "Prononcé par synthèse vocale. Les modèles fonctionnent, par exemple : Il fait {{ states('sensor.outdoor_temperature') }} degrés dehors.",
+            "rooms": "Laissez pièces, enceintes et personnes vides pour jouer partout.",
+            "target_speakers": "Enceintes précises, en plus des pièces.",
+            "people": "Joue là où se trouve chaque personne (nécessite la présence par pièce)."
+          }
+        },
+        "reconfigure": {
+          "title": "Modifier l'annonce programmée",
+          "description": "Dire quelque chose à une heure donnée, les jours choisis.",
+          "data": {
+            "name": "Nom",
+            "message": "Message",
+            "rooms": "Pièces",
+            "target_speakers": "Enceintes",
+            "people": "Personnes",
+            "priority": "Priorité",
+            "time": "Heure",
+            "days": "Jours"
+          },
+          "data_description": {
+            "message": "Prononcé par synthèse vocale. Les modèles fonctionnent, par exemple : Il fait {{ states('sensor.outdoor_temperature') }} degrés dehors.",
+            "rooms": "Laissez pièces, enceintes et personnes vides pour jouer partout.",
+            "target_speakers": "Enceintes précises, en plus des pièces.",
+            "people": "Joue là où se trouve chaque personne (nécessite la présence par pièce)."
+          }
+        }
+      },
+      "error": {
+        "no_message": "Saisissez un message.",
+        "no_days": "Choisissez au moins un jour."
+      },
+      "abort": {
+        "reconfigure_successful": "Enregistré."
+      }
+    },
+    "triggered": {
+      "initiate_flow": {
+        "user": "Ajouter une annonce déclenchée"
+      },
+      "entry_type": "Annonce déclenchée",
+      "step": {
+        "user": {
+          "title": "Annonce déclenchée",
+          "description": "Dire quelque chose quand une entité change, par exemple un interrupteur allumé ou une porte ouverte.",
+          "data": {
+            "name": "Nom",
+            "message": "Message",
+            "rooms": "Pièces",
+            "target_speakers": "Enceintes",
+            "people": "Personnes",
+            "priority": "Priorité",
+            "entity": "Quand ceci change",
+            "to_state": "Vers cet état",
+            "for": "Pendant au moins",
+            "cooldown": "Délai minimum"
+          },
+          "data_description": {
+            "message": "Prononcé par synthèse vocale. Les modèles fonctionnent ; {{ name }} et {{ state }} sont le nom et le nouvel état de l'entité.",
+            "rooms": "Laissez pièces, enceintes et personnes vides pour jouer partout.",
+            "target_speakers": "Enceintes précises, en plus des pièces.",
+            "people": "Joue là où se trouve chaque personne (nécessite la présence par pièce).",
+            "entity": "N'importe quelle entité : interrupteur, capteur de porte, détecteur de mouvement, lave-linge...",
+            "to_state": "Seulement quand il passe à cet état, par exemple on, off, open. Laissez vide pour tout changement.",
+            "for": "Facultatif : seulement s'il reste dans cet état aussi longtemps (par exemple une porte restée ouverte).",
+            "cooldown": "Ne pas répéter cette annonce plus souvent que ceci."
+          }
+        },
+        "reconfigure": {
+          "title": "Modifier l'annonce déclenchée",
+          "description": "Dire quelque chose quand une entité change, par exemple un interrupteur allumé ou une porte ouverte.",
+          "data": {
+            "name": "Nom",
+            "message": "Message",
+            "rooms": "Pièces",
+            "target_speakers": "Enceintes",
+            "people": "Personnes",
+            "priority": "Priorité",
+            "entity": "Quand ceci change",
+            "to_state": "Vers cet état",
+            "for": "Pendant au moins",
+            "cooldown": "Délai minimum"
+          },
+          "data_description": {
+            "message": "Prononcé par synthèse vocale. Les modèles fonctionnent ; {{ name }} et {{ state }} sont le nom et le nouvel état de l'entité.",
+            "rooms": "Laissez pièces, enceintes et personnes vides pour jouer partout.",
+            "target_speakers": "Enceintes précises, en plus des pièces.",
+            "people": "Joue là où se trouve chaque personne (nécessite la présence par pièce).",
+            "entity": "N'importe quelle entité : interrupteur, capteur de porte, détecteur de mouvement, lave-linge...",
+            "to_state": "Seulement quand il passe à cet état, par exemple on, off, open. Laissez vide pour tout changement.",
+            "for": "Facultatif : seulement s'il reste dans cet état aussi longtemps (par exemple une porte restée ouverte).",
+            "cooldown": "Ne pas répéter cette annonce plus souvent que ceci."
+          }
+        }
+      },
+      "error": {
+        "no_message": "Saisissez un message.",
+        "no_days": "Choisissez au moins un jour."
+      },
+      "abort": {
+        "reconfigure_successful": "Enregistré."
+      }
     }
   }
 }

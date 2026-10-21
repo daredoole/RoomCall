@@ -1,0 +1,38 @@
+# RoomCall
+
+> RoomCall is a Home Assistant custom integration (HACS) that turns the speakers Home Assistant
+> already controls (Sonos, Google Cast/Nest, AirPlay, HEOS receivers, Android TV boxes) into an
+> intercom and announcement system, organised by Home Assistant areas.
+
+Domain: `roomcall`. One config entry. Everything is managed through standard Home Assistant
+APIs; no extra credentials.
+
+## Do things
+
+- Speak or play audio now: action `roomcall.broadcast` with `areas`, `speakers`, `people`,
+  `message` or `media_url`, `priority` (`normal`|`urgent`), `volume`. Returns
+  `{ok, id, results[], skipped}`.
+- Assist / LLM agents: intent `RoomCallAnnounce` (slots `message`, `area`, `urgent`).
+- Speak in one room: `notify.send_message` on `notify.roomcall_<room>`.
+- Do Not Disturb: `switch.roomcall_do_not_disturb`.
+
+## Announcements (config subentries)
+
+- Types: `scheduled` (`time`, `days`) and `triggered` (`entity`, `to_state`, `for`, `cooldown`).
+- Shared fields: `name`, `message` (template), `rooms`, `target_speakers`, `people`, `priority`.
+- Create: POST `/api/config/config_entries/subentries/flow` with
+  `{"handler": [entry_id, "scheduled"]}`, then POST the fields to `.../flow/<flow_id>`.
+- List/delete: WebSocket `config_entries/subentries/list` / `config_entries/subentries/delete`.
+- Each announcement has `button.*_play_now` and `switch.*_enabled` (attributes describe it).
+
+## Read
+
+- `sensor.roomcall_last_call` attribute `history`: last 10 calls.
+- Diagnostics download; Repairs for unavailable speakers and bad internal URLs.
+
+## Docs
+
+- [Home Assistant guide](https://daredoole.github.io/RoomCall/home-assistant/)
+- [Announcements](https://daredoole.github.io/RoomCall/announcements/)
+- [Managing RoomCall with AI](https://daredoole.github.io/RoomCall/ai/)
+- [Apple Home intercom](https://daredoole.github.io/RoomCall/apple-home/)

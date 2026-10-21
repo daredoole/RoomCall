@@ -113,6 +113,23 @@
         "doorbell": "Deurbel",
         "off": "Geen gong"
       }
+    },
+    "days": {
+      "options": {
+        "mon": "Maandag",
+        "tue": "Dinsdag",
+        "wed": "Woensdag",
+        "thu": "Donderdag",
+        "fri": "Vrijdag",
+        "sat": "Zaterdag",
+        "sun": "Zondag"
+      }
+    },
+    "priority": {
+      "options": {
+        "normal": "Normaal",
+        "urgent": "Dringend (negeert Niet storen en stille uren)"
+      }
     }
   },
   "entity": {
@@ -124,6 +141,14 @@
     "switch": {
       "do_not_disturb": {
         "name": "Niet storen"
+      },
+      "announcement_enabled": {
+        "name": "Ingeschakeld"
+      }
+    },
+    "button": {
+      "play_announcement": {
+        "name": "Nu afspelen"
       }
     }
   },
@@ -155,6 +180,10 @@
         "priority": {
           "name": "Prioriteit",
           "description": "Dringende oproepen klinken harder en negeren Niet storen en stille uren."
+        },
+        "speakers": {
+          "name": "Speakers",
+          "description": "Specifieke mediaspelers, naast ruimtes en personen."
         }
       }
     }
@@ -171,6 +200,130 @@
     "no_internal_url": {
       "title": "RoomCall heeft een lokale netwerk-URL nodig",
       "description": "Speakers halen elke oproep op bij Home Assistant, maar er is geen interne URL. Stel er een in onder Instellingen → Systeem → Netwerk."
+    }
+  },
+  "config_subentries": {
+    "scheduled": {
+      "initiate_flow": {
+        "user": "Geplande aankondiging toevoegen"
+      },
+      "entry_type": "Geplande aankondiging",
+      "step": {
+        "user": {
+          "title": "Geplande aankondiging",
+          "description": "Zeg iets op een tijdstip, op de dagen die je kiest.",
+          "data": {
+            "name": "Naam",
+            "message": "Bericht",
+            "rooms": "Ruimtes",
+            "target_speakers": "Speakers",
+            "people": "Personen",
+            "priority": "Prioriteit",
+            "time": "Tijd",
+            "days": "Dagen"
+          },
+          "data_description": {
+            "message": "Uitgesproken met tekst-naar-spraak. Templates werken, bijvoorbeeld: Het is buiten {{ states('sensor.outdoor_temperature') }} graden.",
+            "rooms": "Laat ruimtes, speakers en personen leeg om overal af te spelen.",
+            "target_speakers": "Specifieke speakers, naast de ruimtes.",
+            "people": "Speelt waar iemand nu is (vereist aanwezigheid per ruimte)."
+          }
+        },
+        "reconfigure": {
+          "title": "Geplande aankondiging bewerken",
+          "description": "Zeg iets op een tijdstip, op de dagen die je kiest.",
+          "data": {
+            "name": "Naam",
+            "message": "Bericht",
+            "rooms": "Ruimtes",
+            "target_speakers": "Speakers",
+            "people": "Personen",
+            "priority": "Prioriteit",
+            "time": "Tijd",
+            "days": "Dagen"
+          },
+          "data_description": {
+            "message": "Uitgesproken met tekst-naar-spraak. Templates werken, bijvoorbeeld: Het is buiten {{ states('sensor.outdoor_temperature') }} graden.",
+            "rooms": "Laat ruimtes, speakers en personen leeg om overal af te spelen.",
+            "target_speakers": "Specifieke speakers, naast de ruimtes.",
+            "people": "Speelt waar iemand nu is (vereist aanwezigheid per ruimte)."
+          }
+        }
+      },
+      "error": {
+        "no_message": "Voer een bericht in.",
+        "no_days": "Kies minstens één dag."
+      },
+      "abort": {
+        "reconfigure_successful": "Opgeslagen."
+      }
+    },
+    "triggered": {
+      "initiate_flow": {
+        "user": "Aankondiging bij gebeurtenis toevoegen"
+      },
+      "entry_type": "Aankondiging bij gebeurtenis",
+      "step": {
+        "user": {
+          "title": "Aankondiging bij gebeurtenis",
+          "description": "Zeg iets wanneer een entiteit verandert, bijvoorbeeld een schakelaar aan of een deur open.",
+          "data": {
+            "name": "Naam",
+            "message": "Bericht",
+            "rooms": "Ruimtes",
+            "target_speakers": "Speakers",
+            "people": "Personen",
+            "priority": "Prioriteit",
+            "entity": "Wanneer dit verandert",
+            "to_state": "Naar deze status",
+            "for": "Minstens gedurende",
+            "cooldown": "Afkoeltijd"
+          },
+          "data_description": {
+            "message": "Uitgesproken met tekst-naar-spraak. Templates werken; {{ name }} en {{ state }} zijn de naam en nieuwe status van de entiteit.",
+            "rooms": "Laat ruimtes, speakers en personen leeg om overal af te spelen.",
+            "target_speakers": "Specifieke speakers, naast de ruimtes.",
+            "people": "Speelt waar iemand nu is (vereist aanwezigheid per ruimte).",
+            "entity": "Elke entiteit: lichtschakelaar, deursensor, bewegingssensor, wasmachine...",
+            "to_state": "Alleen bij wijziging naar deze status, bijvoorbeeld on, off, open. Leeg laten voor elke wijziging.",
+            "for": "Optioneel: alleen als het zo lang in die status blijft (bijvoorbeeld een openstaande deur).",
+            "cooldown": "Herhaal deze aankondiging niet vaker dan dit."
+          }
+        },
+        "reconfigure": {
+          "title": "Aankondiging bij gebeurtenis bewerken",
+          "description": "Zeg iets wanneer een entiteit verandert, bijvoorbeeld een schakelaar aan of een deur open.",
+          "data": {
+            "name": "Naam",
+            "message": "Bericht",
+            "rooms": "Ruimtes",
+            "target_speakers": "Speakers",
+            "people": "Personen",
+            "priority": "Prioriteit",
+            "entity": "Wanneer dit verandert",
+            "to_state": "Naar deze status",
+            "for": "Minstens gedurende",
+            "cooldown": "Afkoeltijd"
+          },
+          "data_description": {
+            "message": "Uitgesproken met tekst-naar-spraak. Templates werken; {{ name }} en {{ state }} zijn de naam en nieuwe status van de entiteit.",
+            "rooms": "Laat ruimtes, speakers en personen leeg om overal af te spelen.",
+            "target_speakers": "Specifieke speakers, naast de ruimtes.",
+            "people": "Speelt waar iemand nu is (vereist aanwezigheid per ruimte).",
+            "entity": "Elke entiteit: lichtschakelaar, deursensor, bewegingssensor, wasmachine...",
+            "to_state": "Alleen bij wijziging naar deze status, bijvoorbeeld on, off, open. Leeg laten voor elke wijziging.",
+            "for": "Optioneel: alleen als het zo lang in die status blijft (bijvoorbeeld een openstaande deur).",
+            "cooldown": "Herhaal deze aankondiging niet vaker dan dit."
+          }
+        }
+      },
+      "error": {
+        "no_message": "Voer een bericht in.",
+        "no_days": "Kies minstens één dag."
+      },
+      "abort": {
+        "reconfigure_successful": "Opgeslagen."
+      }
     }
   }
 }

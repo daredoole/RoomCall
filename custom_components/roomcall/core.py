@@ -215,13 +215,20 @@ def resolve(hass: HomeAssistant, speakers: list[str], targets: list[str]) -> lis
     """Speaker entity ids for area ids, area names, speaker entity ids, or ``all``."""
     if not targets or ALL_ROOMS in targets:
         return list(speakers)
+    # A media player named directly plays even if it is not one of the intercom speakers.
+    direct = [
+        t
+        for t in targets
+        if t.startswith("media_player.") and t not in speakers and hass.states.get(t) is not None
+    ]
     wanted: set[str] = set()
     for target in targets:
         if target in speakers:
             wanted.add(f"entity:{target}")
         elif area_id := area_id_for(hass, target):
             wanted.add(area_id)
-    return [e for e in speakers if speaker_area(hass, e) in wanted or f"entity:{e}" in wanted]
+    chosen = [e for e in speakers if speaker_area(hass, e) in wanted or f"entity:{e}" in wanted]
+    return chosen + direct
 
 
 def friendly(hass: HomeAssistant, entity_id: str) -> str:
