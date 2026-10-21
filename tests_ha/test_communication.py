@@ -143,6 +143,14 @@ async def test_permissions_and_exposure_prevent_audio(hass, setup_roomcall, hass
         assert result["error"]["code"] == "forbidden"
     result = await execute(hass, "preview", {"areas": ["kitchen"]}, Context(user_id="unknown"))
     assert result["error"]["code"] == "forbidden"
+    async_mock_service(hass, "media_player", "play_media")
+    sent = await execute(hass, "send", {"areas": ["kitchen"], "media_url": "x"}, context)
+    await finished(hass, sent["id"])
+    with patch("custom_components.roomcall.communication.async_should_expose", return_value=False):
+        status = await execute(
+            hass, "status", {"id": sent["id"]}, context, assistant="conversation"
+        )
+        assert status["error"]["code"] == "forbidden"
 
 
 async def test_device_identity_dedup_does_not_merge_matching_models(hass, setup_roomcall):

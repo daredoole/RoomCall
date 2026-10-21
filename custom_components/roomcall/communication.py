@@ -16,6 +16,7 @@ from homeassistant.util import dt as dt_util
 from .calls import CallError, CallRequest, prepare_call
 from .capabilities import discover
 from .const import DOMAIN
+from .core import resolve
 from .errors import Problem
 from .schema import vol
 
@@ -210,11 +211,27 @@ async def execute(
                     raise Problem("forbidden")
             return {"ok": True, **data.jobs.submit(values, context, assistant).summary()}
         if operation in ("status", "cancel", "acknowledge"):
-            if operation == "status":
-                job = await data.jobs.get(values["id"], context)
-            elif operation == "cancel":
+            job = await data.jobs.get(values["id"], context, recipient=operation == "acknowledge")
+            if assistant:
+                entities = [*job.values.get("people", []), *job.values.get("satellites", [])]
+                if job.record:
+                    entities.extend(result.entity_id for result in job.record.results)
+                elif any(job.values.get(key) for key in ("areas", "speakers", "everywhere")):
+                    entities.extend(
+                        resolve(
+                            hass,
+                            data.speakers,
+                            [*job.values.get("areas", []), *job.values.get("speakers", [])],
+                        )
+                    )
+                for entity_id in entities:
+                    if not await permitted(
+                        hass, entity_id, context, assistant, control=operation != "status"
+                    ):
+                        raise Problem("forbidden")
+            if operation == "cancel":
                 job = await data.jobs.cancel(values["id"], context)
-            else:
+            elif operation == "acknowledge":
                 job = await data.jobs.acknowledge(values["id"], context, values["response"])
             return {"ok": True, **job.summary()}
         if operation == "sound_test":
