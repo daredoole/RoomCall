@@ -86,7 +86,11 @@ def talk_sdp(
     ipv6: bool = False,
     payload_type: int = TALK_PAYLOAD_TYPE,
 ) -> str:
-    """SDP that lets ffmpeg receive and decrypt the iPhone's talk-back audio."""
+    """SDP that lets ffmpeg receive and decrypt the iPhone's talk-back audio.
+
+    ``address`` is *this* machine's address: for an incoming stream ffmpeg binds to the
+    SDP's connection address, which is where the iPhone sends the audio.
+    """
     family = "IP6" if ipv6 else "IP4"
     return "\r\n".join(
         [
@@ -295,7 +299,8 @@ async def talk_loop(
             phrases,
         )
         if session.get("active"):
-            await asyncio.sleep(0.2)
+            # A receiver that could not even start should not be retried in a tight loop.
+            await asyncio.sleep(0.2 if received else 2.0)
 
 
 class HomeKitIntercom:
@@ -306,6 +311,7 @@ class HomeKitIntercom:
         self.data = data
         self.port = port
         self.drivers: dict[str, Any] = {}  # area_id -> AccessoryDriver
+        self.address: str | None = None  # where the iPhone sends talk-back audio
         self.pincode: str | None = None
         self._tmp: tempfile.TemporaryDirectory[str] | None = None
 
@@ -336,6 +342,7 @@ class HomeKitIntercom:
         from pyhap.accessory_driver import AccessoryDriver
 
         address = await async_get_source_ip(self.hass)
+        self.address = address
         zeroconf = await async_get_async_instance(self.hass)
         self.pincode = await self._load_pincode()
         self._tmp = tempfile.TemporaryDirectory(prefix="roomcall-homekit-")
@@ -474,11 +481,12 @@ def _camera_class() -> type:
                 stream_config.get("a_sample_rate"),
                 payload_type,
             )
+            local = self.intercom.address or "0.0.0.0"
             sdp = talk_sdp(
-                stream_config["address"],
+                local,
                 stream_config["a_port"],
                 stream_config["a_srtp_key"],
-                ipv6=":" in stream_config["address"],
+                ipv6=":" in local,
                 payload_type=payload_type,
             )
 
