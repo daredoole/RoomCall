@@ -264,7 +264,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data.entry_id = entry.entry_id
     hass.data[DOMAIN] = data
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    repairs.async_check(hass, data.speakers)
+    entry.async_on_unload(repairs.async_watch(hass, data.speakers))
     if data.homekit_enabled:
         await _start_homekit(hass, data)
     return True

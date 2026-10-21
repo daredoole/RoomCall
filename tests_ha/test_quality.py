@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from custom_components.roomcall.diagnostics import async_get_config_entry_diagnostics
 from homeassistant.core import HomeAssistant
 from homeassistant.core_config import async_process_ha_core_config
 from homeassistant.helpers import issue_registry as ir
-from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+    async_mock_service,
+)
 
 DOMAIN = "roomcall"
 
@@ -29,7 +36,7 @@ async def test_diagnostics_hide_what_people_said(hass: HomeAssistant, setup_room
     assert diag["recent_calls"][0]["text"] == "**REDACTED**"
 
 
-async def test_unavailable_speaker_raises_a_repair(hass: HomeAssistant, house):
+async def test_unavailable_speaker_raises_a_repair_after_a_grace_period(hass: HomeAssistant, house):
     hass.states.async_set("media_player.basement_sonos", "unavailable")
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -37,12 +44,32 @@ async def test_unavailable_speaker_raises_a_repair(hass: HomeAssistant, house):
     )
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
-    issue = ir.async_get(hass).async_get_issue(DOMAIN, "missing_speakers")
+    await hass.async_block_till_done()
+    issues = ir.async_get(hass)
+    # Not straight away: speakers reboot and integrations reconnect after a restart.
+    assert issues.async_get_issue(DOMAIN, "missing_speakers") is None
+
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=301))
+    await hass.async_block_till_done()
+    issue = issues.async_get_issue(DOMAIN, "missing_speakers")
     assert issue is not None
     assert "basement sonos" in issue.translation_placeholders["speakers"].lower()
 
+    # Cleared as soon as the speaker is back.
     hass.states.async_set("media_player.basement_sonos", "idle", {"supported_features": 1048576})
-    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert issues.async_get_issue(DOMAIN, "missing_speakers") is None
+
+
+async def test_speaker_that_comes_back_quickly_is_not_reported(hass: HomeAssistant, house):
+    hass.states.async_set("media_player.basement_sonos", "unavailable")
+    entry = MockConfigEntry(domain=DOMAIN, data={"speakers": ["media_player.basement_sonos"]})
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    hass.states.async_set("media_player.basement_sonos", "idle", {"supported_features": 1048576})
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=301))
+    await hass.async_block_till_done()
     assert ir.async_get(hass).async_get_issue(DOMAIN, "missing_speakers") is None
 
 
