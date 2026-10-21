@@ -15,6 +15,7 @@ import logging
 import tempfile
 import zlib
 from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -299,16 +300,22 @@ class HomeKitIntercom:
             png = await self.hass.async_add_executor_job(render_room_picture, room["name"])
             picture = tmp / f"{area_id}.png"
             await self.hass.async_add_executor_job(picture.write_bytes, png)
-            driver = AccessoryDriver(
-                loop=self.hass.loop,
-                port=self.port + index,
-                address=address,
-                pincode=self.pincode.encode(),
-                persist_file=self.hass.config.path(".storage", state_file(area_id)),
-                async_zeroconf_instance=zeroconf,
+            # Creating the driver and camera reads HAP definitions and pairing state from
+            # disk, so do it off the event loop.
+            driver = await self.hass.async_add_executor_job(
+                partial(
+                    AccessoryDriver,
+                    loop=self.hass.loop,
+                    port=self.port + index,
+                    address=address,
+                    pincode=self.pincode.encode(),
+                    persist_file=self.hass.config.path(".storage", state_file(area_id)),
+                    async_zeroconf_instance=zeroconf,
+                )
             )
-            camera = _camera_class()(camera_options(address), driver, f"{room['name']} Intercom")
-            camera.setup_intercom(self, area_id, str(picture), png)
+            camera = await self.hass.async_add_executor_job(
+                _build_camera, self, driver, address, area_id, room["name"], str(picture), png
+            )
             driver.add_accessory(camera)
             await driver.async_start()
             self.drivers[area_id] = driver
@@ -347,6 +354,20 @@ class HomeKitIntercom:
             _LOGGER.warning("RoomCall HomeKit call to %s not played: %s", area_id, err)
         except Exception:
             _LOGGER.exception("RoomCall HomeKit call to %s failed", area_id)
+
+
+def _build_camera(
+    intercom: HomeKitIntercom,
+    driver: Any,
+    address: str,
+    area_id: str,
+    name: str,
+    picture: str,
+    png: bytes,
+) -> Any:
+    camera = _camera_class()(camera_options(address), driver, f"{name} Intercom")
+    camera.setup_intercom(intercom, area_id, picture, png)
+    return camera
 
 
 _CAMERA_CLASS: type | None = None
