@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.6.2 — 2026-10-20
+
+- Releases include `roomcall.intoto.jsonl`, the signed build provenance for every release file (verify with `gh attestation verify roomcall.zip --repo daredoole/RoomCall`). Workflows use least-privilege, job-level permissions.
+
 ## 0.6.1 — 2026-10-20
 
 - Repairs: don't report speakers as unavailable while Home Assistant is still starting. A speaker is reported only after 5 minutes unavailable, and the alert clears as soon as it is back.
