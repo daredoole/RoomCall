@@ -217,6 +217,12 @@ Siri, Apple Watch and CarPlay can call this too — see [Siri and Shortcuts](sir
   (`talk`, `message`, `media`), `priority`, `delivered`, `failed`, `skipped`, `text`, and
   `history` (the last 10 calls).
 - `switch.roomcall_do_not_disturb`: see above.
+- Per announcement (its own device, *Announcement: name*): `button.<name>_play_now` and
+  `switch.<name>_enabled`, whose attributes describe the schedule or trigger, targets,
+  `last_played` and `last_error`. See [Announcements](announcements.md).
+
+AI agents and voice assistants: see [Managing RoomCall with AI](ai.md) — the `RoomCallAnnounce`
+Assist intent, every action and field, and how announcements are created through the API.
 
 ## Diagnostics and Repairs
 
@@ -227,9 +233,11 @@ Siri, Apple Watch and CarPlay can call this too — see [Siri and Shortcuts](sir
 
 ## How playback works
 
-Recordings are converted to MP3 with Home Assistant's ffmpeg (with the chime in front), kept in
-memory for two minutes behind an unguessable URL, and handed to each speaker with
-`media_player.play_media`, a short moment apart. Speakers that support it get `announce: true`,
+**Live calls** (the default) stream from the card over Home Assistant's WebSocket: ffmpeg encodes
+the audio to MP3 as it arrives (chime first) and speakers play one growing URL, so they start
+while you are still talking. **Recorded calls** (`live: false`, typed messages and automations)
+are converted to MP3 in one go and kept in memory for two minutes behind an unguessable URL.
+Either way each speaker gets `media_player.play_media`, a short moment apart. Speakers that support it get `announce: true`,
 so Sonos lowers the music instead of stopping it.
 
 Uploads, history and replays require a signed-in Home Assistant user. Clip and chime URLs are
