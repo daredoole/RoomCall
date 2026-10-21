@@ -35,7 +35,12 @@ def _player(
     )
     registry = er.async_get(hass)
     ent = registry.async_get_or_create(
-        "media_player", platform, object_id, device_id=device.id, suggested_object_id=object_id
+        "media_player",
+        platform,
+        object_id,
+        device_id=device.id,
+        suggested_object_id=object_id,
+        original_name=object_id,
     )
     registry.async_update_entity(ent.entity_id, area_id=area_id)
     hass.states.async_set(ent.entity_id, state, attrs)

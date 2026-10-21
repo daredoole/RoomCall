@@ -40,11 +40,24 @@ Track progress and vote on the [GitHub issues](https://github.com/daredoole/Room
 - [x] Scheduled and triggered announcements to rooms, speakers or people
 - [x] Assist / LLM intent and an AI management guide
 
-## Next
+## v0.8 — Communication workflows
+
+- [x] Explicit current-HA LLM tools and an older-HA API; truthful delivery evidence
+- [x] Capability discovery, previews, sound tests and physical-speaker deduplication
+- [x] Bounded queued message jobs, expiration, idempotency and explicit acknowledgments
+- [x] Questions and transcribed replies through compatible Assist satellites
+- [x] Browser room stations with consent-based WebRTC audio calls
+- [x] Presence freshness/confidence, language/room preferences and script control adapters
+- [x] Optional local voicemail, explicit translation providers and recorded-speech processing
+- [x] Local metrics and human/agent journey tests
+
+Details and hardware boundaries: [Messages and room stations](communication.md).
+
+## Further hardware work
 
 - [ ] **Hands-free talk-back** from rooms with only a Sonos: a small mic station (Atom Echo,
       ESP32-S3, Home Assistant Voice) opens for a few seconds after each call
       ([#11](https://github.com/daredoole/RoomCall/issues/11))
-- [ ] **Doorbell bridge**: answer the door from any room or your watch ([#21](https://github.com/daredoole/RoomCall/issues/21))
+- [ ] **Native doorbell audio bridge**: script control adapters exist; bridging camera/SIP audio into room stations remains separate hardware work ([#21](https://github.com/daredoole/RoomCall/issues/21))
 - [ ] Listed in the default HACS store — submitted, in review ([#25](https://github.com/daredoole/RoomCall/issues/25))
-- [ ] Per-room chimes and voicemail for rooms where nobody answered
+- [ ] Per-room chimes

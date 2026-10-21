@@ -24,6 +24,11 @@ FILES = {
         ROOT / "custom_components" / "roomcall" / "frontend" / "roomcall-card.js",
         "text/javascript",
     ),
+    "/roomcall-controls.js": (
+        ROOT / "custom_components/roomcall/frontend/roomcall-controls.js",
+        "text/javascript",
+    ),
+    "/strings.json": (ROOT / "custom_components/roomcall/strings.json", "application/json"),
     "/logo.svg": (OUT / "logo.svg", "image/svg+xml"),
 }
 
@@ -132,7 +137,7 @@ def main() -> int:
         page.mouse.up()
         page.wait_for_function(
             "document.querySelector('roomcall-card').shadowRoot"
-            ".querySelector('.status').textContent.startsWith('Delivered')"
+            ".querySelector('.status').textContent.startsWith('Playback requests accepted')"
         )
         page.screenshot(path=OUT / "ha-card-delivered.png")
         page.close()

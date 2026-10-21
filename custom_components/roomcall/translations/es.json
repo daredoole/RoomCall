@@ -95,12 +95,28 @@
             "data_description": {
               "port": "Cámbialo solo si otro puente HomeKit ya lo usa."
             }
+          },
+          "communication": {
+            "name": "Comunicación",
+            "data": {
+              "aliases": "Alias de altavoces físicos",
+              "preferences": "Preferencias personales",
+              "adapters": "Scripts SIP y timbre",
+              "presence_max_age": "Antigüedad máxima de presencia (segundos)",
+              "presence_min_confidence": "Confianza mínima de presencia",
+              "max_volume": "Volumen máximo de anuncios",
+              "voicemail": "Guardar mensajes localmente (opcional)",
+              "voicemail_retention": "Retención de mensajes (segundos)",
+              "translation_entity": "Proveedor de traducción IA (opcional)",
+              "audio_processing": "Procesamiento de voz grabada"
+            }
           }
         }
       }
     },
     "error": {
-      "no_speakers": "Elige al menos un altavoz."
+      "no_speakers": "Elige al menos un altavoz.",
+      "invalid_settings": "Revisa los alias, las preferencias y los adaptadores."
     }
   },
   "selector": {
@@ -129,6 +145,115 @@
       "options": {
         "normal": "Normal",
         "urgent": "Urgente (ignora No molestar y horas de silencio)"
+      }
+    },
+    "communication": {
+      "options": {
+        "invalid_request": "La solicitud no es válida.",
+        "target_required": "Elige una habitación, persona o altavoz.",
+        "content_required": "Introduce un mensaje o una URL de audio.",
+        "no_targets": "No se encontró un destino de RoomCall.",
+        "forbidden": "No tienes acceso a esta operación.",
+        "not_ready": "RoomCall aún no está listo.",
+        "presence_unknown": "La habitación actual de la persona es desconocida o está desactualizada.",
+        "dnd_blocked": "No molestar bloquea este mensaje. Inténtalo más tarde.",
+        "quiet_hours_blocked": "El horario de silencio bloquea estas habitaciones.",
+        "tts_unavailable": "Configura primero un motor de voz.",
+        "provider_failed": "El proveedor falló. Revisa el diagnóstico e inténtalo de nuevo.",
+        "playback_failed": "Falló la solicitud de reproducción.",
+        "queue_full": "La cola está llena. Inténtalo más tarde.",
+        "expired": "El mensaje caducó.",
+        "idempotency_conflict": "Esta clave ya pertenece a otro mensaje.",
+        "not_found": "No se encontró este elemento o ha caducado.",
+        "already_started": "La reproducción ha comenzado. No puede cancelarse desde la cola.",
+        "not_waiting": "Este mensaje no espera una confirmación.",
+        "ack_timeout": "Nadie confirmó el mensaje a tiempo.",
+        "satellite_unavailable": "Elige un satélite disponible que admita preguntas.",
+        "station_in_use": "Esta estación ya está registrada. Vuelve a conectarla.",
+        "station_unavailable": "Esta estación no está disponible.",
+        "station_busy": "Esta estación ya está en una llamada.",
+        "consent_required": "El destinatario debe responder antes de conectar el audio.",
+        "translation_unavailable": "Selecciona un proveedor de traducción y un idioma de destino.",
+        "translation_failed": "La traducción falló. No se envió el mensaje original.",
+        "mixed_languages": "Envía mensajes separados para destinatarios con idiomas distintos.",
+        "voicemail_disabled": "Activa primero el buzón de voz en RoomCall.",
+        "invalid_settings": "Revisa los alias, las preferencias y los adaptadores.",
+        "accepted": "Solicitudes de reproducción aceptadas: {count}. Audio sin confirmar.",
+        "failed": "Falló la reproducción en {speakers}.",
+        "partial": "{accepted} solicitudes aceptadas. Fallaron: {speakers}.",
+        "talk": "Hablar",
+        "type": "Escribir",
+        "ask": "Preguntar",
+        "message": "Mensaje",
+        "send": "Enviar",
+        "preview": "Ver destinatarios",
+        "setup": "Configuración y pruebas",
+        "test": "Reproducir prueba",
+        "heard": "Lo he oído",
+        "silent": "No he oído nada",
+        "queued": "En cola",
+        "running": "Solicitando reproducción",
+        "completed": "Solicitud aceptada; audio sin confirmar.",
+        "waiting_ack": "Esperando confirmación",
+        "acknowledged": "Confirmado",
+        "answered": "Respuesta recibida",
+        "cancelled": "Cancelado",
+        "acknowledge": "Confirmar",
+        "cancel": "Cancelar",
+        "require_ack": "Pedir confirmación",
+        "satellite": "Satélite de voz",
+        "station": "Estación de habitación",
+        "connect_station": "Activar esta estación",
+        "call_station": "Llamar a estación",
+        "answer": "Responder",
+        "hangup": "Colgar",
+        "incoming": "Llamada de {name}",
+        "calling": "Llamando…",
+        "connected": "Conectado",
+        "ended": "Llamada finalizada",
+        "empty": "No hay nada que mostrar.",
+        "recording_hint": "Elige una habitación, mantén pulsado y habla.",
+        "request_hint": "Una solicitud aceptada no confirma que se haya oído.",
+        "agent_prompt": "Descubre capacidades primero. Comprueba destinatarios antes de enviar. Especifica destinos. Reutiliza la clave al reintentar. Consulta el estado. Una solicitud aceptada no prueba que se haya oído. No cambies automáticamente a urgente.",
+        "tool_discover": "Descubrir habitaciones, dispositivos, estaciones y capacidades.",
+        "tool_preview": "Ver destinatarios y reglas sin reproducir audio.",
+        "tool_send": "Enviar un mensaje con destinos explícitos y clave de solicitud.",
+        "tool_ask": "Preguntar a satélites compatibles y recoger respuestas.",
+        "tool_status": "Leer estado, pruebas y respuestas por ID.",
+        "tool_cancel": "Cancelar un mensaje antes de que empiece a reproducirse.",
+        "tool_acknowledge": "Confirmar explícitamente un mensaje pendiente.",
+        "tool_diagnose": "Leer capacidades, bloqueos y métricas locales.",
+        "tool_sound_test": "Reproducir una prueba en un altavoz configurado.",
+        "tool_confirm_test": "Registrar si una persona oyó la prueba anterior.",
+        "tool_adapter": "Ejecutar un adaptador SIP o de timbre configurado.",
+        "tool_voicemail": "Ver, borrar o reproducir tus mensajes guardados si está activado.",
+        "adapter_unavailable": "Este adaptador no está configurado o no está disponible.",
+        "refresh": "Actualizar",
+        "replay": "Reproducir",
+        "delete": "Eliminar",
+        "voicemail": "Buzón de voz"
+      }
+    },
+    "audio_processing": {
+      "options": {
+        "off": "Desactivado",
+        "speech": "Reducción de ruido, normalización y limitador"
+      }
+    },
+    "communication_operation": {
+      "options": {
+        "discover": "Descubrir habitaciones, dispositivos, estaciones y capacidades.",
+        "preview": "Ver destinatarios y reglas sin reproducir audio.",
+        "send": "Enviar un mensaje con destinos explícitos y clave de solicitud.",
+        "ask": "Preguntar a satélites compatibles y recoger respuestas.",
+        "status": "Leer estado, pruebas y respuestas por ID.",
+        "cancel": "Cancelar un mensaje antes de que empiece a reproducirse.",
+        "acknowledge": "Confirmar explícitamente un mensaje pendiente.",
+        "diagnose": "Leer capacidades, bloqueos y métricas locales.",
+        "sound_test": "Reproducir una prueba en un altavoz configurado.",
+        "confirm_test": "Registrar si una persona oyó la prueba anterior.",
+        "adapter": "Ejecutar un adaptador SIP o de timbre configurado.",
+        "voicemail": "Ver, borrar o reproducir tus mensajes guardados si está activado."
       }
     }
   },
@@ -184,6 +309,18 @@
         "speakers": {
           "name": "Altavoces",
           "description": "Reproductores concretos, además de habitaciones y personas."
+        }
+      }
+    },
+    "communicate": {
+      "name": "Comunicar",
+      "description": "Descubre capacidades primero. Comprueba destinatarios antes de enviar. Especifica destinos. Reutiliza la clave al reintentar. Consulta el estado. Una solicitud aceptada no prueba que se haya oído. No cambies automáticamente a urgente.",
+      "fields": {
+        "operation": {
+          "name": "Operación"
+        },
+        "request": {
+          "name": "Solicitud"
         }
       }
     }

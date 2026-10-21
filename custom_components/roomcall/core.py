@@ -66,6 +66,7 @@ class Delivery:
     elapsed_ms: int
     error: str | None = None
     attempts: int = 1
+    error_code: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -75,6 +76,9 @@ class Delivery:
             "elapsed_ms": self.elapsed_ms,
             "error": self.error,
             "attempts": self.attempts,
+            "error_code": self.error_code,
+            "request_accepted": self.ok,
+            "audible": None,
         }
 
 
@@ -91,6 +95,9 @@ class CallRecord:
     transcript: str | None = None
     message: str | None = None
     has_audio: bool = False
+    owner: str | None = None
+    evidence: dict[str, dict[str, Any]] = field(default_factory=dict)
+    requires_ack: bool = False
 
     @property
     def ok(self) -> bool:
@@ -106,10 +113,15 @@ class CallRecord:
             "priority": self.priority,
             "ok": self.ok,
             "delivered": [r.name for r in self.results if r.ok],
+            "accepted": [r.name for r in self.results if r.ok],
             "failed": {r.name: r.error for r in self.results if not r.ok},
             "skipped": self.skipped,
             "text": self.transcript or self.message,
             "has_audio": self.has_audio,
+            "evidence": self.evidence,
+            "audible": None,
+            "delivery_semantics": "request_accepted",
+            "requires_ack": self.requires_ack,
         }
 
 
@@ -265,6 +277,7 @@ async def to_playable(
     gain_db: float,
     chime: str | None = None,
     chime_url: str | None = None,
+    processing: str = "off",
 ) -> tuple[bytes, str]:
     """Return ``(audio, content_type)`` playable by every speaker (MP3/WAV).
 
@@ -272,6 +285,9 @@ async def to_playable(
     read) takes precedence over it. Either is prepended to the recording.
     """
     base = content_type.split(";", 1)[0].strip().lower()
+    filters = f"volume={gain_db}dB"
+    if processing == "speech":
+        filters += ",highpass=f=100,afftdn=nf=-25,dynaudnorm=f=150:g=15,alimiter=limit=0.9"
     if chime_url:
         inputs = ["-i", chime_url]
         graph = chimes.chime_filter(1, 1, from_file=True)
@@ -280,10 +296,10 @@ async def to_playable(
         graph = chimes.chime_filter(1, len(chimes.STYLES[chime]))
     else:
         inputs, graph = [], ""
-    if base in PLAYABLE and not gain_db and not graph:
+    if base in PLAYABLE and not gain_db and not graph and processing == "off":
         return data, "audio/mpeg" if PLAYABLE[base] == "mp3" else "audio/wav"
     if graph:
-        voice = f"[0:a]aresample=44100,aformat=channel_layouts=mono,volume={gain_db}dB[voice]"
+        voice = f"[0:a]aresample=44100,aformat=channel_layouts=mono,{filters}[voice]"
         args = [
             "-i",
             "pipe:0",
@@ -294,7 +310,7 @@ async def to_playable(
             "[out]",
         ]
     else:
-        args = ["-i", "pipe:0", "-af", f"volume={gain_db}dB"]
+        args = ["-i", "pipe:0", "-af", filters]
     out = await _run_ffmpeg(ffmpeg_binary, [*args, *_encode_args(), "pipe:1"], data)
     return out, "audio/mpeg"
 
@@ -372,9 +388,49 @@ async def _play_one(
     restore: bool = False,
     seconds: float | None = None,
     until: Callable[[], Awaitable[None]] | None = None,
+    deadline: float | None = None,
+    on_dispatch: Callable[[], None] | None = None,
+    priority: str = PRIORITY_NORMAL,
 ) -> Delivery:
     if delay:
         await asyncio.sleep(delay)
+    runtime = hass.data.get("roomcall")
+    scheduler = getattr(runtime, "scheduler", None)
+    lock = None
+    if scheduler:
+        try:
+            lock = await scheduler.acquire(entity_id, deadline)
+        except (TimeoutError, RuntimeError) as err:
+            code = "expired" if isinstance(err, TimeoutError) else "queue_full"
+            return Delivery(entity_id, friendly(hass, entity_id), False, 0, code, 0, code)
+    if deadline is not None and asyncio.get_running_loop().time() >= deadline:
+        if lock:
+            lock.release()
+        return Delivery(entity_id, friendly(hass, entity_id), False, 0, "expired", 0, "expired")
+    if runtime is not None:
+        from .policy import DoNotDisturbError, plan
+
+        try:
+            fresh = plan(
+                hass,
+                [entity_id],
+                base_volume=volume,
+                priority=priority,
+                dnd=runtime.dnd,
+                quiet=runtime.quiet,
+                urgent_volume=runtime.urgent_volume,
+                now=dt_util.now(),
+            )
+            if not fresh.entity_ids:
+                raise DoNotDisturbError("quiet_hours_blocked")
+            volume = fresh.volumes[entity_id]
+            if volume is not None:
+                volume = min(volume, runtime.max_volume)
+        except DoNotDisturbError:
+            if lock:
+                lock.release()
+            code = "dnd_blocked" if runtime.dnd else "quiet_hours_blocked"
+            return Delivery(entity_id, friendly(hass, entity_id), False, 0, code, 0, code)
     guard = None
     if restore and not supports_announce(hass, entity_id):
         from .restore import Guard  # imported here to avoid an import cycle
@@ -382,9 +438,14 @@ async def _play_one(
         guard = Guard(hass, entity_id)
         guard.start()
     try:
-        return await _attempt(hass, entity_id, media_id, volume, chime_message, retry)
+        if on_dispatch:
+            on_dispatch()
+        result = await _attempt(hass, entity_id, media_id, volume, chime_message, retry)
+        return result
     finally:
-        if guard is not None:
+        if lock is not None:
+            scheduler.finish(lock, entity_id, guard, seconds, until)
+        elif guard is not None:
             hass.async_create_background_task(
                 guard.finish(seconds, until), f"roomcall restore {entity_id}"
             )
@@ -420,6 +481,7 @@ async def _attempt(
         round((time.perf_counter() - started) * 1000),
         error,
         attempts,
+        "playback_failed" if error else None,
     )
 
 
@@ -439,6 +501,9 @@ async def fan_out(
     restore: bool = False,
     seconds: float | None = None,
     until: Callable[[], Awaitable[None]] | None = None,
+    media_ids: dict[str, str] | None = None,
+    deadline: float | None = None,
+    on_dispatch: Callable[[], None] | None = None,
 ) -> CallRecord:
     """Play on every speaker, starting each ``stagger`` seconds after the previous one.
 
@@ -450,7 +515,7 @@ async def fan_out(
             _play_one(
                 hass,
                 e,
-                media_id,
+                (media_ids or {}).get(e, media_id),
                 (volumes or {}).get(e, volume),
                 chime_message,
                 delay=i * stagger,
@@ -458,6 +523,9 @@ async def fan_out(
                 restore=restore,
                 seconds=seconds,
                 until=until,
+                deadline=deadline,
+                on_dispatch=on_dispatch,
+                priority=record.priority if record else PRIORITY_NORMAL,
             )
             for i, e in enumerate(entity_ids)
         )

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import voluptuous as vol
 from homeassistant.components.media_player import MediaPlayerEntityFeature
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -20,6 +19,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import selector
 
 from . import chimes
+from .capabilities import deduplicate
 from .const import (
     CONF_CHIME,
     CONF_CHIME_STYLE,
@@ -72,6 +72,7 @@ from .const import (
     SUBENTRY_SCHEDULED,
     SUBENTRY_TRIGGERED,
 )
+from .schema import vol
 
 # Music Assistant mirrors physical speakers that already have a native entity; skipping it by
 # default avoids playing every message twice.
@@ -88,7 +89,7 @@ def suggested_speakers(hass: HomeAssistant) -> list[str]:
         features = state.attributes.get("supported_features", 0)
         if features & MediaPlayerEntityFeature.MEDIA_ANNOUNCE:
             out.append(state.entity_id)
-    return sorted(out)
+    return deduplicate(hass, sorted(out), {})[0]
 
 
 def _suggest(value: Any) -> dict[str, Any]:
@@ -138,6 +139,7 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
     quiet = current.get(SECTION_QUIET) or {}
     replies = current.get(SECTION_REPLY) or {}
     homekit = current.get(SECTION_HOMEKIT) or {}
+    communication = current.get("communication") or {}
     style = chime.get(CONF_CHIME_STYLE) or (
         DEFAULT_CHIME_STYLE if current.get(CONF_CHIME, DEFAULT_CHIME) else chimes.OFF
     )
@@ -250,8 +252,108 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                 ),
                 {"collapsed": True},
             ),
+            vol.Required("communication", default=dict(communication)): section(
+                vol.Schema(
+                    {
+                        vol.Optional(
+                            "aliases", default=communication.get("aliases", {})
+                        ): selector.ObjectSelector(),
+                        vol.Optional(
+                            "preferences", default=communication.get("preferences", {})
+                        ): selector.ObjectSelector(),
+                        vol.Optional(
+                            "adapters", default=communication.get("adapters", {})
+                        ): selector.ObjectSelector(),
+                        vol.Required(
+                            "presence_max_age", default=communication.get("presence_max_age", 300)
+                        ): selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=10, max=86400, step=1, mode=selector.NumberSelectorMode.BOX
+                            )
+                        ),
+                        vol.Required(
+                            "presence_min_confidence",
+                            default=communication.get("presence_min_confidence", 0),
+                        ): _volume_slider(),
+                        vol.Required(
+                            "max_volume", default=communication.get("max_volume", 1)
+                        ): _volume_slider(),
+                        vol.Required(
+                            "voicemail", default=communication.get("voicemail", False)
+                        ): selector.BooleanSelector(),
+                        vol.Required(
+                            "voicemail_retention",
+                            default=communication.get("voicemail_retention", 86400),
+                        ): selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=300, max=604800, step=1, mode=selector.NumberSelectorMode.BOX
+                            )
+                        ),
+                        vol.Optional(
+                            "translation_entity",
+                            description=_suggest(communication.get("translation_entity")),
+                        ): selector.EntitySelector(selector.EntitySelectorConfig(domain="ai_task")),
+                        vol.Required(
+                            "audio_processing", default=communication.get("audio_processing", "off")
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=["off", "speech"], translation_key="audio_processing"
+                            )
+                        ),
+                    }
+                ),
+                {"collapsed": True},
+            ),
         }
     )
+
+
+def validate_communication(values: dict[str, Any]) -> None:
+    """Validate freeform mappings before they enter the runtime configuration."""
+    vol.Schema(
+        {
+            vol.Optional("aliases"): {cv_entity: vol.All(str, vol.Length(min=1, max=80))},
+            vol.Optional("preferences"): {
+                cv_person: vol.Schema(
+                    {
+                        vol.Optional("room"): str,
+                        vol.Optional("language"): vol.Match(
+                            r"^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})?$"
+                        ),
+                    }
+                )
+            },
+            vol.Optional("adapters"): {
+                str: vol.Schema(
+                    {
+                        vol.Required("kind"): vol.In(("sip", "doorbell")),
+                        vol.Required("script"): vol.Match(r"^script\.[a-z0-9_]+$"),
+                    }
+                )
+            },
+            vol.Optional("presence_max_age"): vol.All(
+                vol.Coerce(int), vol.Range(min=10, max=86400)
+            ),
+            vol.Optional("presence_min_confidence"): vol.All(
+                vol.Coerce(float), vol.Range(min=0, max=1)
+            ),
+            vol.Optional("max_volume"): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+            vol.Optional("voicemail"): bool,
+            vol.Optional("voicemail_retention"): vol.All(
+                vol.Coerce(int), vol.Range(min=300, max=604800)
+            ),
+            vol.Optional("translation_entity"): vol.Match(r"^ai_task\.[a-z0-9_]+$"),
+            vol.Optional("audio_processing"): vol.In(("off", "speech")),
+        }
+    )(values)
+
+
+def cv_entity(value: str) -> str:
+    return vol.Match(r"^media_player\.[a-z0-9_]+$")(value)
+
+
+def cv_person(value: str) -> str:
+    return vol.Match(r"^person\.[a-z0-9_]+$")(value)
 
 
 class RoomCallConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -293,7 +395,12 @@ class RoomCallOptionsFlow(OptionsFlow):
             if not user_input.get(CONF_SPEAKERS):
                 errors[CONF_SPEAKERS] = "no_speakers"
             else:
-                return self.async_create_entry(data=user_input)
+                try:
+                    validate_communication(user_input.get("communication") or {})
+                except vol.Invalid:
+                    errors["base"] = "invalid_settings"
+                else:
+                    return self.async_create_entry(data=user_input)
         current = {**self.config_entry.data, **self.config_entry.options, **(user_input or {})}
         return self.async_show_form(
             step_id="init", data_schema=_options_schema(self.hass, current), errors=errors

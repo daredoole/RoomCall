@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "project": {
+    "name": "RoomCall",
+    "productType": "Home Assistant intercom integration",
+    "stack": [
+      "Python",
+      "Home Assistant",
+      "vanilla JavaScript",
+      "Web Components"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "custom_components/roomcall/frontend/roomcall-card.js"
+    ],
+    "components": [],
+    "assets": [],
+    "instructions": [
+      "AGENTS.md"
+    ]
+  },
+  "design": {
+    "colorMode": "unknown",
+    "colors": {},
+    "typography": {},
+    "spacing": {},
+    "radius": {},
+    "shadows": {},
+    "motion": {},
+    "density": "unknown"
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": [
+      "ha-card",
+      "ha-icon",
+      "native buttons and form controls"
+    ],
+    "patterns": []
+  },
+  "constraints": {
+    "must": [
+      "Use Home Assistant theme variables",
+      "Translate all new copy",
+      "Require local user interaction for microphone capture",
+      "Keep existing compact and kiosk layouts"
+    ],
+    "avoid": []
+  },
+  "decisions": [
+    "Preserve the existing card; add Talk/Type/Ask controls and a collapsed setup section.",
+    "21st catalog search required authentication; reuse the existing HA primitives."
+  ],
+  "evidence": [
+    {
+      "fact": "project.instructions",
+      "source": "AGENTS.md"
+    }
+  ],
+  "generatedAt": "2026-10-21T16:36:51.098Z"
+}

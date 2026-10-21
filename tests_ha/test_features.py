@@ -83,7 +83,7 @@ async def test_chime_off_passes_wav_through(hass: HomeAssistant, house, hass_cli
         headers={"Content-Type": "audio/wav"},
     )
     assert resp.status == 200
-    assert calls[0].data["media_content_id"].endswith(".wav")
+    assert calls[0].data["media_content_id"].split("?", 1)[0].endswith(".wav")
 
 
 # --- delivery -------------------------------------------------------------------------

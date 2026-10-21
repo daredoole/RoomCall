@@ -188,7 +188,8 @@ async def test_ai_and_voice_assistants_can_announce(hass: HomeAssistant, setup_r
         "RoomCallAnnounce",
         {"message": {"value": "Dinner is ready"}, "area": {"value": "basement"}},
     )
-    assert response.speech["plain"]["speech"] == "Announced in basement."
+    assert "Playback requests accepted" in response.speech["plain"]["speech"]
+    assert "unconfirmed" in response.speech["plain"]["speech"]
     assert [c.data["entity_id"] for c in played] == ["media_player.basement_sonos"]
 
     handler = next(h for h in intent.async_get(hass) if h.intent_type == "RoomCallAnnounce")
