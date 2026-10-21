@@ -19,6 +19,8 @@ class Problem(Exception):
         self.details = details
 
     def as_dict(self, hass: HomeAssistant) -> dict[str, Any]:
+        from .protocol import next_actions
+
         return {
             "ok": False,
             "error": {
@@ -26,5 +28,6 @@ class Problem(Exception):
                 "message": text(hass, self.code),
                 "retryable": self.retryable,
                 "details": self.details,
+                "next_actions": next_actions(self.code),
             },
         }

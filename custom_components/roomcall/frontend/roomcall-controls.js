@@ -22,6 +22,14 @@ export class RoomCallControls {
       .communication .test-row { display:flex; align-items:center; flex-wrap:wrap; gap:6px }
       .communication .result { overflow-wrap:anywhere; white-space:pre-wrap }
       .communication button { min-height:36px; min-width:44px }
+      .setup-wizard { display:grid; gap:10px; margin:12px 0; min-width:0 }
+      .setup-wizard fieldset { min-inline-size:0; display:grid; gap:8px;
+        border:1px solid var(--divider-color); border-radius:8px; padding:10px }
+      .setup-wizard label { overflow-wrap:anywhere }
+      .setup-wizard input[type=number] { width:100%; box-sizing:border-box; font:inherit;
+        color:var(--primary-text-color); background:var(--card-background-color);
+        border:1px solid var(--divider-color); border-radius:8px; padding:10px }
+      .setup-wizard .wizard-status { overflow-wrap:anywhere; white-space:pre-wrap }
       .communication button:focus-visible,.communication summary:focus-visible {
         outline:2px solid var(--primary-color); outline-offset:3px }
       :host([layout="compact"]) .communication { display:none }
@@ -64,6 +72,9 @@ export class RoomCallControls {
     this.setup = document.createElement("div");
     this.setup.className = "setup-content";
     this.details.append(summary, this.setup);
+    this.wizard = new SetupWizard(this);
+    this.setup.before(this.wizard.root);
+    this.details.open = card._configured === false;
     this.details.addEventListener("toggle", () => {
       if (this.details.open) this.refresh().catch((e) => this.error(e));
     });
@@ -96,7 +107,8 @@ export class RoomCallControls {
   }
   async command(operation, request = {}) {
     const result = await this.card._hass.callApi("POST", "roomcall/command", { operation, request });
-    if (!result.ok) throw new Error(result.error?.message || this.t("provider_failed"));
+    if (!result.ok) throw Object.assign(new Error(result.error?.message || this.t("provider_failed")),
+      { problem: result.error });
     return result;
   }
   error(error) { this.result.textContent = error.message || String(error); }
@@ -153,6 +165,7 @@ export class RoomCallControls {
     } catch (error) { this.error(error); }
   }
   async refresh() {
+    if (this.card._configured === false) return;
     this.capabilities = await this.command("discover");
     if (this.closed) return;
     this.satellites.replaceChildren(...this.capabilities.satellites.filter((s) => s.can_ask && s.available).map((s) => new Option(s.name, s.entity_id)));
@@ -215,8 +228,303 @@ export class RoomCallControls {
     for (const timer of this.timers) clearTimeout(timer);
     this.timers.clear();
     this.station?.close();
+    this.wizard.closed = true;
     this.settingsRoot.remove();
     this.root.remove();
+  }
+}
+
+class SetupWizard {
+  constructor(controls) {
+    this.controls = controls;
+    this.t = (key, values) => controls.t(key, values);
+    this.root = document.createElement("section");
+    this.root.className = "setup-wizard";
+    this.root.setAttribute("aria-label", this.t("guided_setup"));
+    const title = document.createElement("strong");
+    title.textContent = this.t("guided_setup");
+    this.status = document.createElement("div");
+    this.status.className = "wizard-status muted";
+    this.status.setAttribute("role", "status");
+    this.form = document.createElement("form");
+    this.form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      this.run(() => this.plan());
+    });
+    this.speakers = document.createElement("fieldset");
+    const legend = document.createElement("legend");
+    legend.textContent = this.t("setup_speakers");
+    this.speakers.append(legend);
+    this.engine = controls.select("setup_tts");
+    this.volume = document.createElement("input");
+    Object.assign(this.volume, {
+      type: "number",
+      min: "0",
+      max: "1",
+      step: "0.05",
+    });
+    this.volume.setAttribute("aria-label", this.t("setup_volume"));
+    this.mediaOnly = document.createElement("input");
+    this.mediaOnly.type = "checkbox";
+    const mediaLabel = document.createElement("label");
+    mediaLabel.append(
+      this.mediaOnly,
+      document.createTextNode(` ${this.t("media_only")}`),
+    );
+    const engineLabel = document.createElement("label");
+    engineLabel.textContent = this.t("setup_tts");
+    engineLabel.append(this.engine);
+    const volumeLabel = document.createElement("label");
+    volumeLabel.textContent = this.t("setup_volume");
+    volumeLabel.append(this.volume);
+    this.form.append(
+      this.speakers,
+      engineLabel,
+      volumeLabel,
+      mediaLabel,
+      this.button("create_plan", () => this.plan()),
+    );
+    this.form.addEventListener("input", () => {
+      this.active = null;
+      this.review.replaceChildren();
+      this.renderActions();
+    });
+    this.resume = controls.select("resume_plan");
+    this.resume.addEventListener("change", () =>
+      this.show(this.plans.find((p) => p.id === this.resume.value)),
+    );
+    this.review = document.createElement("div");
+    this.review.className = "setup-review";
+    this.actions = document.createElement("nav");
+    this.tests = document.createElement("div");
+    this.root.append(
+      title,
+      this.button("scan_devices", () => this.scan()),
+      this.button("diagnose_setup", () => this.diagnose()),
+      this.status,
+      this.form,
+      this.resume,
+      this.review,
+      this.actions,
+      this.tests,
+    );
+    this.run(() => this.scan());
+  }
+  button(key, action) {
+    return this.controls.button(key, () => this.run(action));
+  }
+  async request(action, values = {}) {
+    return this.controls.command("setup", { action, ...values });
+  }
+  async run(action) {
+    if (this.busy || this.closed) return;
+    this.busy = true;
+    this.root.setAttribute("aria-busy", "true");
+    try {
+      await action();
+    } catch (error) {
+      this.status.textContent = error.message;
+    } finally {
+      this.busy = false;
+      this.root.removeAttribute("aria-busy");
+    }
+  }
+  async scan() {
+    const { discovery } = await this.request("discover");
+    if (this.closed) return;
+    this.discovery = discovery;
+    this.speakers.querySelectorAll("label").forEach((label) => label.remove());
+    for (const item of discovery.endpoints.filter(
+      (e) => e.eligible || e.selected,
+    )) {
+      const label = document.createElement("label"),
+        input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = item.entity_id;
+      input.checked = discovery.recommended.speakers.includes(item.entity_id);
+      label.append(input, document.createTextNode(` ${item.name}`));
+      this.speakers.append(label);
+    }
+    this.engine.replaceChildren(
+      new Option(this.t("choose_tts"), ""),
+      ...discovery.tts_engines.map((e) => new Option(e.name, e.entity_id)),
+    );
+    this.engine.value =
+      discovery.settings.tts_engine || discovery.recommended.tts_engine || "";
+    this.volume.value = discovery.settings.volume ?? "";
+    this.status.textContent = this.t("setup_scan_count", {
+      count: discovery.endpoints.length,
+    });
+    const { plans } = await this.request("list");
+    if (this.closed) return;
+    this.plans = plans.sort((a, b) => b.created - a.created);
+    this.resume.replaceChildren(
+      ...this.plans.map(
+        (p) =>
+          new Option(
+            `${this.t(`setup_${p.state}`)} · ${new Date(p.created * 1000).toLocaleString()}`,
+            p.id,
+          ),
+      ),
+    );
+    this.resume.hidden = !this.plans.length;
+    this.resume.value = this.active?.id || this.plans[0]?.id || "";
+    if (this.resume.value)
+      this.show(this.plans.find((p) => p.id === this.resume.value));
+  }
+  async plan() {
+    if (!this.form.reportValidity()) return;
+    const settings = {
+      speakers: [...this.speakers.querySelectorAll("input:checked")].map(
+        (i) => i.value,
+      ),
+      tts_engine: this.engine.value || null,
+    };
+    if (this.volume.value !== "") settings.volume = Number(this.volume.value);
+    const result = await this.request("plan", {
+      settings,
+      media_only: this.mediaOnly.checked,
+    });
+    this.show(result.plan);
+  }
+  show(plan) {
+    this.active = plan;
+    this.review.replaceChildren();
+    this.tests.replaceChildren();
+    if (!plan) return;
+    for (const input of this.speakers.querySelectorAll("input"))
+      input.checked = plan.settings.speakers.includes(input.value);
+    this.engine.value = plan.settings.tts_engine || "";
+    this.volume.value = plan.settings.volume ?? "";
+    this.mediaOnly.checked = plan.media_only;
+    const title = document.createElement("strong");
+    title.textContent = this.t("setup_review");
+    const list = document.createElement("ul");
+    const names = plan.settings.speakers.map(
+      (id) =>
+        this.discovery.endpoints.find((e) => e.entity_id === id)?.name || id,
+    );
+    for (const value of [
+      this.t("plan_state", { state: this.t(`setup_${plan.state}`) }),
+      `${this.t("setup_speakers")}: ${names.join(", ")}`,
+      `${this.t("setup_tts")}: ${this.discovery.tts_engines.find((e) => e.entity_id === plan.settings.tts_engine)?.name || this.t("media_only")}`,
+      `${this.t("setup_volume")}: ${plan.settings.volume ?? this.t("setup_keep_volume")}`,
+      ...plan.questions.map((q) => q.message),
+    ]) {
+      const item = document.createElement("li");
+      item.textContent = value;
+      list.append(item);
+    }
+    this.review.append(title, list);
+    this.renderActions();
+    if (plan.state === "applied")
+      for (const entity of plan.settings.speakers) {
+        const row = document.createElement("div");
+        row.className = "test-row";
+        const name = document.createElement("span");
+        name.textContent =
+          this.discovery.endpoints.find((e) => e.entity_id === entity)?.name ||
+          entity;
+        row.append(
+          name,
+          this.button("test", async () => {
+            const job = await this.request("test", {
+              id: plan.id,
+              speaker: entity,
+            });
+            this.status.textContent = this.t("test_pending");
+            this.controls.watch(job.id, () => {
+              if (this.closed) return;
+              for (const heard of [true, false])
+                row.append(
+                  this.button(heard ? "heard" : "silent", async () => {
+                    await this.request("confirm", {
+                      id: plan.id,
+                      speaker: entity,
+                      heard,
+                    });
+                    await this.verify();
+                  }),
+                );
+            });
+          }),
+        );
+        this.tests.append(row);
+      }
+  }
+  renderActions() {
+    this.actions.replaceChildren();
+    const plan = this.active;
+    if (!plan) return;
+    if (["draft", "applying"].includes(plan.state))
+      this.actions.append(
+        this.button("apply_plan", async () => {
+          const result = await this.request("apply", {
+            id: plan.id,
+            revision: plan.revision,
+          });
+          this.show(result.plan);
+          this.status.textContent = this.t("setup_started");
+          await this.controls.card._load();
+        }),
+      );
+    if (["applied", "undoing"].includes(plan.state)) {
+      this.actions.append(this.button("verify_setup", () => this.verify()));
+      const confirmLabel = document.createElement("label"),
+        confirm = document.createElement("input");
+      confirm.type = "checkbox";
+      confirmLabel.append(
+        confirm,
+        document.createTextNode(` ${this.t("confirm_undo")}`),
+      );
+      this.actions.append(
+        confirmLabel,
+        this.button("undo_setup", async () => {
+          const result = await this.request("undo", {
+            id: plan.id,
+            revision: plan.revision,
+            confirm: confirm.checked,
+          });
+          this.show(result.plan);
+          this.status.textContent = this.t("setup_rolled_back");
+          await this.controls.card._load();
+        }),
+      );
+    }
+  }
+  async verify() {
+    const result = await this.request("verify", { id: this.active.id });
+    this.status.textContent = this.t(
+      result.verification.completed
+        ? "setup_complete"
+        : result.verification.configuration_ready
+          ? "setup_needs_tests"
+          : "setup_not_ready",
+    );
+    await this.controls.card._load();
+    await this.controls.refresh();
+  }
+  async diagnose() {
+    const result = await this.controls.command("doctor");
+    this.status.textContent =
+      result.findings
+        .map((f) => `${f.entity_id || ""} ${f.message}`)
+        .join("\n") || this.t("doctor_clear");
+    this.tests.replaceChildren();
+    for (const route of result.alternatives) {
+      const button = this.button("plan_route", async () => {
+        const proposal = await this.controls.command("doctor", {
+          action: "plan_route",
+          speaker: route.from,
+          alternative: route.to,
+        });
+        this.show(proposal.plan);
+      });
+      const name = (id) =>
+        this.discovery.endpoints.find((e) => e.entity_id === id)?.name || id;
+      button.textContent += `: ${name(route.from)} → ${name(route.to)}`;
+      this.tests.append(button);
+    }
   }
 }
 

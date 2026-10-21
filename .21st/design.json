@@ -50,7 +50,8 @@
   },
   "decisions": [
     "Preserve the existing card; add Talk/Type/Ask controls and a collapsed setup section.",
-    "21st catalog search required authentication; reuse the existing HA primitives."
+    "21st catalog search required authentication; reuse the existing HA primitives.",
+    "Share persisted review/apply/test/verify/undo setup between native HA controls and administrator tools; keep narrow layouts and existing theme primitives."
   ],
   "evidence": [
     {

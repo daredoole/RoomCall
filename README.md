@@ -62,6 +62,7 @@ intercom, organised by your Home Assistant **areas**.
 - ☎️ **Browser room stations** — call another open dashboard using WebRTC; the recipient answers before audio connects.
 - ✅ **Delivery evidence and sound tests** — distinguish playback requests, audio fetches, matching player reports and explicit human acknowledgment.
 - 🧰 **Agent tools** — discover capabilities, preview, send, inspect status and diagnose failures through HA's LLM/MCP APIs; retries can reuse an idempotency key.
+- 🛠️ **Guided setup for humans and agents** — discover speakers, review/apply a saved plan, resume, confirm audio and undo; dedicated announcement tools and conservative repair proposals ([contract](https://daredoole.github.io/RoomCall/agent-setup/)).
 - 📬 **Optional voicemail and translation** — bounded local retention, per-person TTS languages, explicit translation providers and recorded speech processing.
 - 🔔 **A notify entity per room** (`notify.roomcall_kitchen`) and ready-made **blueprints** for the doorbell, laundry, bedtime and arrivals.
 - 🩺 **Diagnostics and Repairs** — problems show up in Home Assistant, not as silent calls.

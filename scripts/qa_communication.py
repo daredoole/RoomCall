@@ -11,6 +11,52 @@ from playwright.sync_api import expect, sync_playwright
 from qa_layout import check_layout
 
 
+def check_guided_setup(browser, errors) -> None:
+    for width, height in [(240, 600), (390, 844), (1280, 900)]:
+        context = browser.new_context(viewport={"width": width, "height": height})
+        page = context.new_page()
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        open_card(page, "mobile" if width < 600 else "desktop", "dark")
+        card = page.locator("roomcall-card")
+        card.locator("summary").click()
+        wizard = card.locator(".setup-wizard")
+        expect(wizard.locator(".wizard-status")).to_contain_text("Found")
+        speakers = wizard.locator('fieldset input[type="checkbox"]')
+        for index in range(1, speakers.count()):
+            speakers.nth(index).uncheck()
+        wizard.get_by_role("spinbutton").fill("0.3")
+        wizard.get_by_role("button", name="Review setup plan", exact=True).click()
+        expect(wizard.locator(".setup-review")).to_contain_text("0.3")
+        assert (
+            page.evaluate("ROOMCALL_HARNESS.requests.filter(r=>r.request?.action==='apply').length")
+            == 0
+        )
+        wizard.get_by_role("button", name="Apply this plan", exact=True).click()
+        expect(wizard.get_by_role("button", name="Verify setup", exact=True)).to_be_visible()
+        wizard.get_by_role("button", name="Verify setup", exact=True).click()
+        expect(wizard.locator(".wizard-status")).to_contain_text("Test each speaker")
+        # Reloading resumes the persisted plan; it does not apply again or play audio.
+        page.reload()
+        card = page.locator("roomcall-card")
+        card.locator("summary").click()
+        wizard = card.locator(".setup-wizard")
+        expect(wizard.locator(".setup-review")).to_contain_text("Applied")
+        expect(wizard.get_by_role("spinbutton")).to_have_value("0.3")
+        wizard.get_by_role("button", name="Play test sound", exact=True).click()
+        wizard.get_by_role("button", name="I heard it", exact=True).click()
+        expect(wizard.locator(".wizard-status")).to_contain_text("Setup verified")
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        assert wizard.evaluate("e=>e.scrollWidth<=e.clientWidth")
+        if width == 390:
+            wizard.screenshot(path=OUT / "ha-guided-setup.png")
+        wizard.get_by_role("button", name="Undo this setup", exact=True).click()
+        expect(wizard.locator(".wizard-status")).to_contain_text("Explicitly confirm")
+        wizard.get_by_role("checkbox", name="Confirm restoring", exact=False).check()
+        wizard.get_by_role("button", name="Undo this setup", exact=True).click()
+        expect(wizard.locator(".setup-review")).to_contain_text("Previous settings restored")
+        context.close()
+
+
 def main() -> None:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
@@ -22,6 +68,7 @@ def main() -> None:
         )
         errors = []
         check_layout(browser)
+        check_guided_setup(browser, errors)
         for width, height in [(390, 844), (1280, 900)]:
             context = browser.new_context(viewport={"width": width, "height": height})
             context.grant_permissions(["microphone"], origin=ORIGIN)

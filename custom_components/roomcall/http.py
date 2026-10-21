@@ -66,7 +66,9 @@ class RoomsView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:
         hass = request.app[KEY_HASS]
-        data = _data(request)
+        data = hass.data.get(DOMAIN)
+        if data is None:
+            return self.json({"rooms": [], "people": [], "speakers": 0, "configured": False})
         return self.json(
             {
                 "rooms": rooms(hass, data.speakers),
@@ -216,7 +218,8 @@ class HistoryView(HomeAssistantView):
     name = "api:roomcall:history"
 
     async def get(self, request: web.Request) -> web.Response:
-        return self.json({"calls": [r.summary() for r in _data(request).history.records()]})
+        data = request.app[KEY_HASS].data.get(DOMAIN)
+        return self.json({"calls": [r.summary() for r in data.history.records()] if data else []})
 
 
 class HistoryClipView(HomeAssistantView):

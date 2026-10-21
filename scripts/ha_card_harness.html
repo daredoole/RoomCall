@@ -103,6 +103,15 @@
   const tests = new Map();
   const stations = new Map();
   const sessions = new Map();
+  const setupPlans = new Map(JSON.parse(sessionStorage.getItem("roomcall-plans")||"[]"));
+  let setupSettings=JSON.parse(sessionStorage.getItem("roomcall-settings")||"null")||{
+    speakers:ROOMS.map(r=>`media_player.${r.area_id}`),tts_engine:"tts.piper",volume:0.4};
+  const setupHeard=new Set(JSON.parse(sessionStorage.getItem("roomcall-heard")||"[]"));
+  const saveSetup=()=>{
+    sessionStorage.setItem("roomcall-plans",JSON.stringify([...setupPlans]));
+    sessionStorage.setItem("roomcall-settings",JSON.stringify(setupSettings));
+    sessionStorage.setItem("roomcall-heard",JSON.stringify([...setupHeard]));
+  };
   const hass = {
     states,
     language: "en",
@@ -111,6 +120,36 @@
       if (path === "roomcall/command") {
         requests.push(body);
         const request = body.request || {};
+        if(body.operation==="doctor")return {ok:true,findings:[],alternatives:[]};
+        if(body.operation==="setup") {
+          const plan=setupPlans.get(request.id);
+          if(request.action==="discover")return {ok:true,discovery:{
+            configured:true,settings:setupSettings,recommended:setupSettings,
+            endpoints:ROOMS.map(r=>({entity_id:`media_player.${r.area_id}`,name:r.name,eligible:true,
+              selected:setupSettings.speakers.includes(`media_player.${r.area_id}`),available:true})),
+            tts_engines:[{entity_id:"tts.piper",name:"Piper"}],questions:[]}};
+          if(request.action==="list")return {ok:true,plans:[...setupPlans.values()]};
+          if(request.action==="plan") {
+            const id=crypto.randomUUID();
+            const draft={id,revision:id,state:"draft",created:Date.now()/1000,
+              settings:{...setupSettings,...request.settings},questions:[],tests:{},before:setupSettings};
+            setupPlans.set(id,draft);saveSetup();return {ok:true,plan:draft};
+          }
+          if(request.action==="apply") {plan.state="applied";setupSettings=plan.settings;setupHeard.clear();saveSetup();return {ok:true,plan};}
+          if(request.action==="undo") {
+            if(!request.confirm)return {ok:false,error:{message:"Explicitly confirm this undo or deletion."}};
+            plan.state="rolled_back";setupSettings=plan.before;saveSetup();return {ok:true,plan};
+          }
+          if(request.action==="test") {
+            const id=crypto.randomUUID();plan.tests[request.speaker]=id;
+            jobs.set(id,{ok:true,id,state:"completed",responses:[],speaker:request.speaker});saveSetup();
+            return {ok:true,id,plan};
+          }
+          if(request.action==="confirm") {if(request.heard)setupHeard.add(request.speaker);else setupHeard.delete(request.speaker);saveSetup();return {ok:true,plan};}
+          if(request.action==="verify")return {ok:true,plan,verification:{configuration_ready:true,
+            completed:plan.settings.speakers.every(id=>setupHeard.has(id)),audio_confirmed:plan.settings.speakers.every(id=>setupHeard.has(id))}};
+          return {ok:true,plan};
+        }
         if (body.operation === "discover") return { ok:true, schema_version:1,
           endpoints:ROOMS.map((r) => ({ entity_id:`media_player.${r.area_id}`,name:r.name,selected:true,
             sound_test:tests.get(`media_player.${r.area_id}`) })),

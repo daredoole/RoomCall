@@ -18,6 +18,7 @@ from .capabilities import discover
 from .const import DOMAIN
 from .core import resolve
 from .errors import Problem
+from .protocol import API_VERSION, SETUP_KEY
 from .schema import vol
 
 TARGETS = {
@@ -43,6 +44,41 @@ MESSAGE = {
     vol.Optional("defer_until_present", default=False): cv.boolean,
 }
 SCHEMAS = {
+    "catalog": vol.Schema({}),
+    "setup": vol.Schema(
+        {
+            vol.Required("action"): vol.In(
+                ("discover", "list", "plan", "get", "apply", "verify", "undo", "test", "confirm")
+            ),
+            vol.Optional("settings", default={}): dict,
+            vol.Optional("id"): cv.string,
+            vol.Optional("revision"): cv.string,
+            vol.Optional("confirm", default=False): cv.boolean,
+            vol.Optional("speaker"): cv.entity_id,
+            vol.Optional("heard", default=False): cv.boolean,
+            vol.Optional("media_only", default=False): cv.boolean,
+        }
+    ),
+    "announcements": vol.Schema(
+        {
+            vol.Required("action"): vol.In(
+                ("schema", "list", "create", "update", "enable", "disable", "delete")
+            ),
+            vol.Optional("id"): cv.string,
+            vol.Optional("revision"): cv.string,
+            vol.Optional("kind"): vol.In(("scheduled", "triggered")),
+            vol.Optional("values", default={}): dict,
+            vol.Optional("idempotency_key"): vol.All(cv.string, vol.Length(min=1, max=128)),
+            vol.Optional("confirm", default=False): cv.boolean,
+        }
+    ),
+    "doctor": vol.Schema(
+        {
+            vol.Optional("action", default="inspect"): vol.In(("inspect", "plan_route")),
+            vol.Optional("speaker"): cv.entity_id,
+            vol.Optional("alternative"): cv.entity_id,
+        }
+    ),
     "discover": vol.Schema({}),
     "diagnose": vol.Schema(TARGETS),
     "preview": vol.Schema(TARGETS),
@@ -150,10 +186,30 @@ async def execute(
     *,
     assistant: str | None = None,
 ) -> dict[str, Any]:
+    result = await _execute(hass, operation, values, context, assistant=assistant)
+    return {**result, "api_version": API_VERSION}
+
+
+async def _execute(hass, operation, values, context, *, assistant=None):
     try:
         if operation not in SCHEMAS:
             raise Problem("invalid_request")
         values = SCHEMAS[operation](values)
+        if operation == "catalog":
+            from .protocol import catalog
+
+            return catalog(hass)
+        if operation in {"setup", "announcements", "doctor"}:
+            manager = hass.data.get(SETUP_KEY)
+            if manager is None:
+                raise Problem("not_ready", retryable=True)
+            if operation == "setup":
+                return await manager.execute(values, context, assistant)
+            if operation == "doctor":
+                return await manager.doctor(values, context, assistant)
+            from .announcement_api import execute as manage_announcements
+
+            return await manage_announcements(hass, values, context, assistant)
         if "message" in values:
             values["message"] = values["message"].strip()
             if not values["message"]:

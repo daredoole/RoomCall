@@ -35,8 +35,10 @@ URLs do not pass through RoomCall's fetch endpoint.
 ## Actions and API
 
 Use **RoomCall: Communicate** in the action editor. All operations return a JSON
-object with `ok`. Validation and provider failures return an `error` object with
-`code`, translated `message`, `retryable`, and `details`.
+object with `ok` and `api_version`. Validation and provider failures return an `error`
+object with `code`, translated `message`, `retryable`, `details`, and `next_actions`.
+The [guided setup contract](agent-setup.md) covers persisted setup, repair proposals,
+announcement administration, and the shared human setup controls.
 
 ```yaml
 action: roomcall.communicate
@@ -67,6 +69,10 @@ and `media_url`.
 
 | Operation | Request |
 |---|---|
+| `catalog` | Empty. Machine-readable operation schemas, response envelope, flags and bootstrap recipe. |
+| `setup` | Administrator: discover, plan, apply, verify, test, confirm, list, get and undo. |
+| `announcements` | Administrator: schema, list, create, update, enable, disable and delete. |
+| `doctor` | Administrator: inspect setup failures or propose a verified physical alternate route. |
 | `discover` | Empty. Returns rooms, endpoints, people, satellites, stations, adapters and capabilities. |
 | `diagnose` | Empty. Adds policy state and local metrics. |
 | `preview` | Targets, optional `priority` and `volume`. Does not synthesize or play audio. |

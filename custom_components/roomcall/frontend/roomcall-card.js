@@ -1,5 +1,5 @@
 /* RoomCall push-to-talk card for Home Assistant dashboards. */
-const CARD_VERSION = "0.8.1";
+const CARD_VERSION = "0.9.0";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
 const LAYOUTS = ["default", "compact", "kiosk"];
@@ -99,6 +99,8 @@ class RoomCallCard extends HTMLElement {
       const only = this._config.rooms;
       this._rooms = only ? res.rooms.filter((r) => only.includes(r.area_id) || only.includes(r.name)) : res.rooms;
       this._count = res.speakers;
+      this._configured = res.configured !== false;
+      this.shadowRoot.querySelector(".talk").disabled = !this._configured;
       this._dndEntity = res.dnd_entity;
       const people = this._config.people;
       this._people = people === false ? [] : Array.isArray(people)
@@ -114,6 +116,7 @@ class RoomCallCard extends HTMLElement {
     try {
       const strings = await this._hass.callApi("GET", `roomcall/locale?language=${encodeURIComponent(this._hass.language || "en")}`);
       this._strings = strings;
+      if (!this._configured) this._setStatus(strings.not_ready, "muted");
       const { RoomCallControls } = await import(`./roomcall-controls.js?v=${CARD_VERSION}`);
       if (this.isConnected && !this._communication) this._communication = new RoomCallControls(this, strings);
     } catch (error) { console.warn("RoomCall communication controls", error); }

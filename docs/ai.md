@@ -18,7 +18,14 @@ use Home Assistant's MCP integration with the selected RoomCall API; no separate
 RoomCall credentials or server are needed. API availability depends on the HA
 version and MCP configuration.
 
-Start with **`roomcall__discover`**, then **`roomcall__preview`**, **`roomcall__send`**
+Start with **`roomcall__catalog`**. For installation/setup, use
+**`roomcall__setup`** and the [guided agent setup contract](agent-setup.md), including
+bootstrap before an entry exists, persistent plans, tests, verification and undo.
+Use **`roomcall__announcements`** for announcement administration and
+**`roomcall__doctor`** for repair proposals. These three administration tools require
+an authenticated HA administrator.
+
+For daily messaging, use **`roomcall__discover`**, **`roomcall__preview`**, **`roomcall__send`**
 and **`roomcall__status`**. Use an explicit target and reuse the same
 `idempotency_key` when retrying an unchanged message. `diagnose` explains policy and
 capabilities; blocked messages must not be automatically promoted to urgent.
@@ -56,7 +63,10 @@ it as urgent to override."*
 ## 3. Create, change and delete announcements
 
 Announcements are **config subentries** of the RoomCall entry, types `scheduled` and
-`triggered`. Create one with the standard subentry flow (REST shown; the WebSocket and the
+`triggered`. Agents can use `roomcall__announcements` with `action: schema`, then
+`create`, `list`, `update`, `enable`, `disable`, or confirmed `delete`. Updates
+require the current revision; creates support persistent idempotency keys.
+The native subentry flow remains available (REST shown; the WebSocket and the
 Home Assistant MCP server's `config_subentry` helper work the same way):
 
 ```http

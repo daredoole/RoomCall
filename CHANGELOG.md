@@ -4,6 +4,20 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.9.0 — 2026-10-21
+
+- Bootstrap RoomCall's tools by opening HA's configuration flow before an entry exists;
+  add a versioned operation catalog, native settings schemas and executable error recovery.
+- Persist administrator-owned setup plans with review, revision checks, native apply,
+  crash recovery, human-confirmed audio verification, resume and scoped undo.
+- Add dedicated announcement schema/CRUD/enable tools with revision checks, persistent
+  bounded idempotency and native HA configuration flows.
+- Diagnose setup failures and propose alternate routes only for verified physical
+  speaker identities; repair proposals never apply themselves or bypass policy.
+- Share guided setup between the card and agents; cover 240px/mobile/desktop,
+  interrupted setup, authorization and both HA schema engines. Add protocol-agent
+  acceptance reports alongside the existing 100% Python statement coverage gates.
+
 ## 0.8.1 — 2026-10-21
 
 - Size dashboard cards to their contents, wrap narrow columns, and contain forced-height

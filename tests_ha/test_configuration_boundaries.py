@@ -212,8 +212,8 @@ def test_schema_engine_follows_home_assistant_contract(engine):
     with (
         patch.dict(sys.modules, {engine: selected}),
         patch(
-            "homeassistant.helpers.config_validation.config_entry_only_config_schema",
-            return_value=schema,
+            "homeassistant.helpers.config_validation.PLATFORM_SCHEMA",
+            schema,
         ),
     ):
         module = load_compatibility_module("_legacy_schema", "schema.py")
