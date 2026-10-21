@@ -78,7 +78,14 @@ def state_file(area_id: str) -> str:
     return f"roomcall.homekit.{safe}.{zlib.crc32(area_id.encode()):08x}.state"
 
 
-def talk_sdp(address: str, port: int, srtp_key: str, *, ipv6: bool = False) -> str:
+def talk_sdp(
+    address: str,
+    port: int,
+    srtp_key: str,
+    *,
+    ipv6: bool = False,
+    payload_type: int = TALK_PAYLOAD_TYPE,
+) -> str:
     """SDP that lets ffmpeg receive and decrypt the iPhone's talk-back audio."""
     family = "IP6" if ipv6 else "IP4"
     return "\r\n".join(
@@ -88,9 +95,9 @@ def talk_sdp(address: str, port: int, srtp_key: str, *, ipv6: bool = False) -> s
             "s=RoomCall talk",
             f"c=IN {family} {address}",
             "t=0 0",
-            f"m=audio {port} RTP/AVP {TALK_PAYLOAD_TYPE}",
+            f"m=audio {port} RTP/AVP {payload_type}",
             "b=AS:24",
-            f"a=rtpmap:{TALK_PAYLOAD_TYPE} opus/48000/2",
+            f"a=rtpmap:{payload_type} opus/48000/2",
             "a=rtcp-mux",
             f"a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:{srtp_key}",
             "",
@@ -103,7 +110,7 @@ def talk_command(ffmpeg: str) -> list[str]:
         ffmpeg,
         "-hide_banner",
         "-loglevel",
-        "error",
+        "warning",
         "-protocol_whitelist",
         "pipe,udp,rtp,file,crypto",
         "-f",
@@ -120,13 +127,21 @@ def talk_command(ffmpeg: str) -> list[str]:
     ]
 
 
+def _byte(value: Any, default: int) -> int:
+    """HAP-python hands some numbers over as one raw byte."""
+    if value is None:
+        return default
+    if isinstance(value, bytes | bytearray):
+        return value[0] if value else default
+    return int(value)
+
+
 def video_command(ffmpeg: str, picture: str, cfg: dict[str, Any]) -> list[str]:
     """A still picture of the room, streamed as H.264 over SRTP."""
     fps = int(cfg.get("fps") or 15)
     bitrate = int(cfg.get("v_max_bitrate") or 299)
     mtu = int.from_bytes(cfg["v_max_mtu"], "little") if cfg.get("v_max_mtu") else 1378
-    payload = cfg.get("v_payload_type") or b"\x63"
-    payload_type = payload[0] if isinstance(payload, bytes | bytearray) else int(payload)
+    payload_type = _byte(cfg.get("v_payload_type"), 99)
     port = cfg["v_port"]
     return [
         ffmpeg,
@@ -224,31 +239,61 @@ async def _terminate(proc: asyncio.subprocess.Process) -> None:
         proc.kill()
 
 
+async def _log_stderr(stream: asyncio.StreamReader, label: str) -> None:
+    while line := await stream.readline():
+        text = line.decode(errors="replace").strip()
+        if text:
+            _LOGGER.warning("RoomCall HomeKit %s: %s", label, text)
+
+
 async def talk_loop(
-    ffmpeg: str, sdp: str, on_phrase: Callable[[bytes], None], session: dict[str, Any]
+    ffmpeg: str,
+    sdp: str,
+    on_phrase: Callable[[bytes], None],
+    session: dict[str, Any],
+    label: str = "talk",
 ) -> None:
     """Receive talk-back audio for as long as the Home app keeps the camera open.
 
     ffmpeg gives up after about 20 s without packets (the iPhone only sends while the talk
     button is on), so the receiver is restarted until the session ends.
     """
-    segmenter = Segmenter(on_phrase)
+    phrases = 0
+
+    def counted(pcm: bytes) -> None:
+        nonlocal phrases
+        phrases += 1
+        on_phrase(pcm)
+
+    segmenter = Segmenter(counted)
     while session.get("active"):
         proc = await asyncio.create_subprocess_exec(
             *talk_command(ffmpeg),
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
         )
         session["talk"] = proc
-        assert proc.stdin is not None and proc.stdout is not None
+        assert proc.stdin is not None and proc.stdout is not None and proc.stderr is not None
+        errors = asyncio.ensure_future(_log_stderr(proc.stderr, label))
         proc.stdin.write(sdp.encode())
         await proc.stdin.drain()
         proc.stdin.close()
+        received = 0
         while chunk := await proc.stdout.read(3200):
+            received += len(chunk)
             segmenter.feed(chunk)
         await proc.wait()
+        await errors
         segmenter.flush()
+        _LOGGER.info(
+            "RoomCall HomeKit %s: receiver ended (exit %s), decoded %.1f s of audio, "
+            "%d phrase(s) so far",
+            label,
+            proc.returncode,
+            received / (SAMPLE_RATE * 2),
+            phrases,
+        )
         if session.get("active"):
             await asyncio.sleep(0.2)
 
@@ -340,6 +385,11 @@ class HomeKitIntercom:
         from .calls import CallError, place_recorded_call
         from .talkstream import pcm_to_wav
 
+        _LOGGER.info(
+            "RoomCall HomeKit %s: phrase of %.1f s, playing it",
+            area_id,
+            len(pcm) / (SAMPLE_RATE * 2),
+        )
         try:
             await place_recorded_call(
                 self.hass,
@@ -403,16 +453,33 @@ def _camera_class() -> type:
                 video = await asyncio.create_subprocess_exec(
                     *video_command(ffmpeg, self.picture, stream_config),
                     stdout=asyncio.subprocess.DEVNULL,
-                    stderr=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.PIPE,
                 )
             except OSError as err:
                 _LOGGER.error("RoomCall HomeKit stream failed to start: %s", err)
                 return False
+            assert video.stderr is not None
+            label = f"{self.area_id} talk"
+            session_info["video_log"] = asyncio.ensure_future(
+                _log_stderr(video.stderr, f"{self.area_id} video")
+            )
+            payload_type = _byte(stream_config.get("a_payload_type"), TALK_PAYLOAD_TYPE)
+            _LOGGER.info(
+                "RoomCall HomeKit %s: stream to %s video:%s audio:%s codec=%s rate=%skHz pt=%s",
+                self.area_id,
+                stream_config["address"],
+                stream_config.get("v_port"),
+                stream_config.get("a_port"),
+                stream_config.get("a_codec"),
+                stream_config.get("a_sample_rate"),
+                payload_type,
+            )
             sdp = talk_sdp(
                 stream_config["address"],
                 stream_config["a_port"],
                 stream_config["a_srtp_key"],
                 ipv6=":" in stream_config["address"],
+                payload_type=payload_type,
             )
 
             def phrase(pcm: bytes) -> None:
@@ -421,12 +488,13 @@ def _camera_class() -> type:
             session_info["active"] = True
             session_info["video"] = video
             session_info["loop"] = hass.async_create_background_task(
-                talk_loop(ffmpeg, sdp, phrase, session_info),
+                talk_loop(ffmpeg, sdp, phrase, session_info, label),
                 f"roomcall homekit talk {self.area_id}",
             )
             return True
 
         async def stop_stream(self, session_info: dict) -> None:
+            _LOGGER.info("RoomCall HomeKit %s: stream stopped", self.area_id)
             session_info["active"] = False
             for key in ("video", "talk"):
                 if (proc := session_info.pop(key, None)) is not None:
