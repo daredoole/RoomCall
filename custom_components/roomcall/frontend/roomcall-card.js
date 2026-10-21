@@ -1,5 +1,5 @@
 /* RoomCall push-to-talk card for Home Assistant dashboards. */
-const CARD_VERSION = "0.3.0";
+const CARD_VERSION = "0.4.0";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
 const LAYOUTS = ["default", "compact", "kiosk"];
@@ -274,7 +274,7 @@ class RoomCallCard extends HTMLElement {
         play.addEventListener("click", () => this._replay(call.id));
         actions.append(play);
       }
-      if (call.from) {
+      if (call.from && (this._rooms || []).some((r) => r.area_id === call.from)) {
         const reply = document.createElement("button");
         reply.title = `Reply to ${from}`;
         reply.innerHTML = `<ha-icon icon="mdi:reply"></ha-icon>`;

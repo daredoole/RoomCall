@@ -9,11 +9,11 @@ from homeassistant.components.ffmpeg import get_ffmpeg_manager
 from homeassistant.components.http import KEY_HASS, HomeAssistantView
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.network import NoURLAvailableError, get_url
+from homeassistant.helpers.network import get_url
 from homeassistant.util import dt as dt_util
 
 from . import chimes
-from .calls import CallError, CallRequest, place_call
+from .calls import CallError, place_recorded_call
 from .const import (
     ALL_ROOMS,
     API_CHIME,
@@ -27,7 +27,7 @@ from .const import (
     PRIORITIES,
     PRIORITY_NORMAL,
 )
-from .core import TranscodeError, friendly, mp3_seconds, render_chime, rooms, to_playable
+from .core import friendly, mp3_seconds, render_chime, rooms
 
 if TYPE_CHECKING:
     from . import RoomCallData
@@ -101,43 +101,21 @@ class TalkView(HomeAssistantView):
             return self.json_message("Empty recording", 400)
         if len(body) > MAX_UPLOAD_BYTES:
             return self.json_message("Recording too large", 413)
-        try:
-            audio, content_type = await to_playable(
-                get_ffmpeg_manager(hass).binary,
-                body,
-                request.content_type or "application/octet-stream",
-                data.gain_db,
-                data.chime_style,
-                data.chime_url,
-            )
-        except TranscodeError as err:
-            return self.json_message(f"Could not convert recording: {err}", 422)
-        clip_id = data.clips.add(audio, content_type)
-        ext = "mp3" if content_type == "audio/mpeg" else "wav"
-        try:
-            base = base_url(hass)
-        except NoURLAvailableError:
-            return self.json_message("Set an internal URL under Settings > System > Network", 500)
         volume_q = query.get("volume")
         user = request.get("hass_user")
         person = query.get("person")
         try:
-            record = await place_call(
+            record, audio, content_type = await place_recorded_call(
                 hass,
                 data,
-                CallRequest(
-                    targets=[] if person else [target],
-                    people=[person] if person else None,
-                    media_id=f"{base}{API_CLIP.format(clip=f'{clip_id}.{ext}')}",
-                    kind="talk",
-                    priority=priority,
-                    from_room=query.get("from") or None,
-                    volume=float(volume_q) if volume_q else None,
-                    audio=audio if content_type == "audio/mpeg" else None,
-                    recording=body,
-                    caller_user_id=user.id if user else None,
-                    seconds=mp3_seconds(audio) if content_type == "audio/mpeg" else None,
-                ),
+                body,
+                request.content_type or "application/octet-stream",
+                targets=[] if person else [target],
+                people=[person] if person else None,
+                priority=priority,
+                from_label=query.get("from") or None,
+                volume=float(volume_q) if volume_q else None,
+                caller_user_id=user.id if user else None,
             )
         except CallError as err:
             return self.json_message(str(err), err.status)

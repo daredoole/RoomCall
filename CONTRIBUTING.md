@@ -27,7 +27,7 @@ The integration lives in `custom_components/roomcall/` and is tested with
 
 ```bash
 uv venv .venv-ha --python 3.13
-uv pip install --python .venv-ha pytest-homeassistant-custom-component ha-ffmpeg
+uv pip install --python .venv-ha pytest-homeassistant-custom-component ha-ffmpeg "HAP-python==5.0.0"
 .venv-ha/bin/pytest tests_ha
 ```
 

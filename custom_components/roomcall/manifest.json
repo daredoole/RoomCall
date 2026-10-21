@@ -3,7 +3,9 @@
   "name": "RoomCall",
   "after_dependencies": [
     "frontend",
-    "tts"
+    "network",
+    "tts",
+    "zeroconf"
   ],
   "codeowners": [
     "@daredoole"
@@ -18,7 +20,9 @@
   "integration_type": "service",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/daredoole/RoomCall/issues",
-  "requirements": [],
+  "requirements": [
+    "HAP-python>=5.0.0"
+  ],
   "single_config_entry": true,
-  "version": "0.3.0"
+  "version": "0.4.0"
 }

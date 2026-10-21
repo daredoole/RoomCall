@@ -4,6 +4,15 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.4.0 — 2026-10-20
+
+- **Apple Home intercom** (opt-in, Configure → Apple Home): every room appears in the Home app as
+  a camera with a talk button. Talking in Home, on Apple Watch or from Control Center plays in
+  that room — with the chime, history, transcripts and notifications like any call. RoomCall acts
+  as a HomeKit camera bridge (HAP-python), decodes the iPhone's SRTP/Opus talk-back with ffmpeg
+  and splits it into phrases with voice-activity detection.
+- Calls from the Home app are labelled "Apple Home"; Reply buttons only target real rooms.
+
 ## 0.3.0 — 2026-10-20
 
 - **AV receivers and TV boxes**: speakers that can't announce (Denon/Marantz through HEOS,

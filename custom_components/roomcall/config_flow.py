@@ -23,6 +23,8 @@ from .const import (
     CONF_CHIME_STYLE,
     CONF_CHIME_URL,
     CONF_GAIN_DB,
+    CONF_HOMEKIT_ENABLED,
+    CONF_HOMEKIT_PORT,
     CONF_NOTIFY,
     CONF_QUIET_END,
     CONF_QUIET_SKIP_AREAS,
@@ -39,6 +41,7 @@ from .const import (
     CONF_VOLUME,
     DEFAULT_CHIME,
     DEFAULT_CHIME_STYLE,
+    DEFAULT_HOMEKIT_PORT,
     DEFAULT_RESTORE,
     DEFAULT_RETRY,
     DEFAULT_STAGGER_MS,
@@ -46,6 +49,7 @@ from .const import (
     DOMAIN,
     SECTION_CHIME,
     SECTION_DELIVERY,
+    SECTION_HOMEKIT,
     SECTION_QUIET,
     SECTION_REPLY,
 )
@@ -114,6 +118,7 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
     delivery = current.get(SECTION_DELIVERY) or {}
     quiet = current.get(SECTION_QUIET) or {}
     replies = current.get(SECTION_REPLY) or {}
+    homekit = current.get(SECTION_HOMEKIT) or {}
     style = chime.get(CONF_CHIME_STYLE) or (
         DEFAULT_CHIME_STYLE if current.get(CONF_CHIME, DEFAULT_CHIME) else chimes.OFF
     )
@@ -181,6 +186,25 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                             CONF_QUIET_SKIP_AREAS,
                             description=_suggest(quiet.get(CONF_QUIET_SKIP_AREAS)),
                         ): selector.AreaSelector(selector.AreaSelectorConfig(multiple=True)),
+                    }
+                ),
+                {"collapsed": True},
+            ),
+            vol.Required(SECTION_HOMEKIT, default=dict(homekit)): section(
+                vol.Schema(
+                    {
+                        vol.Required(
+                            CONF_HOMEKIT_ENABLED,
+                            default=homekit.get(CONF_HOMEKIT_ENABLED, False),
+                        ): selector.BooleanSelector(),
+                        vol.Required(
+                            CONF_HOMEKIT_PORT,
+                            default=homekit.get(CONF_HOMEKIT_PORT, DEFAULT_HOMEKIT_PORT),
+                        ): selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=1024, max=65535, mode=selector.NumberSelectorMode.BOX
+                            )
+                        ),
                     }
                 ),
                 {"collapsed": True},

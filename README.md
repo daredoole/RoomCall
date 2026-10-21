@@ -48,6 +48,7 @@ intercom, organised by your Home Assistant **areas**.
 - 📻 **Pick a chime** (walkie-talkie, ding, doorbell…) or bring your own.
 - 🔉 **Announce mode** — Sonos lowers the music instead of stopping it, and speakers are staggered so none drop the call.
 - 📺 **AV receivers and TV boxes** — Denon/HEOS and onn/Google TV play the call, then go back to the TV input, volume and app they were on.
+- 🍏 **Apple Home intercom** — every room is a camera tile in the Home app; tap the mic on your iPhone or Apple Watch to talk in that room.
 - 🗣️ **Automations and Siri** — `roomcall.broadcast` from automations, Shortcuts, Apple Watch and CarPlay.
 - 🖥️ **Kiosk and compact layouts** for wall tablets and busy dashboards.
 - 🔒 **Local only** — audio goes from your phone to Home Assistant to the speaker. No cloud, no account.

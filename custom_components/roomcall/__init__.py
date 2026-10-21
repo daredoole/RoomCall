@@ -10,6 +10,7 @@ from typing import Any
 from urllib.parse import quote
 
 import voluptuous as vol
+from homeassistant.components import persistent_notification
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
@@ -35,6 +36,8 @@ from .const import (
     CONF_CHIME_STYLE,
     CONF_CHIME_URL,
     CONF_GAIN_DB,
+    CONF_HOMEKIT_ENABLED,
+    CONF_HOMEKIT_PORT,
     CONF_NOTIFY,
     CONF_QUIET_END,
     CONF_QUIET_SKIP_AREAS,
@@ -52,6 +55,7 @@ from .const import (
     DEFAULT_CHIME,
     DEFAULT_CHIME_STYLE,
     DEFAULT_GAIN_DB,
+    DEFAULT_HOMEKIT_PORT,
     DEFAULT_RESTORE,
     DEFAULT_RETRY,
     DEFAULT_STAGGER_MS,
@@ -61,6 +65,7 @@ from .const import (
     PRIORITY_NORMAL,
     SECTION_CHIME,
     SECTION_DELIVERY,
+    SECTION_HOMEKIT,
     SECTION_QUIET,
     SECTION_REPLY,
     SERVICE_BROADCAST,
@@ -115,6 +120,9 @@ class RoomCallData:
     stt_engine: str | None = None
     dnd: bool = False
     entry_id: str | None = None
+    homekit_enabled: bool = False
+    homekit_port: int = DEFAULT_HOMEKIT_PORT
+    homekit: Any = None  # HomeKitIntercom while running
     clips: ClipStore = field(default_factory=ClipStore)
     history: History = field(default_factory=History)
     chime_cache: dict[str, bytes] = field(default_factory=dict)
@@ -136,6 +144,7 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
     delivery = opts.get(SECTION_DELIVERY) or {}
     quiet = opts.get(SECTION_QUIET) or {}
     replies = opts.get(SECTION_REPLY) or {}
+    homekit = opts.get(SECTION_HOMEKIT) or {}
     style = chime.get(CONF_CHIME_STYLE)
     if style is None:  # entries from 0.1.x only had an on/off switch
         style = DEFAULT_CHIME_STYLE if opts.get(CONF_CHIME, DEFAULT_CHIME) else chimes.OFF
@@ -159,6 +168,8 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         notify=list(replies.get(CONF_NOTIFY) or []),
         reply_path=(replies.get(CONF_REPLY_PATH) or "").strip() or None,
         stt_engine=replies.get(CONF_STT_ENGINE) or None,
+        homekit_enabled=bool(homekit.get(CONF_HOMEKIT_ENABLED, False)),
+        homekit_port=int(homekit.get(CONF_HOMEKIT_PORT, DEFAULT_HOMEKIT_PORT)),
     )
 
 
@@ -249,10 +260,40 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data.entry_id = entry.entry_id
     hass.data[DOMAIN] = data
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    if data.homekit_enabled:
+        await _start_homekit(hass, data)
     return True
 
 
+async def _start_homekit(hass: HomeAssistant, data: RoomCallData) -> None:
+    from .core import rooms
+    from .homekit import HomeKitIntercom
+
+    intercom = HomeKitIntercom(hass, data, data.homekit_port)
+    try:
+        await intercom.async_start(rooms(hass, data.speakers))
+    except Exception:
+        _LOGGER.exception("RoomCall could not start the Apple Home bridge")
+        await intercom.async_stop()
+        return
+    data.homekit = intercom
+    if not intercom.paired:
+        persistent_notification.async_create(
+            hass,
+            "Add each room in the **Home** app: **+** → **Add Accessory** → "
+            "**More options…** → pick **<Room> Intercom** and enter the code "
+            f"**{intercom.pincode}** (the same code for every room).\n\n"
+            "Open a room's camera tile and use the microphone to talk in that room.",
+            title="Add RoomCall to Apple Home",
+            notification_id=f"{DOMAIN}_homekit_pairing",
+        )
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    current: RoomCallData | None = hass.data.get(DOMAIN)
+    if current is not None and current.homekit is not None:
+        await current.homekit.async_stop()
+        current.homekit = None
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded and (data := hass.data.pop(DOMAIN, None)) is not None:
         hass.data[_KEPT] = (data.history, data.dnd)
