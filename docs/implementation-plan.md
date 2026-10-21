@@ -13,7 +13,7 @@ continues to provide its existing push-to-talk API.
   from a successful service call.
 - Keep bounded message jobs and serialize use of each physical endpoint. Give
   every asynchronous operation an ID, expiry, and observable terminal state.
-- Require authenticated control; browser station ownership and room membership
+- Require authenticated control; browser station ownership and valid HA room assignment
   are enforced on the server. Microphones open only after local interaction.
 - Store voicemail only when enabled. Translation uses an explicitly selected
   Home Assistant AI task provider; language preferences use the selected TTS
@@ -63,9 +63,10 @@ continues to provide its existing push-to-talk API.
 - [x] Version fields and changelog updated together.
 - [x] Ruff, formatting, mypy, standalone tests, HA tests (85% coverage), docs,
   frontend checks and package builds.
-- [ ] HACS validation and hassfest in CI.
+- [x] HACS validation and hassfest in CI.
 - [x] Browser QA at desktop/mobile sizes; screenshots updated.
-- [ ] Pull request created and CI results inspected. No direct push to main.
+- [x] [Pull request #42](https://github.com/daredoole/RoomCall/pull/42) created and
+  CI results inspected. No direct push to main.
 
 ## Measurement contract
 

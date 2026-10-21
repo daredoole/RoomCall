@@ -18,7 +18,15 @@ def catalog(language: str) -> dict[str, str]:
 
 @lru_cache(maxsize=5)
 def _catalog(language: str) -> dict[str, str]:
-    path = Path(__file__).parent / "translations" / f"{language}.json"
+    root = Path(__file__).parent / "translations"
+    paths = {
+        "en": root / "en.json",
+        "es": root / "es.json",
+        "de": root / "de.json",
+        "fr": root / "fr.json",
+        "nl": root / "nl.json",
+    }
+    path = paths.get(language, paths["en"])
     return json.loads(path.read_text())["selector"]["communication"]["options"]
 
 

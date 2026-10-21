@@ -386,6 +386,9 @@ async def test_command_http_authentication_locale_and_validation(
     locale = await (await client.get("/api/roomcall/locale?language=es")).json()
     assert locale["send"] == "Enviar"
     assert set(catalog("fr")) == set(catalog("unknown"))
+    assert catalog("../../../../etc/passwd") == catalog("en")
+    assert catalog("es/../../etc/passwd") == catalog("en")
+    assert catalog("\x00") == catalog("en")
 
 
 async def test_delivery_tokens_do_not_claim_audibility(hass, setup_roomcall, hass_client_no_auth):
