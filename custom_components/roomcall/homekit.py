@@ -12,6 +12,7 @@ import asyncio
 import contextlib
 import io
 import logging
+import os
 import tempfile
 import zlib
 from collections.abc import Callable
@@ -271,6 +272,10 @@ async def talk_loop(
     on_phrase: Callable[[bytes], None],
     session: dict[str, Any],
     label: str = "talk",
+    *,
+    on_start: Callable[[bytes], None] | None = None,
+    on_audio: Callable[[bytes], None] | None = None,
+    on_end: Callable[[], None] | None = None,
 ) -> None:
     """Receive talk-back audio for as long as the Home app keeps the camera open.
 
@@ -284,7 +289,7 @@ async def talk_loop(
         phrases += 1
         on_phrase(pcm)
 
-    segmenter = Segmenter(counted)
+    segmenter = Segmenter(counted, on_start=on_start, on_audio=on_audio, on_end=on_end)
     while session.get("active"):
         proc = await asyncio.create_subprocess_exec(
             *talk_command(ffmpeg),
@@ -369,6 +374,8 @@ class HomeKitIntercom:
         self.address = address
         zeroconf = await async_get_async_instance(self.hass)
         self.pincode = await self._load_pincode()
+        storage = self.hass.config.path(".storage")
+        await self.hass.async_add_executor_job(partial(os.makedirs, storage, exist_ok=True))
         self._tmp = tempfile.TemporaryDirectory(prefix="roomcall-homekit-")
         tmp = Path(self._tmp.name)
         for index, room in enumerate(sorted(rooms, key=lambda r: r["area_id"])):
@@ -411,29 +418,36 @@ class HomeKitIntercom:
             self._tmp.cleanup()
             self._tmp = None
 
-    async def async_phrase(self, area_id: str, pcm: bytes) -> None:
-        """One spoken phrase from the Home app: play it in the room."""
-        from .calls import CallError, place_recorded_call
-        from .talkstream import pcm_to_wav
+    async def async_live_start(self, area_id: str) -> Any:
+        """Start a live call to the room; returns the LiveStream to feed."""
+        from .calls import CallRequest, place_call, prepare_call
+        from .const import API_LIVE
+        from .http import base_url
+        from .live import LiveStream
 
-        _LOGGER.info(
-            "RoomCall HomeKit %s: phrase of %.1f s, playing it",
-            area_id,
-            len(pcm) / (SAMPLE_RATE * 2),
+        data = self.data
+        request = CallRequest(targets=[area_id], media_id="", kind="talk", from_room="Apple Home")
+        prepared = prepare_call(self.hass, data, request)  # raises CallError
+        stream = LiveStream(
+            get_ffmpeg_manager(self.hass).binary,
+            gain_db=data.gain_db,
+            chime=data.chime_style,
+            chime_url=data.chime_url,
         )
-        try:
-            await place_recorded_call(
-                self.hass,
-                self.data,
-                pcm_to_wav(pcm),
-                "audio/wav",
-                targets=[area_id],
-                from_label="Apple Home",
-            )
-        except CallError as err:
-            _LOGGER.warning("RoomCall HomeKit call to %s not played: %s", area_id, err)
-        except Exception:
-            _LOGGER.exception("RoomCall HomeKit call to %s failed", area_id)
+        await stream.start()
+        data.live.add(stream)
+        request.media_id = f"{base_url(self.hass)}{API_LIVE.format(stream=f'{stream.id}.mp3')}"
+        request.live = stream
+
+        async def run() -> None:
+            try:
+                await place_call(self.hass, data, request, prepared)
+            except Exception:
+                _LOGGER.exception("RoomCall HomeKit live call to %s failed", area_id)
+                await stream.abort()
+
+        self.hass.async_create_background_task(run(), f"roomcall homekit live {area_id}")
+        return stream
 
 
 def _build_camera(
@@ -450,6 +464,44 @@ def _build_camera(
     camera.setup_intercom(intercom, area_id, picture, png)
     driver.add_accessory(camera)
     return camera
+
+
+class _LivePhrase:
+    """One spoken phrase from the Home app, streamed to the room while it is spoken."""
+
+    def __init__(self, intercom: HomeKitIntercom, area_id: str, preroll: bytes) -> None:
+        self._stream: Any = None
+        self._pending = bytearray(preroll)
+        self._ended = False
+        intercom.hass.async_create_task(self._start(intercom, area_id))
+
+    async def _start(self, intercom: HomeKitIntercom, area_id: str) -> None:
+        from .calls import CallError
+
+        try:
+            stream = await intercom.async_live_start(area_id)
+        except CallError as err:
+            _LOGGER.warning("RoomCall HomeKit call to %s not played: %s", area_id, err)
+            return
+        except Exception:
+            _LOGGER.exception("RoomCall HomeKit live call to %s failed", area_id)
+            return
+        self._stream = stream
+        stream.feed(bytes(self._pending))
+        self._pending.clear()
+        if self._ended:
+            stream.end()
+
+    def feed(self, pcm: bytes) -> None:
+        if self._stream is not None:
+            self._stream.feed(pcm)
+        else:
+            self._pending += pcm
+
+    def end(self) -> None:
+        self._ended = True
+        if self._stream is not None:
+            self._stream.end()
 
 
 _CAMERA_CLASS: type | None = None
@@ -514,13 +566,38 @@ def _camera_class() -> type:
                 payload_type=payload_type,
             )
 
+            # Live: the call starts as soon as you start speaking and streams while you talk.
+            current: dict[str, _LivePhrase] = {}
+
+            def start(pcm: bytes) -> None:
+                current["call"] = _LivePhrase(self.intercom, self.area_id, pcm)
+
+            def audio(pcm: bytes) -> None:
+                if call := current.get("call"):
+                    call.feed(pcm)
+
+            def end() -> None:
+                if call := current.pop("call", None):
+                    call.end()
+
             def phrase(pcm: bytes) -> None:
-                hass.async_create_task(self.intercom.async_phrase(self.area_id, pcm))
+                _LOGGER.info(
+                    "RoomCall HomeKit %s: phrase of %.1f s", self.area_id, len(pcm) / 32000
+                )
 
             session_info["active"] = True
             session_info["video"] = video
             session_info["loop"] = hass.async_create_background_task(
-                talk_loop(ffmpeg, sdp, phrase, session_info, label),
+                talk_loop(
+                    ffmpeg,
+                    sdp,
+                    phrase,
+                    session_info,
+                    label,
+                    on_start=start,
+                    on_audio=audio,
+                    on_end=end,
+                ),
                 f"roomcall homekit talk {self.area_id}",
             )
             return True

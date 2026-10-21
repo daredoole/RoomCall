@@ -23,6 +23,10 @@ class Segmenter:
     """Energy-based voice activity detection with an adaptive noise floor."""
 
     on_phrase: Callable[[bytes], None]
+    # Optional live hooks: speech started (with pre-roll), each frame while speaking, ended.
+    on_start: Callable[[bytes], None] | None = None
+    on_audio: Callable[[bytes], None] | None = None
+    on_end: Callable[[], None] | None = None
     start_ms: int = 120  # loud this long to start a phrase
     end_ms: int = 700  # quiet this long to end it
     min_ms: int = 400  # shorter phrases are dropped (taps, clicks)
@@ -82,8 +86,12 @@ class Segmenter:
                 self._voiced = self._loud
                 self._phrase = bytearray(b"".join(self._history))
                 self._history.clear()
+                if self.on_start:
+                    self.on_start(bytes(self._phrase))
             return
         self._phrase += frame
+        if self.on_audio:
+            self.on_audio(frame)
         self._quiet = 0 if loud else self._quiet + 1
         self._voiced += 1 if loud else 0
         too_long = len(self._phrase) // (FRAME_BYTES // FRAME_MS) >= self.max_ms
@@ -95,6 +103,8 @@ class Segmenter:
         self._phrase = bytearray()
         self._speaking = False
         self._loud = self._quiet = self._voiced = 0
+        if self.on_end:
+            self.on_end()
         if voiced_ms >= self.min_ms:
             self.on_phrase(phrase)
 

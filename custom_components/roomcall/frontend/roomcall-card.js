@@ -1,8 +1,36 @@
 /* RoomCall push-to-talk card for Home Assistant dashboards. */
-const CARD_VERSION = "0.4.5";
+const CARD_VERSION = "0.5.0";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
 const LAYOUTS = ["default", "compact", "kiosk"];
+const LIVE_RATE = 16000;
+// Turns the microphone into 16 kHz 16-bit PCM frames of 40 ms for live calls.
+const PCM_WORKLET = `
+class RoomCallPcm extends AudioWorkletProcessor {
+  constructor() { super(); this.step = sampleRate / ${16000}; this.t = 0; this.out = new Int16Array(640); this.n = 0; }
+  process(inputs) {
+    const input = inputs[0] && inputs[0][0];
+    if (!input) return true;
+    let t = this.t;
+    while (t < input.length) {
+      const start = Math.floor(t);
+      const end = Math.max(start + 1, Math.min(input.length, Math.floor(t + this.step)));
+      let sum = 0;
+      for (let k = start; k < end; k++) sum += input[k];
+      const s = Math.max(-1, Math.min(1, sum / (end - start)));
+      this.out[this.n++] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      if (this.n === this.out.length) {
+        this.port.postMessage(this.out.buffer, [this.out.buffer]);
+        this.out = new Int16Array(640);
+        this.n = 0;
+      }
+      t += this.step;
+    }
+    this.t = t - input.length;
+    return true;
+  }
+}
+registerProcessor("roomcall-pcm16", RoomCallPcm);`;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
@@ -23,7 +51,14 @@ class RoomCallCard extends HTMLElement {
     if (config.layout && !LAYOUTS.includes(config.layout)) {
       throw new Error(`layout must be one of: ${LAYOUTS.join(", ")}`);
     }
-    this._config = { title: "Intercom", layout: "default", history: 3, people: true, ...config };
+    this._config = {
+      title: "Intercom",
+      layout: "default",
+      history: 3,
+      people: true,
+      live: true,
+      ...config,
+    };
     const fromUrl = new URLSearchParams(window.location.search).get("roomcall");
     this._replyTo = fromUrl || null;
     this._target = fromUrl || this._config.default_room || "all";
@@ -342,6 +377,10 @@ class RoomCallCard extends HTMLElement {
       this._raf = requestAnimationFrame(tick);
     };
     tick();
+    if (this._config.live && !this._liveUnsupported) {
+      this._startLive(talk);
+      return;
+    }
     this._chunks = [];
     this._recorder = new MediaRecorder(this._stream);
     this._recorder.ondataavailable = (ev) => ev.data.size && this._chunks.push(ev.data);
@@ -358,10 +397,126 @@ class RoomCallCard extends HTMLElement {
 
   _stop(e) {
     e.preventDefault();
+    if (this._live) {
+      this._stopLive();
+      return;
+    }
     if (!this._recorder || this._recorder.state !== "recording") return;
     this._recorder.stop();
     cancelAnimationFrame(this._raf);
     this._stream.getTracks().forEach((t) => t.stop());
+    const talk = this.shadowRoot.querySelector(".talk");
+    talk.classList.remove("live");
+    this.shadowRoot.querySelector(".label").textContent = "Hold to talk";
+  }
+
+  _talkingTo() {
+    return this._person
+      ? (this._people.find((p) => p.entity_id === this._person) || {}).name
+      : this._target === "all" ? "everywhere" : this._roomName(this._target);
+  }
+
+  // Live call: speakers start while you are still talking.
+  async _startLive(talk) {
+    const live = { handlerId: null, queue: [], done: false, unsub: null };
+    this._live = live;
+    talk.classList.add("live");
+    this.shadowRoot.querySelector(".label").textContent = "Release to finish";
+    this._setStatus(`${this._urgent ? "Urgent: live" : "Live"} to ${this._talkingTo()}…`);
+    const send = (pcm) => {
+      const frame = new Uint8Array(1 + pcm.byteLength);
+      frame[0] = live.handlerId;
+      frame.set(new Uint8Array(pcm), 1);
+      this._hass.connection.socket.send(frame);
+    };
+    try {
+      if (!RoomCallCard._workletUrl) {
+        RoomCallCard._workletUrl = URL.createObjectURL(
+          new Blob([PCM_WORKLET], { type: "text/javascript" }),
+        );
+      }
+      await this._ctx.audioWorklet.addModule(RoomCallCard._workletUrl);
+      const node = new AudioWorkletNode(this._ctx, "roomcall-pcm16");
+      const mute = this._ctx.createGain();
+      mute.gain.value = 0;
+      this._ctx.createMediaStreamSource(this._stream).connect(node);
+      node.connect(mute).connect(this._ctx.destination); // keeps the worklet running
+      node.port.onmessage = (ev) => {
+        if (live.done) return;
+        if (live.handlerId === null) live.queue.push(ev.data);
+        else send(ev.data);
+      };
+      const msg = { type: "roomcall/live", target: this._target };
+      if (this._person) msg.person = this._person;
+      if (this._urgent) msg.priority = "urgent";
+      if (this._config.room) msg.from = this._config.room;
+      live.unsub = await this._hass.connection.subscribeMessage((ev) => this._onLive(live, ev, send), msg);
+      if (live.done && live.handlerId !== null) this._endLiveAudio(live);
+    } catch (err) {
+      const unknown = err && (err.code === "unknown_command" || String(err.message).includes("Unknown command"));
+      if (unknown) this._liveUnsupported = true;
+      this._finishLive(live);
+      this._setStatus(
+        unknown
+          ? "Live calls need RoomCall 0.5 or newer in Home Assistant — hold again to send a recording."
+          : (err && err.message) || "Could not start the call",
+        "err",
+      );
+    }
+  }
+
+  _onLive(live, ev, send) {
+    if (ev.type === "ready") {
+      live.handlerId = ev.handler_id;
+      for (const pcm of live.queue.splice(0)) send(pcm);
+      if (live.done) this._endLiveAudio(live);
+    } else if (ev.type === "delivered") {
+      const names = (ev.results || []).filter((r) => r.ok).map((r) => r.speaker);
+      if (!live.done) this._setStatus(`Live on ${names.join(", ") || "no speakers"} — keep talking`, "ok");
+      const failed = (ev.results || []).filter((r) => !r.ok).map((r) => r.speaker);
+      if (failed.length) this._setStatus(`Not delivered to: ${failed.join(", ")}`, "err");
+      live.delivered = names;
+    } else if (ev.type === "done") {
+      live.unsub && live.unsub();
+      const where = (live.delivered || []).join(", ");
+      this._setStatus(`Delivered ${ev.seconds} s live${where ? ` to ${where}` : ""}.`, "ok");
+      if (this._replyTo) {
+        this._replyTo = null;
+        this._renderRooms();
+      }
+      this._urgent = false;
+      this._renderToggles();
+      this._loadHistory();
+    } else if (ev.type === "error") {
+      live.unsub && live.unsub();
+      this._setStatus(ev.message || "The call failed", "err");
+    }
+  }
+
+  _endLiveAudio(live) {
+    if (live.ended) return;
+    live.ended = true;
+    this._hass.connection.socket.send(new Uint8Array([live.handlerId])); // empty frame = end
+  }
+
+  _stopLive() {
+    const live = this._live;
+    live.done = true;
+    if (live.handlerId !== null) this._endLiveAudio(live);
+    this._finishLive(live);
+    if (this._peak < SILENCE_PEAK) {
+      this._setStatus("No sound from your microphone — check which mic the browser is using.", "err");
+    } else {
+      this._setStatus("Finishing…");
+    }
+  }
+
+  _finishLive(live) {
+    live.done = true;
+    this._live = null;
+    cancelAnimationFrame(this._raf);
+    this._stream && this._stream.getTracks().forEach((t) => t.stop());
+    this._ctx && this._ctx.close();
     const talk = this.shadowRoot.querySelector(".talk");
     talk.classList.remove("live");
     this.shadowRoot.querySelector(".label").textContent = "Hold to talk";

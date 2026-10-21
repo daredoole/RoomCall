@@ -14,9 +14,9 @@ button; what you say plays in that room with the chime first, exactly like a cal
 
 ## Talk to a room
 
-Open the room's camera tile and hold (or tap) the **microphone**. Speak, then pause: each phrase
-is sent when you stop talking for about 0.7 seconds, so you can keep the microphone on for a
-back-and-forth.
+Open the room's camera tile and tap the **microphone**, then talk. The room starts hearing you
+(chime first) as soon as you start speaking, and the call ends when you pause or turn the
+microphone off, so you can keep it on for a back-and-forth.
 
 - **Apple Watch:** open the Home app → the camera → tap the microphone.
 - **Control Center:** add the Home controls and pin the room camera.

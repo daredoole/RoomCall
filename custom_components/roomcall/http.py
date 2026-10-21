@@ -20,6 +20,7 @@ from .const import (
     API_CLIP,
     API_HISTORY,
     API_HISTORY_CLIP,
+    API_LIVE,
     API_ROOMS,
     API_TALK,
     DOMAIN,
@@ -149,6 +150,36 @@ class ClipView(HomeAssistantView):
             content_type=found.content_type,
             headers={"Cache-Control": "no-store"},
         )
+
+
+class LiveView(HomeAssistantView):
+    """A live call's MP3, served while it is still being recorded.
+
+    Like a clip, it has an unguessable short-lived id because speakers cannot sign in.
+    """
+
+    url = API_LIVE
+    name = "api:roomcall:live"
+    requires_auth = False
+
+    async def head(self, request: web.Request, stream: str) -> web.Response:
+        if _data(request).live.get(stream.removesuffix(".mp3")) is None:
+            return web.Response(status=404)
+        return web.Response(content_type="audio/mpeg", headers={"Cache-Control": "no-store"})
+
+    async def get(self, request: web.Request, stream: str) -> web.StreamResponse:
+        live = _data(request).live.get(stream.removesuffix(".mp3"))
+        if live is None:
+            return web.Response(status=404)
+        response = web.StreamResponse(
+            headers={"Content-Type": "audio/mpeg", "Cache-Control": "no-store"}
+        )
+        response.enable_chunked_encoding()
+        await response.prepare(request)
+        async for chunk in live.chunks():
+            await response.write(chunk)
+        await response.write_eof()
+        return response
 
 
 class ChimeView(HomeAssistantView):

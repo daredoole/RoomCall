@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "roomcall"
-VERSION = "0.4.5"
+VERSION = "0.5.0"
 
 CONF_SPEAKERS = "speakers"
 CONF_VOLUME = "volume"
@@ -59,6 +59,7 @@ API_ROOMS = "/api/roomcall/rooms"
 API_CLIP = "/api/roomcall/clip/{clip}"
 API_CHIME = "/api/roomcall/chime/{style}"
 API_HISTORY = "/api/roomcall/history"
+API_LIVE = "/api/roomcall/live/{stream}"
 API_HISTORY_CLIP = "/api/roomcall/history/{call_id}"
 
 SERVICE_BROADCAST = "broadcast"
