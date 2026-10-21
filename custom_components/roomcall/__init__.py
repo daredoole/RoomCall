@@ -19,9 +19,10 @@ from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, Supp
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.network import NoURLAvailableError
+from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
-from . import chimes, intents, repairs, ws
+from . import chimes, frontend, intents, repairs, ws
 from .announcements import Announcer
 from .calls import CallError, CallRequest, place_call
 from .const import (
@@ -33,7 +34,6 @@ from .const import (
     ATTR_TARGET_PEOPLE,
     ATTR_TARGET_SPEAKERS,
     ATTR_VOLUME,
-    CARD_FILENAME,
     CONF_CHIME,
     CONF_CHIME_STYLE,
     CONF_CHIME_URL,
@@ -72,7 +72,6 @@ from .const import (
     SECTION_REPLY,
     SERVICE_BROADCAST,
     URL_STATIC,
-    VERSION,
 )
 from .core import ClipStore, History
 from .http import (
@@ -202,7 +201,15 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         [StaticPathConfig(URL_STATIC, str(Path(__file__).parent / "frontend"), False)]
     )
     if "frontend" in hass.config.components:
-        add_extra_js_url(hass, f"{URL_STATIC}/{CARD_FILENAME}?v={VERSION}")
+
+        async def _register_card(_hass: HomeAssistant) -> None:
+            try:
+                await frontend.async_register_card(hass)
+            except Exception:
+                _LOGGER.exception("RoomCall could not register its dashboard card")
+                add_extra_js_url(hass, frontend.card_url())
+
+        async_at_started(hass, _register_card)
 
     async def _broadcast(call: ServiceCall) -> ServiceResponse:
         data: RoomCallData | None = hass.data.get(DOMAIN)
