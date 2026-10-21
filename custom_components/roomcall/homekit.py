@@ -313,10 +313,9 @@ class HomeKitIntercom:
                     async_zeroconf_instance=zeroconf,
                 )
             )
-            camera = await self.hass.async_add_executor_job(
+            await self.hass.async_add_executor_job(
                 _build_camera, self, driver, address, area_id, room["name"], str(picture), png
             )
-            driver.add_accessory(camera)
             await driver.async_start()
             self.drivers[area_id] = driver
         _LOGGER.info(
@@ -365,8 +364,10 @@ def _build_camera(
     picture: str,
     png: bytes,
 ) -> Any:
+    """Create the room's camera and attach it (this loads saved pairing state from disk)."""
     camera = _camera_class()(camera_options(address), driver, f"{name} Intercom")
     camera.setup_intercom(intercom, area_id, picture, png)
+    driver.add_accessory(camera)
     return camera
 
 
