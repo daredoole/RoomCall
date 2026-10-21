@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.4.2 — 2026-10-20
+
+- Apple Home: also load saved pairing state off the event loop.
+
 ## 0.4.1 — 2026-10-20
 
 - Apple Home: create HomeKit accessories off the event loop (fixes a "Detected blocking call to open" warning).
