@@ -72,8 +72,13 @@ class LiveStream:
             "-hide_banner",
             "-loglevel",
             "error",
+            # Raw PCM needs no probing; without this ffmpeg waits for ~5 s of input first.
             "-fflags",
             "nobuffer",
+            "-probesize",
+            "32",
+            "-analyzeduration",
+            "0",
             "-f",
             "s16le",
             "-ar",
