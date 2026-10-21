@@ -173,9 +173,12 @@ the message, and `sensor.roomcall_last_call` records every call. More examples i
 | Delivery | 250 ms apart, retry on | Stops Sonos speakers from dropping simultaneous calls |
 | Quiet hours | off | Quieter calls and skipped rooms overnight |
 | Notifications and replies | off | Phones to notify, Reply button, speech-to-text |
+| Apple Home | off | Rooms as camera tiles with a talk button in the Home app |
 
-Card options (`room`, `people`, `history`, `layout: compact | kiosk`) are in the
-[guide](https://daredoole.github.io/RoomCall/home-assistant/#3-add-the-push-to-talk-card).
+**Announcements** are added from the integration's ⋮ menu: *Add scheduled announcement* /
+*Add triggered announcement* ([guide](https://daredoole.github.io/RoomCall/announcements/)).
+Card options (`room`, `people`, `history`, `layout`, `live`) are set in the visual editor
+([details](https://daredoole.github.io/RoomCall/home-assistant/#3-add-the-push-to-talk-card)).
 
 ## How it works
 
@@ -184,14 +187,20 @@ sequenceDiagram
     participant P as Phone (card)
     participant H as Home Assistant
     participant S as Speaker
-    P->>H: hold-to-talk recording (HTTPS, authenticated)
-    H->>H: ffmpeg → MP3 + chirp, kept 2 min under a random URL
-    H->>S: media_player.play_media (announce)
-    S->>H: download clip from the internal URL
-    H-->>P: delivery report on the card
+    P->>H: press: open a live call (WebSocket, signed in)
+    H->>S: media_player.play_media (announce) with a live MP3 URL
+    loop while you hold the button
+        P->>H: 40 ms of audio
+        H->>H: ffmpeg encodes it (chime first)
+        S->>H: speaker streams the growing MP3
+    end
+    P->>H: release: end of audio
+    H-->>P: delivered, then history, transcript and notifications
 ```
 
-A call plays about 1–2 seconds after you let go (AirPlay adds ~2 s of buffering).
+With **live calls** (the default) speakers start shortly after you press and play while you are
+still talking; how soon depends on each speaker's buffering. With `live: false` the card records
+the whole message first and it plays about 1–2 seconds after you let go (AirPlay adds ~2 s).
 
 ## FAQ
 

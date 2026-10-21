@@ -13,13 +13,21 @@ talk, and your voice plays in the room you picked — on Sonos, AirPlay and Goog
 
 ## What you get
 
-- **Hold-to-talk card** for any dashboard, in the Home Assistant app or browser.
-- **Rooms are your areas** — talk to one room, everywhere, or a person wherever they are.
+- **Hold-to-talk card, live** — speakers play while you are still talking; set it up in the
+  visual card editor, with compact and kiosk layouts.
+- **Rooms are your areas** — talk to one room, everywhere, specific speakers, or a person
+  wherever they are.
+- **[Apple Home intercom](apple-home.md)** — every room is a camera tile with a talk button on
+  iPhone, Apple Watch and Control Center.
+- **[Announcements](announcements.md)** — scheduled ("bus in 10 minutes" on weekdays) and
+  triggered ("the garage has been open 10 minutes"), with live values in the message.
 - **Reply** from a phone notification, straight back to the caller's room.
 - **Do Not Disturb, quiet hours and urgent calls.**
-- **Call history** with replay and transcripts.
-- **Chimes** before each message, and **announce mode** so Sonos ducks the music.
-- **`roomcall.broadcast`** for automations, Siri, Apple Watch and CarPlay.
+- **Call history** with replay and speech-to-text transcripts.
+- **Works with receivers and TV boxes** — Denon/HEOS and Google TV go back to what they were doing.
+- **Automations and AI** — `roomcall.broadcast`, a notify entity per room,
+  [blueprints](blueprints.md), Siri Shortcuts, and an Assist intent for AI agents
+  ([managing RoomCall with AI](ai.md)).
 - **Local only** — no cloud, no accounts; audio never leaves your network.
 
 [Set it up in Home Assistant →](home-assistant.md){ .md-button .md-button--primary }

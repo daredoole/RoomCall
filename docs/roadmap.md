@@ -29,6 +29,12 @@ Track progress and vote on the [GitHub issues](https://github.com/daredoole/Room
 
 - [x] Live calls: speakers play while you talk, from the card and Apple Home ([#13](https://github.com/daredoole/RoomCall/issues/13))
 
+## v0.6 — Polish ✅
+
+- [x] Visual card editor, notify entity per room, blueprints, Repairs, diagnostics
+- [x] Spanish, German, French and Dutch
+- [x] Brand icon shipped with the integration; signed releases; OpenSSF Scorecard
+
 ## v0.7 — Announcements and AI ✅
 
 - [x] Scheduled and triggered announcements to rooms, speakers or people
@@ -40,5 +46,5 @@ Track progress and vote on the [GitHub issues](https://github.com/daredoole/Room
       ESP32-S3, Home Assistant Voice) opens for a few seconds after each call
       ([#11](https://github.com/daredoole/RoomCall/issues/11))
 - [ ] **Doorbell bridge**: answer the door from any room or your watch ([#21](https://github.com/daredoole/RoomCall/issues/21))
-- [ ] Brand icon in Home Assistant and the default HACS store ([#25](https://github.com/daredoole/RoomCall/issues/25))
+- [ ] Listed in the default HACS store — submitted, in review ([#25](https://github.com/daredoole/RoomCall/issues/25))
 - [ ] Per-room chimes and voicemail for rooms where nobody answered
