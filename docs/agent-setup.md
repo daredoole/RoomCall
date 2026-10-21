@@ -60,6 +60,8 @@ recorded-audio-only installation. Volume is optional. Nested settings patches
 preserve unrelated saved values; `null` removes an optional override (HA's initial
 entry value still applies if present, and is shown in the plan). Review
 `changes` before applying, including defaults added by HA's schema.
+Listening confirmations belong to the plan that issued the test. Confirming an
+unrelated or older test does not verify a new setup.
 
 Plans belong to their creator, survive HA restarts, expire after 24 hours, and
 carry configuration revisions. Intervening changes return `configuration_conflict`

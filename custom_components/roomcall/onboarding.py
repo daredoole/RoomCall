@@ -392,7 +392,7 @@ class Setup:
         endpoints = []
         for entity_id in plan["settings"]["speakers"]:
             state = self.hass.states.get(entity_id)
-            test = data.sound_tests.get(entity_id, {}) if data else {}
+            test = plan.get("confirmations", {}).get(entity_id, {})
             heard = test.get("heard") is True and test.get("at", 0) >= plan.get(
                 "applied_at", float("inf")
             )
@@ -511,6 +511,12 @@ class Setup:
                             context,
                             assistant=assistant,
                         )
+                        if result["ok"]:
+                            plan.setdefault("confirmations", {})[speaker] = {
+                                "heard": result["heard"],
+                                "at": result["at"],
+                            }
+                            await self.save()
                     return {**result, "plan": self.public(plan)}
             result = {"ok": True, "plan": self.public(plan)}
             if action == "verify":

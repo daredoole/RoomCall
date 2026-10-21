@@ -238,6 +238,22 @@ async def test_unavailable_tts_never_completes_setup(hass, setup_roomcall, hass_
     assert "choose_tts" in {f["code"] for f in diagnosed["findings"]}
 
 
+async def test_external_confirmation_does_not_verify_a_new_plan(
+    hass, setup_roomcall, hass_admin_user
+):
+    user = hass_admin_user
+    plan = await draft(hass, user)
+    await call(hass, user, action="apply", id=plan["id"], revision=plan["revision"])
+    await hass.async_block_till_done()
+    # A legacy test may have played before apply but been confirmed afterward.
+    data = hass.data["roomcall"]
+    data.sound_tests = {entity: {"heard": True, "at": time.time() + 10} for entity in data.speakers}
+    checked = await call(hass, user, action="verify", id=plan["id"])
+    assert checked["verification"]["configuration_ready"]
+    assert not checked["verification"]["audio_confirmed"]
+    assert not checked["verification"]["completed"]
+
+
 def test_schema_converter_contracts():
     from custom_components.roomcall import protocol
 

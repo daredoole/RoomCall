@@ -22,7 +22,7 @@ changes. Human audibility confirmation remains separate from device evidence.
 Optional retention/cloud providers and permission/exposure changes are never
 enabled as automatic repairs.
 
-Local validation: current HA 225 passed; older supported HA 224 passed and one
-expected compatibility skip, both at 100% statement coverage. Standalone: 33
+Local validation on both supported HA versions reached 100% statement coverage,
+with one expected compatibility skip on older HA. Standalone: 33
 passed, 100%. Browser layout/setup/WebRTC QA, Ruff, mypy, strict docs build,
 package build and 21st UI review pass. CI records the final PR validation.
