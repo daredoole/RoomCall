@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.4.5 — 2026-10-20
+
+- Apple Home: cut talk-back delay from ~10 s to about 2 s. A phrase now ends 0.5 s after the iPhone stops sending (it stops instead of sending silence when the talk button is released), and ffmpeg runs without probing, buffering or a jitter queue.
+
 ## 0.4.4 — 2026-10-20
 
 - Apple Home: fix talk-back never playing — the talk receiver bound to the iPhone's address ("bind failed: Address not available") instead of Home Assistant's own. Back off when the receiver fails to start.

@@ -67,6 +67,9 @@ async def test_talk_back_is_decoded_and_split_into_phrases():
     )
     await asyncio.sleep(0.8)
     await _iphone_talks(port, key, "between(t,0.4,1.6)")
+    # The phrase must play as soon as the iPhone stops sending, not when the camera closes.
+    await asyncio.sleep(1.0)
+    assert len(phrases) == 1
     # The receiver exits when the talk button goes quiet; RoomCall must start a new one.
     await asyncio.sleep(1.2)
     first = session["talk"]
@@ -174,3 +177,31 @@ async def test_apple_home_option_starts_and_stops_the_bridge(hass: HomeAssistant
 
 async def test_apple_home_is_off_by_default(hass: HomeAssistant, setup_roomcall):
     assert hass.data[DOMAIN].homekit is None
+
+
+@needs_opus
+async def test_phrase_ends_when_the_talk_button_is_released():
+    """The iPhone stops sending instead of sending silence; the phrase must still end fast."""
+    import time
+
+    port = _even_udp_port()
+    key = base64.b64encode(os.urandom(30)).decode()
+    got: list[float] = []
+    session = {"active": True}
+    loop = asyncio.create_task(
+        talk_loop(
+            FFMPEG,
+            talk_sdp("127.0.0.1", port, key),
+            lambda _p: got.append(time.monotonic()),
+            session,
+        )
+    )
+    await asyncio.sleep(0.8)
+    await _iphone_talks(port, key, "1")  # voice right up to the release
+    released = time.monotonic()
+    await asyncio.sleep(2.0)
+    session["active"] = False
+    session["talk"].kill()
+    await asyncio.wait_for(loop, 10)
+    assert len(got) == 1
+    assert got[0] - released < 1.5
