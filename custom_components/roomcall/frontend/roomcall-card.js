@@ -1,5 +1,5 @@
 /* RoomCall push-to-talk card for Home Assistant dashboards. */
-const CARD_VERSION = "0.8.0";
+const CARD_VERSION = "0.8.1";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
 const LAYOUTS = ["default", "compact", "kiosk"];
@@ -83,13 +83,14 @@ class RoomCallCard extends HTMLElement {
   }
 
   getCardSize() {
-    return this._config.layout === "compact" ? 3 : 7;
+    const height = this.shadowRoot?.querySelector("ha-card")?.getBoundingClientRect().height;
+    return height ? Math.ceil(height / 50) : this._config.layout === "compact" ? 3 : 7;
   }
 
   getGridOptions() {
-    if (this._config.layout === "compact") return { columns: 12, rows: 3, min_rows: 2 };
-    if (this._config.layout === "kiosk") return { columns: "full", rows: 8, min_rows: 6 };
-    return { columns: 12, rows: 7, min_rows: 5 };
+    // Room chips, forms and setup all change height. Fixed rows let the next card
+    // start underneath our contents, especially in narrow sections.
+    return { columns: this._config.layout === "kiosk" ? "full" : 12, rows: "auto" };
   }
 
   async _load() {
@@ -162,10 +163,12 @@ class RoomCallCard extends HTMLElement {
     const layout = this._config.layout;
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; }
-        ha-card { padding: 16px; display: flex; flex-direction: column; gap: 12px; height: 100%; box-sizing: border-box; }
-        .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-        .title { font-size: 18px; font-weight: 500; }
+        :host { display: block; min-width: 0; min-height: 0; height: 100%; }
+        ha-card { padding: 16px; display: flex; flex-direction: column; gap: 12px; height: 100%; box-sizing: border-box;
+          min-width: 0; min-height: 0; overflow: auto; }
+        ha-card > * { flex-shrink: 0; min-width: 0; }
+        .head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+        .title { font-size: 18px; font-weight: 500; overflow-wrap: anywhere; }
         .muted { color: var(--secondary-text-color); font-size: 13px; }
         .toggles { display: flex; gap: 6px; }
         .reply { display: none; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px;
@@ -177,6 +180,7 @@ class RoomCallCard extends HTMLElement {
           border: 1px solid var(--divider-color); background: var(--card-background-color);
           color: var(--primary-text-color); border-radius: 999px; padding: 8px 14px;
           font-family: inherit; font-size: 14px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center;
+          max-width: 100%; overflow-wrap: anywhere;
         }
         .chip.small { padding: 5px 10px; font-size: 12px; }
         .chip[aria-pressed="true"] { background: var(--primary-color); border-color: var(--primary-color); color: var(--text-primary-color, #fff); }
@@ -185,10 +189,10 @@ class RoomCallCard extends HTMLElement {
         .chip ha-icon { --mdc-icon-size: 18px; }
         .chip.small ha-icon { --mdc-icon-size: 16px; }
         .people:empty { display: none; }
-        .wrap { flex: 1; display: grid; place-items: center; min-height: 150px; }
+        .wrap { flex: 1 0 auto; display: grid; place-items: center; min-height: 150px; }
         .wrap[hidden] { display:none }
         button.talk {
-          width: min(52vw, 170px); aspect-ratio: 1; border-radius: 50%; border: 0; cursor: pointer;
+          width: min(100%, 170px); aspect-ratio: 1; border-radius: 50%; border: 0; cursor: pointer;
           background: var(--primary-color); color: var(--text-primary-color, #fff);
           font-family: inherit; font-size: 17px; font-weight: 600; touch-action: none; user-select: none;
           -webkit-user-select: none; display: grid; place-items: center; align-content: center; gap: 6px; transition: transform 0.08s;
@@ -201,11 +205,11 @@ class RoomCallCard extends HTMLElement {
           box-shadow: 0 0 0 calc(var(--level, 0) * 30px) color-mix(in srgb, var(--error-color, #db4437) 25%, transparent);
         }
         button.talk:disabled { opacity: 0.55; cursor: progress; }
-        .status { text-align: center; min-height: 1.3em; font-size: 14px; }
+        .status { text-align: center; min-height: 1.3em; font-size: 14px; overflow-wrap: anywhere; }
         .ok { color: var(--success-color, #43a047); } .err { color: var(--error-color, #db4437); }
         .history { display: grid; gap: 6px; }
         .history:empty { display: none; }
-        .call { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+        .call { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center;
           padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
         .call .what { font-size: 13px; line-height: 1.3; overflow: hidden; }
         .call .text { color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -224,7 +228,7 @@ class RoomCallCard extends HTMLElement {
         :host([layout="kiosk"]) .title { font-size: 26px; }
         :host([layout="kiosk"]) .chip { padding: 14px 22px; font-size: 18px; }
         :host([layout="kiosk"]) .chip ha-icon { --mdc-icon-size: 24px; }
-        :host([layout="kiosk"]) button.talk { width: min(70vw, 340px); font-size: 26px; }
+        :host([layout="kiosk"]) button.talk { width: min(100%, 340px); font-size: 26px; }
         :host([layout="kiosk"]) button.talk ha-icon { --mdc-icon-size: 72px; }
         :host([layout="kiosk"]) .status { font-size: 18px; }
         :host([layout="kiosk"]) .history { display: none; }

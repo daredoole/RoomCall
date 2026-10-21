@@ -224,5 +224,8 @@ unacknowledged message was heard remain unknown without acoustic/human evidence.
 HA tests exercise actual tool discovery, preview/send/status/recovery, queue
 contention, ownership, fetch evidence, persistence, real ffmpeg processing and
 WebSocket station signaling. `scripts/qa_communication.py` exercises desktop/mobile
-controls and real browser WebRTC with test microphones. Physical speaker and
+controls, all three card layouts at 240–600px widths, auto/fixed-height dashboard
+cells, and real browser WebRTC with test microphones. CI requires 100% statement
+coverage for both Python packages on every supported Python/HA test job, without
+source omissions. This does not measure JavaScript statement coverage. Physical speaker and
 doorbell behavior must still be checked on the chosen hardware.

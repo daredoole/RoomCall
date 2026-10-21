@@ -421,8 +421,6 @@ async def _play_one(
                 urgent_volume=runtime.urgent_volume,
                 now=dt_util.now(),
             )
-            if not fresh.entity_ids:
-                raise DoNotDisturbError("quiet_hours_blocked")
             volume = fresh.volumes[entity_id]
             if volume is not None:
                 volume = min(volume, runtime.max_volume)

@@ -81,3 +81,31 @@ async def test_token_is_enforced_on_api_only(make_client) -> None:
     assert (await client.get("/api/rooms")).status == 401
     assert (await client.get("/api/rooms", headers={"X-RoomCall-Token": "s3cret"})).status == 200
     assert (await client.get("/")).status == 200
+
+
+async def test_status_speaker_inventory_refresh_and_unknown_clip(make_client):
+    client, _ = await make_client()
+    status = await (await client.get("/api/status")).json()
+    assert status["speakers"] == 4
+    speakers = await (await client.get("/api/speakers")).json()
+    assert len(speakers) == 4 and "host" in speakers[0]
+    assert await (await client.post("/api/refresh")).json() == {"speakers": 4}
+    assert (await client.get("/clips/missing.mp3")).status == 404
+
+
+async def test_reject_empty_and_invalid_audio(make_client):
+    client, sink = await make_client()
+    assert (await client.post("/api/talk", data=b"")).status == 400
+    assert (await client.post("/api/talk", data=b"invalid")).status == 422
+    assert sink.plays == []
+
+
+async def test_static_config_can_skip_discovery(aiohttp_client, speakers):
+    from unittest.mock import AsyncMock
+
+    discover = AsyncMock()
+    client = await aiohttp_client(
+        create_app(Config(static_speakers=speakers), {}, discover, discover_on_start=False)
+    )
+    assert (await (await client.get("/api/status")).json())["speakers"] == 4
+    discover.assert_not_awaited()

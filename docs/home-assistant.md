@@ -114,6 +114,11 @@ selected), the card says so instead of sending an empty clip.
 
 `compact` fits a single row of a dashboard. `kiosk` is a big button for a wall tablet.
 
+Cards use automatic height in Sections dashboards so wrapped room buttons, messaging
+forms and expanded setup push the next card down. If an existing dashboard pins a
+row count, the card scrolls within that space. Remove the saved row count, or set
+`grid_options: {rows: auto}`, to let it grow with its contents.
+
 ## Replies
 
 With phones and a dashboard path set, every call sends a notification such as

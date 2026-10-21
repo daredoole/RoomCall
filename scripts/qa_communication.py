@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from ha_screenshots import ORIGIN, OUT, open_card
 from playwright.sync_api import expect, sync_playwright
+from qa_layout import check_layout
 
 
 def main() -> None:
@@ -20,6 +21,7 @@ def main() -> None:
             ]
         )
         errors = []
+        check_layout(browser)
         for width, height in [(390, 844), (1280, 900)]:
             context = browser.new_context(viewport={"width": width, "height": height})
             context.grant_permissions(["microphone"], origin=ORIGIN)

@@ -169,8 +169,6 @@ class LiveStream:
             if self.done:
                 return
             self._changed.clear()
-            if sent < len(self.mp3) or self.done:
-                continue
             await self._changed.wait()
 
 

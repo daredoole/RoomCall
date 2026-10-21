@@ -4,6 +4,13 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.8.1 — 2026-10-21
+
+- Size dashboard cards to their contents, wrap narrow columns, and contain forced-height
+  layouts so adjacent cards remain usable. Cover compact/default/kiosk layouts in browser QA.
+- Require 100% Python statement coverage for the integration and standalone server in CI,
+  including supported HA versions, failure recovery, adapters, and resource cleanup.
+
 ## 0.8.0 — 2026-10-21
 
 - Explicit Home Assistant LLM tools, an older-HA RoomCall API, caller permissions

@@ -61,10 +61,11 @@ continues to provide its existing push-to-talk API.
 
 - [x] All user-visible additions translated into en/es/de/fr/nl.
 - [x] Version fields and changelog updated together.
-- [x] Ruff, formatting, mypy, standalone tests, HA tests (85% coverage), docs,
+- [x] Ruff, formatting, mypy, standalone tests, HA tests (100% statement coverage), docs,
   frontend checks and package builds.
 - [x] HACS validation and hassfest in CI.
-- [x] Browser QA at desktop/mobile sizes; screenshots updated.
+- [x] Browser QA at desktop/mobile sizes and 240–600px card widths, including
+  expanded controls, long room names, all layouts and fixed-height grid cells.
 - [x] [Pull request #42](https://github.com/daredoole/RoomCall/pull/42) created and
   CI results inspected. No direct push to main.
 
@@ -81,8 +82,13 @@ quiet hours → diagnosis → ordinary recovery, and asking a question → respo
 
 ## Local verification
 
-- HA 2026.10.2 / Python 3.14: 126 passed; 89.65% integration coverage.
-- HA 2026.2.3 / Python 3.13: 125 passed, one current-HA-only skip; 89.78% coverage.
-- Standalone: 17 passed. Ruff, formatting, mypy, strict docs and wheel/sdist builds passed.
+- HA 2026.10.2 / Python 3.14: 100% integration statement coverage.
+- HA 2026.2.3 / Python 3.13: the full suite also requires 100% statement coverage;
+  current-HA-only platform discovery is skipped on this older version.
+- Standalone: 33 passed, 100% statement coverage. Ruff, formatting, mypy, strict
+  docs and wheel/sdist builds passed.
+- Every supported Python/HA CI test job enforces 100%, without source omissions
+  or new coverage exclusions. JavaScript execution is checked through browser QA;
+  the Python percentage does not measure JavaScript statement or branch coverage.
 - Desktop/mobile messaging and real browser WebRTC passed with synthetic microphones;
   physical speakers, SIP devices and doorbells were not available for acoustic testing.

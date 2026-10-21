@@ -32,7 +32,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: uv venv && uv pip install -e ".[dev]"
-      - run: uv run pytest -q
+      - run: uv run pytest -q --cov=src/roomcall --cov-fail-under=100
 
   home-assistant:
     runs-on: ubuntu-latest
@@ -44,11 +44,11 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: uv venv && uv pip install "pytest-homeassistant-custom-component==0.13.316" ha-ffmpeg "HAP-python==5.0.0" pytest-cov
       - run: uv run python scripts/install_ha_test_deps.py
-      - name: Home Assistant tests with coverage (at least 85%)
+      - name: Home Assistant tests with 100% statement coverage
         run: |
           uv run pytest tests_ha -q -p no:cacheprovider \
             --cov=custom_components/roomcall --cov-report=term --cov-report=markdown:coverage.md \
-            --cov-fail-under=85
+            --cov-fail-under=100
       - name: Coverage summary
         if: always()
         run: test -f coverage.md && cat coverage.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -63,7 +63,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: uv venv && uv pip install "pytest-homeassistant-custom-component==0.13.373" ha-ffmpeg "HAP-python==5.0.0" pytest-cov
       - run: uv run python scripts/install_ha_test_deps.py
-      - run: uv run pytest tests_ha -q --cov=custom_components/roomcall --cov-fail-under=85
+      - run: uv run pytest tests_ha -q --cov=custom_components/roomcall --cov-fail-under=100
 
   frontend:
     runs-on: ubuntu-latest
