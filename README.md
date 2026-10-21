@@ -56,6 +56,8 @@ intercom, organised by your Home Assistant **areas**.
 - 🍏 **Apple Home intercom** — every room is a camera tile in the Home app; tap the mic on your iPhone or Apple Watch to talk in that room.
 - 🗣️ **Automations and Siri** — `roomcall.broadcast` from automations, Shortcuts, Apple Watch and CarPlay.
 - 🖥️ **Visual card editor**, plus kiosk and compact layouts for wall tablets and busy dashboards.
+- ⏰ **Scheduled and triggered announcements** — "Bus in 10 minutes" on weekdays, "{{ name }} is on" when the porch light switches, "the garage has been open 10 minutes" — to rooms, specific speakers or people.
+- 🤖 **AI-ready** — any Assist LLM agent can announce ("tell the kitchen dinner is ready"), and agents can create and manage announcements through Home Assistant's own APIs ([guide](https://daredoole.github.io/RoomCall/ai/), [`llms.txt`](https://daredoole.github.io/RoomCall/llms.txt)).
 - 🔔 **A notify entity per room** (`notify.roomcall_kitchen`) and ready-made **blueprints** for the doorbell, laundry, bedtime and arrivals.
 - 🩺 **Diagnostics and Repairs** — problems show up in Home Assistant, not as silent calls.
 - 🌍 English, Español, Deutsch, Français, Nederlands.

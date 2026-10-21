@@ -113,6 +113,23 @@
         "doorbell": "Doorbell",
         "off": "No chime"
       }
+    },
+    "days": {
+      "options": {
+        "mon": "Monday",
+        "tue": "Tuesday",
+        "wed": "Wednesday",
+        "thu": "Thursday",
+        "fri": "Friday",
+        "sat": "Saturday",
+        "sun": "Sunday"
+      }
+    },
+    "priority": {
+      "options": {
+        "normal": "Normal",
+        "urgent": "Urgent (ignores Do Not Disturb and quiet hours)"
+      }
     }
   },
   "entity": {
@@ -124,6 +141,14 @@
     "switch": {
       "do_not_disturb": {
         "name": "Do Not Disturb"
+      },
+      "announcement_enabled": {
+        "name": "Enabled"
+      }
+    },
+    "button": {
+      "play_announcement": {
+        "name": "Play now"
       }
     }
   },
@@ -155,6 +180,10 @@
         "priority": {
           "name": "Priority",
           "description": "Urgent calls play louder and ignore Do Not Disturb and quiet hours."
+        },
+        "speakers": {
+          "name": "Speakers",
+          "description": "Specific media players to play on, in addition to rooms and people."
         }
       }
     }
@@ -171,6 +200,130 @@
     "no_internal_url": {
       "title": "RoomCall needs a local network URL",
       "description": "Speakers download every call from Home Assistant, but no internal URL is available. Set one under Settings → System → Network."
+    }
+  },
+  "config_subentries": {
+    "scheduled": {
+      "initiate_flow": {
+        "user": "Add scheduled announcement"
+      },
+      "entry_type": "Scheduled announcement",
+      "step": {
+        "user": {
+          "title": "Scheduled announcement",
+          "description": "Say something at a time of day, on the days you choose.",
+          "data": {
+            "name": "Name",
+            "message": "Message",
+            "rooms": "Rooms",
+            "target_speakers": "Speakers",
+            "people": "People",
+            "priority": "Priority",
+            "time": "Time",
+            "days": "Days"
+          },
+          "data_description": {
+            "message": "Spoken with text-to-speech. Templates work, for example: It is {{ states('sensor.outdoor_temperature') }} degrees outside.",
+            "rooms": "Leave rooms, speakers and people empty to play everywhere.",
+            "target_speakers": "Specific speakers, in addition to the rooms.",
+            "people": "Plays wherever each person is right now (needs room presence)."
+          }
+        },
+        "reconfigure": {
+          "title": "Edit scheduled announcement",
+          "description": "Say something at a time of day, on the days you choose.",
+          "data": {
+            "name": "Name",
+            "message": "Message",
+            "rooms": "Rooms",
+            "target_speakers": "Speakers",
+            "people": "People",
+            "priority": "Priority",
+            "time": "Time",
+            "days": "Days"
+          },
+          "data_description": {
+            "message": "Spoken with text-to-speech. Templates work, for example: It is {{ states('sensor.outdoor_temperature') }} degrees outside.",
+            "rooms": "Leave rooms, speakers and people empty to play everywhere.",
+            "target_speakers": "Specific speakers, in addition to the rooms.",
+            "people": "Plays wherever each person is right now (needs room presence)."
+          }
+        }
+      },
+      "error": {
+        "no_message": "Enter a message.",
+        "no_days": "Pick at least one day."
+      },
+      "abort": {
+        "reconfigure_successful": "Saved."
+      }
+    },
+    "triggered": {
+      "initiate_flow": {
+        "user": "Add triggered announcement"
+      },
+      "entry_type": "Triggered announcement",
+      "step": {
+        "user": {
+          "title": "Triggered announcement",
+          "description": "Say something when an entity changes, for example a switch turns on or a door opens.",
+          "data": {
+            "name": "Name",
+            "message": "Message",
+            "rooms": "Rooms",
+            "target_speakers": "Speakers",
+            "people": "People",
+            "priority": "Priority",
+            "entity": "When this changes",
+            "to_state": "To this state",
+            "for": "For at least",
+            "cooldown": "Cooldown"
+          },
+          "data_description": {
+            "message": "Spoken with text-to-speech. Templates work, and {{ name }} and {{ state }} are the entity's name and new state.",
+            "rooms": "Leave rooms, speakers and people empty to play everywhere.",
+            "target_speakers": "Specific speakers, in addition to the rooms.",
+            "people": "Plays wherever each person is right now (needs room presence).",
+            "entity": "Any entity: a light switch, door sensor, motion sensor, washer...",
+            "to_state": "Only when it changes to this state, for example on, off, open. Leave empty for any change.",
+            "for": "Optional: only if it stays in that state this long (for example a door left open).",
+            "cooldown": "Don't repeat this announcement more often than this."
+          }
+        },
+        "reconfigure": {
+          "title": "Edit triggered announcement",
+          "description": "Say something when an entity changes, for example a switch turns on or a door opens.",
+          "data": {
+            "name": "Name",
+            "message": "Message",
+            "rooms": "Rooms",
+            "target_speakers": "Speakers",
+            "people": "People",
+            "priority": "Priority",
+            "entity": "When this changes",
+            "to_state": "To this state",
+            "for": "For at least",
+            "cooldown": "Cooldown"
+          },
+          "data_description": {
+            "message": "Spoken with text-to-speech. Templates work, and {{ name }} and {{ state }} are the entity's name and new state.",
+            "rooms": "Leave rooms, speakers and people empty to play everywhere.",
+            "target_speakers": "Specific speakers, in addition to the rooms.",
+            "people": "Plays wherever each person is right now (needs room presence).",
+            "entity": "Any entity: a light switch, door sensor, motion sensor, washer...",
+            "to_state": "Only when it changes to this state, for example on, off, open. Leave empty for any change.",
+            "for": "Optional: only if it stays in that state this long (for example a door left open).",
+            "cooldown": "Don't repeat this announcement more often than this."
+          }
+        }
+      },
+      "error": {
+        "no_message": "Enter a message.",
+        "no_days": "Pick at least one day."
+      },
+      "abort": {
+        "reconfigure_successful": "Saved."
+      }
     }
   }
 }

@@ -113,6 +113,23 @@
         "doorbell": "Türklingel",
         "off": "Kein Gong"
       }
+    },
+    "days": {
+      "options": {
+        "mon": "Montag",
+        "tue": "Dienstag",
+        "wed": "Mittwoch",
+        "thu": "Donnerstag",
+        "fri": "Freitag",
+        "sat": "Samstag",
+        "sun": "Sonntag"
+      }
+    },
+    "priority": {
+      "options": {
+        "normal": "Normal",
+        "urgent": "Dringend (ignoriert Nicht stören und Ruhezeiten)"
+      }
     }
   },
   "entity": {
@@ -124,6 +141,14 @@
     "switch": {
       "do_not_disturb": {
         "name": "Nicht stören"
+      },
+      "announcement_enabled": {
+        "name": "Aktiviert"
+      }
+    },
+    "button": {
+      "play_announcement": {
+        "name": "Jetzt abspielen"
       }
     }
   },
@@ -155,6 +180,10 @@
         "priority": {
           "name": "Priorität",
           "description": "Dringende Durchsagen sind lauter und ignorieren Nicht stören und Ruhezeiten."
+        },
+        "speakers": {
+          "name": "Lautsprecher",
+          "description": "Bestimmte Mediaplayer, zusätzlich zu Räumen und Personen."
         }
       }
     }
@@ -171,6 +200,130 @@
     "no_internal_url": {
       "title": "RoomCall braucht eine lokale Netzwerk-URL",
       "description": "Lautsprecher laden jede Durchsage von Home Assistant, aber es gibt keine interne URL. Lege eine unter Einstellungen → System → Netzwerk fest."
+    }
+  },
+  "config_subentries": {
+    "scheduled": {
+      "initiate_flow": {
+        "user": "Geplante Durchsage hinzufügen"
+      },
+      "entry_type": "Geplante Durchsage",
+      "step": {
+        "user": {
+          "title": "Geplante Durchsage",
+          "description": "Sag etwas zu einer Uhrzeit, an den gewählten Tagen.",
+          "data": {
+            "name": "Name",
+            "message": "Nachricht",
+            "rooms": "Räume",
+            "target_speakers": "Lautsprecher",
+            "people": "Personen",
+            "priority": "Priorität",
+            "time": "Uhrzeit",
+            "days": "Tage"
+          },
+          "data_description": {
+            "message": "Wird per Sprachausgabe gesprochen. Vorlagen funktionieren, zum Beispiel: Draußen sind es {{ states('sensor.outdoor_temperature') }} Grad.",
+            "rooms": "Räume, Lautsprecher und Personen leer lassen, um überall abzuspielen.",
+            "target_speakers": "Bestimmte Lautsprecher, zusätzlich zu den Räumen.",
+            "people": "Spielt dort, wo die Person gerade ist (benötigt Raumerkennung)."
+          }
+        },
+        "reconfigure": {
+          "title": "Geplante Durchsage bearbeiten",
+          "description": "Sag etwas zu einer Uhrzeit, an den gewählten Tagen.",
+          "data": {
+            "name": "Name",
+            "message": "Nachricht",
+            "rooms": "Räume",
+            "target_speakers": "Lautsprecher",
+            "people": "Personen",
+            "priority": "Priorität",
+            "time": "Uhrzeit",
+            "days": "Tage"
+          },
+          "data_description": {
+            "message": "Wird per Sprachausgabe gesprochen. Vorlagen funktionieren, zum Beispiel: Draußen sind es {{ states('sensor.outdoor_temperature') }} Grad.",
+            "rooms": "Räume, Lautsprecher und Personen leer lassen, um überall abzuspielen.",
+            "target_speakers": "Bestimmte Lautsprecher, zusätzlich zu den Räumen.",
+            "people": "Spielt dort, wo die Person gerade ist (benötigt Raumerkennung)."
+          }
+        }
+      },
+      "error": {
+        "no_message": "Gib eine Nachricht ein.",
+        "no_days": "Wähle mindestens einen Tag."
+      },
+      "abort": {
+        "reconfigure_successful": "Gespeichert."
+      }
+    },
+    "triggered": {
+      "initiate_flow": {
+        "user": "Ereignis-Durchsage hinzufügen"
+      },
+      "entry_type": "Ereignis-Durchsage",
+      "step": {
+        "user": {
+          "title": "Ereignis-Durchsage",
+          "description": "Sag etwas, wenn sich eine Entität ändert, z. B. ein Schalter eingeschaltet oder eine Tür geöffnet wird.",
+          "data": {
+            "name": "Name",
+            "message": "Nachricht",
+            "rooms": "Räume",
+            "target_speakers": "Lautsprecher",
+            "people": "Personen",
+            "priority": "Priorität",
+            "entity": "Wenn sich das ändert",
+            "to_state": "Zu diesem Zustand",
+            "for": "Mindestens für",
+            "cooldown": "Sperrzeit"
+          },
+          "data_description": {
+            "message": "Wird per Sprachausgabe gesprochen. Vorlagen funktionieren; {{ name }} und {{ state }} sind Name und neuer Zustand der Entität.",
+            "rooms": "Räume, Lautsprecher und Personen leer lassen, um überall abzuspielen.",
+            "target_speakers": "Bestimmte Lautsprecher, zusätzlich zu den Räumen.",
+            "people": "Spielt dort, wo die Person gerade ist (benötigt Raumerkennung).",
+            "entity": "Jede Entität: Lichtschalter, Türsensor, Bewegungsmelder, Waschmaschine ...",
+            "to_state": "Nur bei Wechsel in diesen Zustand, z. B. on, off, open. Leer lassen für jede Änderung.",
+            "for": "Optional: nur wenn es so lange in diesem Zustand bleibt (z. B. eine offene Tür).",
+            "cooldown": "Diese Durchsage nicht öfter als in diesem Abstand wiederholen."
+          }
+        },
+        "reconfigure": {
+          "title": "Ereignis-Durchsage bearbeiten",
+          "description": "Sag etwas, wenn sich eine Entität ändert, z. B. ein Schalter eingeschaltet oder eine Tür geöffnet wird.",
+          "data": {
+            "name": "Name",
+            "message": "Nachricht",
+            "rooms": "Räume",
+            "target_speakers": "Lautsprecher",
+            "people": "Personen",
+            "priority": "Priorität",
+            "entity": "Wenn sich das ändert",
+            "to_state": "Zu diesem Zustand",
+            "for": "Mindestens für",
+            "cooldown": "Sperrzeit"
+          },
+          "data_description": {
+            "message": "Wird per Sprachausgabe gesprochen. Vorlagen funktionieren; {{ name }} und {{ state }} sind Name und neuer Zustand der Entität.",
+            "rooms": "Räume, Lautsprecher und Personen leer lassen, um überall abzuspielen.",
+            "target_speakers": "Bestimmte Lautsprecher, zusätzlich zu den Räumen.",
+            "people": "Spielt dort, wo die Person gerade ist (benötigt Raumerkennung).",
+            "entity": "Jede Entität: Lichtschalter, Türsensor, Bewegungsmelder, Waschmaschine ...",
+            "to_state": "Nur bei Wechsel in diesen Zustand, z. B. on, off, open. Leer lassen für jede Änderung.",
+            "for": "Optional: nur wenn es so lange in diesem Zustand bleibt (z. B. eine offene Tür).",
+            "cooldown": "Diese Durchsage nicht öfter als in diesem Abstand wiederholen."
+          }
+        }
+      },
+      "error": {
+        "no_message": "Gib eine Nachricht ein.",
+        "no_days": "Wähle mindestens einen Tag."
+      },
+      "abort": {
+        "reconfigure_successful": "Gespeichert."
+      }
     }
   }
 }

@@ -113,6 +113,23 @@
         "doorbell": "Timbre",
         "off": "Sin tono"
       }
+    },
+    "days": {
+      "options": {
+        "mon": "Lunes",
+        "tue": "Martes",
+        "wed": "Miércoles",
+        "thu": "Jueves",
+        "fri": "Viernes",
+        "sat": "Sábado",
+        "sun": "Domingo"
+      }
+    },
+    "priority": {
+      "options": {
+        "normal": "Normal",
+        "urgent": "Urgente (ignora No molestar y horas de silencio)"
+      }
     }
   },
   "entity": {
@@ -124,6 +141,14 @@
     "switch": {
       "do_not_disturb": {
         "name": "No molestar"
+      },
+      "announcement_enabled": {
+        "name": "Activado"
+      }
+    },
+    "button": {
+      "play_announcement": {
+        "name": "Reproducir ahora"
       }
     }
   },
@@ -155,6 +180,10 @@
         "priority": {
           "name": "Prioridad",
           "description": "Las llamadas urgentes suenan más fuerte e ignoran No molestar y las horas de silencio."
+        },
+        "speakers": {
+          "name": "Altavoces",
+          "description": "Reproductores concretos, además de habitaciones y personas."
         }
       }
     }
@@ -171,6 +200,130 @@
     "no_internal_url": {
       "title": "RoomCall necesita una URL de red local",
       "description": "Los altavoces descargan cada llamada desde Home Assistant, pero no hay URL interna. Configura una en Ajustes → Sistema → Red."
+    }
+  },
+  "config_subentries": {
+    "scheduled": {
+      "initiate_flow": {
+        "user": "Añadir aviso programado"
+      },
+      "entry_type": "Aviso programado",
+      "step": {
+        "user": {
+          "title": "Aviso programado",
+          "description": "Di algo a una hora del día, los días que elijas.",
+          "data": {
+            "name": "Nombre",
+            "message": "Mensaje",
+            "rooms": "Habitaciones",
+            "target_speakers": "Altavoces",
+            "people": "Personas",
+            "priority": "Prioridad",
+            "time": "Hora",
+            "days": "Días"
+          },
+          "data_description": {
+            "message": "Se lee con texto a voz. Admite plantillas, por ejemplo: Hace {{ states('sensor.outdoor_temperature') }} grados fuera.",
+            "rooms": "Deja vacías habitaciones, altavoces y personas para que suene en todas partes.",
+            "target_speakers": "Altavoces concretos, además de las habitaciones.",
+            "people": "Suena donde esté cada persona ahora (requiere presencia por habitación)."
+          }
+        },
+        "reconfigure": {
+          "title": "Editar aviso programado",
+          "description": "Di algo a una hora del día, los días que elijas.",
+          "data": {
+            "name": "Nombre",
+            "message": "Mensaje",
+            "rooms": "Habitaciones",
+            "target_speakers": "Altavoces",
+            "people": "Personas",
+            "priority": "Prioridad",
+            "time": "Hora",
+            "days": "Días"
+          },
+          "data_description": {
+            "message": "Se lee con texto a voz. Admite plantillas, por ejemplo: Hace {{ states('sensor.outdoor_temperature') }} grados fuera.",
+            "rooms": "Deja vacías habitaciones, altavoces y personas para que suene en todas partes.",
+            "target_speakers": "Altavoces concretos, además de las habitaciones.",
+            "people": "Suena donde esté cada persona ahora (requiere presencia por habitación)."
+          }
+        }
+      },
+      "error": {
+        "no_message": "Escribe un mensaje.",
+        "no_days": "Elige al menos un día."
+      },
+      "abort": {
+        "reconfigure_successful": "Guardado."
+      }
+    },
+    "triggered": {
+      "initiate_flow": {
+        "user": "Añadir aviso por evento"
+      },
+      "entry_type": "Aviso por evento",
+      "step": {
+        "user": {
+          "title": "Aviso por evento",
+          "description": "Di algo cuando cambie una entidad, por ejemplo al encender un interruptor o abrir una puerta.",
+          "data": {
+            "name": "Nombre",
+            "message": "Mensaje",
+            "rooms": "Habitaciones",
+            "target_speakers": "Altavoces",
+            "people": "Personas",
+            "priority": "Prioridad",
+            "entity": "Cuando esto cambie",
+            "to_state": "A este estado",
+            "for": "Durante al menos",
+            "cooldown": "Espera mínima"
+          },
+          "data_description": {
+            "message": "Se lee con texto a voz. Admite plantillas; {{ name }} y {{ state }} son el nombre y el nuevo estado de la entidad.",
+            "rooms": "Deja vacías habitaciones, altavoces y personas para que suene en todas partes.",
+            "target_speakers": "Altavoces concretos, además de las habitaciones.",
+            "people": "Suena donde esté cada persona ahora (requiere presencia por habitación).",
+            "entity": "Cualquier entidad: un interruptor, un sensor de puerta, de movimiento, la lavadora...",
+            "to_state": "Solo cuando cambie a este estado, por ejemplo on, off, open. Déjalo vacío para cualquier cambio.",
+            "for": "Opcional: solo si permanece así este tiempo (por ejemplo una puerta abierta).",
+            "cooldown": "No repetir este aviso con más frecuencia que esto."
+          }
+        },
+        "reconfigure": {
+          "title": "Editar aviso por evento",
+          "description": "Di algo cuando cambie una entidad, por ejemplo al encender un interruptor o abrir una puerta.",
+          "data": {
+            "name": "Nombre",
+            "message": "Mensaje",
+            "rooms": "Habitaciones",
+            "target_speakers": "Altavoces",
+            "people": "Personas",
+            "priority": "Prioridad",
+            "entity": "Cuando esto cambie",
+            "to_state": "A este estado",
+            "for": "Durante al menos",
+            "cooldown": "Espera mínima"
+          },
+          "data_description": {
+            "message": "Se lee con texto a voz. Admite plantillas; {{ name }} y {{ state }} son el nombre y el nuevo estado de la entidad.",
+            "rooms": "Deja vacías habitaciones, altavoces y personas para que suene en todas partes.",
+            "target_speakers": "Altavoces concretos, además de las habitaciones.",
+            "people": "Suena donde esté cada persona ahora (requiere presencia por habitación).",
+            "entity": "Cualquier entidad: un interruptor, un sensor de puerta, de movimiento, la lavadora...",
+            "to_state": "Solo cuando cambie a este estado, por ejemplo on, off, open. Déjalo vacío para cualquier cambio.",
+            "for": "Opcional: solo si permanece así este tiempo (por ejemplo una puerta abierta).",
+            "cooldown": "No repetir este aviso con más frecuencia que esto."
+          }
+        }
+      },
+      "error": {
+        "no_message": "Escribe un mensaje.",
+        "no_days": "Elige al menos un día."
+      },
+      "abort": {
+        "reconfigure_successful": "Guardado."
+      }
     }
   }
 }

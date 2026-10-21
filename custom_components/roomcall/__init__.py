@@ -21,7 +21,8 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
-from . import chimes, repairs, ws
+from . import chimes, intents, repairs, ws
+from .announcements import Announcer
 from .calls import CallError, CallRequest, place_call
 from .const import (
     API_CHIME,
@@ -30,6 +31,7 @@ from .const import (
     ATTR_PRIORITY,
     ATTR_TARGET_AREAS,
     ATTR_TARGET_PEOPLE,
+    ATTR_TARGET_SPEAKERS,
     ATTR_VOLUME,
     CARD_FILENAME,
     CONF_CHIME,
@@ -88,7 +90,7 @@ from .policy import QuietHours
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.NOTIFY, Platform.SENSOR, Platform.SWITCH]
+PLATFORMS = [Platform.BUTTON, Platform.NOTIFY, Platform.SENSOR, Platform.SWITCH]
 _KEPT = f"{DOMAIN}_kept"
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -96,6 +98,7 @@ BROADCAST_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_TARGET_AREAS): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(ATTR_TARGET_PEOPLE): cv.entity_ids,
+        vol.Optional(ATTR_TARGET_SPEAKERS): cv.entity_ids,
         vol.Exclusive(ATTR_MESSAGE, "content"): cv.string,
         vol.Exclusive(ATTR_MEDIA_URL, "content"): cv.string,
         vol.Optional(ATTR_VOLUME): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
@@ -125,6 +128,7 @@ class RoomCallData:
     homekit_enabled: bool = False
     homekit_port: int = DEFAULT_HOMEKIT_PORT
     homekit: Any = None  # HomeKitIntercom while running
+    announcer: Any = None  # Announcer for scheduled and triggered announcements
     clips: ClipStore = field(default_factory=ClipStore)
     live: LiveStore = field(default_factory=LiveStore)
     history: History = field(default_factory=History)
@@ -193,6 +197,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     for view in (TalkView, RoomsView, ClipView, LiveView, ChimeView, HistoryView, HistoryClipView):
         hass.http.register_view(view())
     ws.async_register(hass)
+    intents.async_register(hass)
     await hass.http.async_register_static_paths(
         [StaticPathConfig(URL_STATIC, str(Path(__file__).parent / "frontend"), False)]
     )
@@ -227,7 +232,10 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                 hass,
                 data,
                 CallRequest(
-                    targets=list(call.data.get(ATTR_TARGET_AREAS) or []),
+                    targets=[
+                        *(call.data.get(ATTR_TARGET_AREAS) or []),
+                        *(call.data.get(ATTR_TARGET_SPEAKERS) or []),
+                    ],
                     people=call.data.get(ATTR_TARGET_PEOPLE),
                     media_id=media_id,
                     kind=kind,
@@ -263,7 +271,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         data.history, data.dnd = kept
     data.entry_id = entry.entry_id
     hass.data[DOMAIN] = data
+    data.announcer = Announcer(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    data.announcer.async_start()
+    entry.async_on_unload(data.announcer.async_stop)
+    # Options and announcements (subentries) both change the entry: reload to apply them.
+    entry.async_on_unload(entry.add_update_listener(_reload))
     entry.async_on_unload(repairs.async_watch(hass, data.speakers))
     if data.homekit_enabled:
         await _start_homekit(hass, data)
@@ -292,6 +305,10 @@ async def _start_homekit(hass: HomeAssistant, data: RoomCallData) -> None:
             title="Add RoomCall to Apple Home",
             notification_id=f"{DOMAIN}_homekit_pairing",
         )
+
+
+async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "roomcall"
-VERSION = "0.6.2"
+VERSION = "0.7.0"
 
 CONF_SPEAKERS = "speakers"
 CONF_VOLUME = "volume"
@@ -65,6 +65,7 @@ API_HISTORY_CLIP = "/api/roomcall/history/{call_id}"
 SERVICE_BROADCAST = "broadcast"
 ATTR_TARGET_AREAS = "areas"
 ATTR_TARGET_PEOPLE = "people"
+ATTR_TARGET_SPEAKERS = "speakers"
 ATTR_MESSAGE = "message"
 ATTR_MEDIA_URL = "media_url"
 ATTR_VOLUME = "volume"
@@ -72,6 +73,24 @@ ATTR_PRIORITY = "priority"
 
 SIGNAL_CALL_FINISHED = f"{DOMAIN}_call_finished"
 SIGNAL_DND_CHANGED = f"{DOMAIN}_dnd_changed"
+SIGNAL_ANNOUNCEMENT = f"{DOMAIN}_announcement"
+
+# Announcements (config subentries).
+SUBENTRY_SCHEDULED = "scheduled"
+SUBENTRY_TRIGGERED = "triggered"
+CONF_MESSAGE = "message"
+CONF_TIME = "time"
+CONF_DAYS = "days"
+CONF_ROOMS = "rooms"
+CONF_TARGET_SPEAKERS = "target_speakers"
+CONF_PEOPLE = "people"
+CONF_PRIORITY = "priority"
+CONF_ENTITY = "entity"
+CONF_TO_STATE = "to_state"
+CONF_FOR = "for"
+CONF_COOLDOWN = "cooldown"
+DAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+DEFAULT_COOLDOWN = 60
 
 CLIP_TTL_SECONDS = 120
 HISTORY_SIZE = 20

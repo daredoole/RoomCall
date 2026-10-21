@@ -4,6 +4,19 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.7.0 — 2026-10-21
+
+- **Scheduled announcements**: a message at a time of day on chosen weekdays.
+- **Triggered announcements**: a message when any entity changes to a state (light switch, door,
+  motion, washer…), with an optional "for at least" hold and a cooldown.
+- Both are config subentries (Add announcement on the integration), with templated messages,
+  targets by room, specific speaker or person, urgent priority, and per-announcement
+  **Play now** button and **Enabled** switch.
+- `roomcall.broadcast` accepts `speakers:` — including media players outside the intercom.
+- **Assist intent `RoomCallAnnounce`**, offered to every LLM conversation agent.
+- Docs: Announcements, Managing RoomCall with AI, `llms.txt`, `AGENTS.md`.
+- The options flow reloads through an update listener (needed for announcement changes).
+
 ## 0.6.2 — 2026-10-20
 
 - Releases include `roomcall.intoto.jsonl`, the signed build provenance for every release file (verify with `gh attestation verify roomcall.zip --repo daredoole/RoomCall`). Workflows use least-privilege, job-level permissions.

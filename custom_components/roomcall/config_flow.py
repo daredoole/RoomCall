@@ -10,7 +10,9 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
-    OptionsFlowWithReload,
+    ConfigSubentryFlow,
+    OptionsFlow,
+    SubentryFlowResult,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import section
@@ -22,10 +24,17 @@ from .const import (
     CONF_CHIME,
     CONF_CHIME_STYLE,
     CONF_CHIME_URL,
+    CONF_COOLDOWN,
+    CONF_DAYS,
+    CONF_ENTITY,
+    CONF_FOR,
     CONF_GAIN_DB,
     CONF_HOMEKIT_ENABLED,
     CONF_HOMEKIT_PORT,
+    CONF_MESSAGE,
     CONF_NOTIFY,
+    CONF_PEOPLE,
+    CONF_PRIORITY,
     CONF_QUIET_END,
     CONF_QUIET_SKIP_AREAS,
     CONF_QUIET_START,
@@ -33,25 +42,35 @@ from .const import (
     CONF_REPLY_PATH,
     CONF_RESTORE,
     CONF_RETRY,
+    CONF_ROOMS,
     CONF_SPEAKERS,
     CONF_STAGGER_MS,
     CONF_STT_ENGINE,
+    CONF_TARGET_SPEAKERS,
+    CONF_TIME,
+    CONF_TO_STATE,
     CONF_TTS_ENGINE,
     CONF_URGENT_VOLUME,
     CONF_VOLUME,
+    DAYS,
     DEFAULT_CHIME,
     DEFAULT_CHIME_STYLE,
+    DEFAULT_COOLDOWN,
     DEFAULT_HOMEKIT_PORT,
     DEFAULT_RESTORE,
     DEFAULT_RETRY,
     DEFAULT_STAGGER_MS,
     DEFAULT_URGENT_VOLUME,
     DOMAIN,
+    PRIORITIES,
+    PRIORITY_NORMAL,
     SECTION_CHIME,
     SECTION_DELIVERY,
     SECTION_HOMEKIT,
     SECTION_QUIET,
     SECTION_REPLY,
+    SUBENTRY_SCHEDULED,
+    SUBENTRY_TRIGGERED,
 )
 
 # Music Assistant mirrors physical speakers that already have a native entity; skipping it by
@@ -256,8 +275,18 @@ class RoomCallConfigFlow(ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(config_entry: ConfigEntry) -> RoomCallOptionsFlow:
         return RoomCallOptionsFlow()
 
+    @classmethod
+    @callback
+    def async_get_supported_subentry_types(
+        cls, config_entry: ConfigEntry
+    ) -> dict[str, type[ConfigSubentryFlow]]:
+        return {
+            SUBENTRY_SCHEDULED: ScheduledAnnouncementFlow,
+            SUBENTRY_TRIGGERED: TriggeredAnnouncementFlow,
+        }
 
-class RoomCallOptionsFlow(OptionsFlowWithReload):
+
+class RoomCallOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -268,4 +297,128 @@ class RoomCallOptionsFlow(OptionsFlowWithReload):
         current = {**self.config_entry.data, **self.config_entry.options, **(user_input or {})}
         return self.async_show_form(
             step_id="init", data_schema=_options_schema(self.hass, current), errors=errors
+        )
+
+
+def _target_fields(defaults: dict[str, Any]) -> dict[Any, Any]:
+    return {
+        vol.Required(
+            CONF_MESSAGE, default=defaults.get(CONF_MESSAGE, "")
+        ): selector.TemplateSelector(),
+        vol.Optional(CONF_ROOMS, default=defaults.get(CONF_ROOMS, [])): selector.AreaSelector(
+            selector.AreaSelectorConfig(multiple=True)
+        ),
+        vol.Optional(
+            CONF_TARGET_SPEAKERS, default=defaults.get(CONF_TARGET_SPEAKERS, [])
+        ): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="media_player", multiple=True)
+        ),
+        vol.Optional(CONF_PEOPLE, default=defaults.get(CONF_PEOPLE, [])): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="person", multiple=True)
+        ),
+        vol.Required(
+            CONF_PRIORITY, default=defaults.get(CONF_PRIORITY, PRIORITY_NORMAL)
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=list(PRIORITIES), translation_key="priority")
+        ),
+    }
+
+
+class _AnnouncementFlow(ConfigSubentryFlow):
+    """Shared add/reconfigure steps for announcements."""
+
+    def _schema(self, defaults: dict[str, Any]) -> vol.Schema:
+        raise NotImplementedError
+
+    def _validate(self, data: dict[str, Any]) -> dict[str, str]:
+        errors: dict[str, str] = {}
+        if not str(data.get(CONF_MESSAGE, "")).strip():
+            errors[CONF_MESSAGE] = "no_message"
+        return errors
+
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            errors = self._validate(user_input)
+            if not errors:
+                title = user_input.pop("name")
+                return self.async_create_entry(title=title, data=user_input)
+        return self.async_show_form(
+            step_id="user", data_schema=self._schema(user_input or {}), errors=errors
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        subentry = self._get_reconfigure_subentry()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            errors = self._validate(user_input)
+            if not errors:
+                title = user_input.pop("name")
+                return self.async_update_and_abort(
+                    self._get_entry(), subentry, title=title, data=user_input
+                )
+        defaults = {"name": subentry.title, **subentry.data, **(user_input or {})}
+        return self.async_show_form(
+            step_id="reconfigure", data_schema=self._schema(defaults), errors=errors
+        )
+
+
+class ScheduledAnnouncementFlow(_AnnouncementFlow):
+    """A message at a time of day, on chosen weekdays."""
+
+    def _schema(self, defaults: dict[str, Any]) -> vol.Schema:
+        return vol.Schema(
+            {
+                vol.Required("name", default=defaults.get("name", "")): selector.TextSelector(),
+                vol.Required(CONF_TIME, default=defaults.get(CONF_TIME, "08:00:00")): (
+                    selector.TimeSelector()
+                ),
+                vol.Required(CONF_DAYS, default=defaults.get(CONF_DAYS, list(DAYS))): (
+                    selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=list(DAYS), multiple=True, translation_key="days"
+                        )
+                    )
+                ),
+                **_target_fields(defaults),
+            }
+        )
+
+    def _validate(self, data: dict[str, Any]) -> dict[str, str]:
+        errors = super()._validate(data)
+        if not data.get(CONF_DAYS):
+            errors[CONF_DAYS] = "no_days"
+        return errors
+
+
+class TriggeredAnnouncementFlow(_AnnouncementFlow):
+    """A message when an entity changes to a state (a switch, a door, a sensor...)."""
+
+    def _schema(self, defaults: dict[str, Any]) -> vol.Schema:
+        return vol.Schema(
+            {
+                vol.Required("name", default=defaults.get("name", "")): selector.TextSelector(),
+                vol.Required(CONF_ENTITY, default=defaults.get(CONF_ENTITY, "")): (
+                    selector.EntitySelector()
+                ),
+                vol.Optional(
+                    CONF_TO_STATE, description={"suggested_value": defaults.get(CONF_TO_STATE)}
+                ): selector.TextSelector(),
+                vol.Optional(
+                    CONF_FOR, description={"suggested_value": defaults.get(CONF_FOR)}
+                ): selector.DurationSelector(),
+                vol.Required(
+                    CONF_COOLDOWN, default=defaults.get(CONF_COOLDOWN, DEFAULT_COOLDOWN)
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0,
+                        max=86400,
+                        unit_of_measurement="s",
+                        mode=selector.NumberSelectorMode.BOX,
+                    )
+                ),
+                **_target_fields(defaults),
+            }
         )
