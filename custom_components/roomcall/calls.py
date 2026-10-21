@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -25,11 +26,12 @@ from .core import (
     to_playable,
     to_speech_pcm,
 )
-from .policy import DoNotDisturbError, person_area, plan
+from .policy import DoNotDisturbError, Plan, person_area, plan
 from .replies import notify_call, transcribe
 
 if TYPE_CHECKING:
     from . import RoomCallData
+    from .live import LiveStream
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,6 +59,14 @@ class CallRequest:
     recording: bytes | None = None  # original upload, for speech-to-text
     caller_user_id: str | None = None
     seconds: float | None = None  # clip length, when known
+    live: LiveStream | None = None  # audio still being recorded
+    on_delivered: Callable[[CallRecord], None] | None = None
+
+
+@dataclass(slots=True)
+class Prepared:
+    targets: list[str]
+    routing: Plan
 
 
 def _targets(hass: HomeAssistant, data: RoomCallData, request: CallRequest) -> list[str]:
@@ -72,7 +82,8 @@ def _targets(hass: HomeAssistant, data: RoomCallData, request: CallRequest) -> l
     return targets
 
 
-async def place_call(hass: HomeAssistant, data: RoomCallData, request: CallRequest) -> CallRecord:
+def prepare_call(hass: HomeAssistant, data: RoomCallData, request: CallRequest) -> Prepared:
+    """Resolve rooms and apply Do Not Disturb, quiet hours and priority (raises CallError)."""
     targets = _targets(hass, data, request)
     entity_ids = resolve(hass, data.speakers, targets)
     if not entity_ids:
@@ -90,7 +101,17 @@ async def place_call(hass: HomeAssistant, data: RoomCallData, request: CallReque
         )
     except DoNotDisturbError as err:
         raise CallError(str(err), 423) from err
+    return Prepared(targets, routing)
 
+
+async def place_call(
+    hass: HomeAssistant,
+    data: RoomCallData,
+    request: CallRequest,
+    prepared: Prepared | None = None,
+) -> CallRecord:
+    prepared = prepared or prepare_call(hass, data, request)
+    targets, routing = prepared.targets, prepared.routing
     record = CallRecord(
         target=", ".join(targets),
         kind=request.kind,
@@ -115,11 +136,23 @@ async def place_call(hass: HomeAssistant, data: RoomCallData, request: CallReque
         volumes=routing.volumes,
         record=record,
     )
-    if data.stt_engine and request.recording:
+    audio = request.audio
+    if request.live is not None:
+        await delivery
+        if request.on_delivered:
+            request.on_delivered(record)
+        # History, transcript and notifications wait for the end of the live recording.
+        await request.live.wait_done()
+        audio = bytes(request.live.mp3) or None
+        if data.stt_engine and request.live.pcm:
+            record.transcript = await _transcribe_pcm(hass, data, bytes(request.live.pcm))
+    elif data.stt_engine and request.recording:
         _, record.transcript = await asyncio.gather(delivery, _transcript(hass, data, request))
     else:
         await delivery
-    data.history.add(record, request.audio)
+    if request.on_delivered and request.live is None:
+        request.on_delivered(record)
+    data.history.add(record, audio)
     call_finished(hass, record)
     if data.notify:
         names = {a.id: a.name for a in ar.async_get(hass).async_list_areas()}
@@ -188,6 +221,15 @@ async def place_recorded_call(
         ),
     )
     return record, audio, playable_type
+
+
+async def _transcribe_pcm(hass: HomeAssistant, data: RoomCallData, pcm: bytes) -> str | None:
+    assert data.stt_engine
+    try:
+        return await transcribe(hass, data.stt_engine, pcm)
+    except Exception:
+        _LOGGER.exception("RoomCall speech-to-text failed")
+        return None
 
 
 async def _transcript(hass: HomeAssistant, data: RoomCallData, request: CallRequest) -> str | None:

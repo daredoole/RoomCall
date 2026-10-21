@@ -22,7 +22,7 @@ from custom_components.roomcall.homekit import (
     video_command,
 )
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
 
 DOMAIN = "roomcall"
 FFMPEG = shutil.which("ffmpeg")
@@ -205,3 +205,89 @@ async def test_phrase_ends_when_the_talk_button_is_released():
     await asyncio.wait_for(loop, 10)
     assert len(got) == 1
     assert got[0] - released < 1.5
+
+
+@needs_opus
+async def test_live_call_starts_while_still_talking():
+    import time
+
+    port = _even_udp_port()
+    key = base64.b64encode(os.urandom(30)).decode()
+    events: list[tuple[str, float]] = []
+    session = {"active": True}
+    loop = asyncio.create_task(
+        talk_loop(
+            FFMPEG,
+            talk_sdp("127.0.0.1", port, key),
+            lambda _p: None,
+            session,
+            on_start=lambda _p: events.append(("start", time.monotonic())),
+            on_audio=lambda _p: events.append(("audio", time.monotonic())),
+            on_end=lambda: events.append(("end", time.monotonic())),
+        )
+    )
+    await asyncio.sleep(0.8)
+    await _iphone_talks(port, key, "1")  # 3 s of talking
+    released = time.monotonic()
+    await asyncio.sleep(1.5)
+    session["active"] = False
+    session["talk"].kill()
+    await asyncio.wait_for(loop, 10)
+    started = next(t for k, t in events if k == "start")
+    assert released - started > 2.0  # the call began long before the caller let go
+    assert any(k == "audio" for k, _ in events)
+    assert events[-1][0] == "end"
+
+
+async def test_bridge_publishes_one_camera_per_room_and_keeps_its_code(
+    hass: HomeAssistant, setup_roomcall
+):
+    from custom_components.roomcall.core import rooms
+
+    data = hass.data[DOMAIN]
+    with (
+        patch(
+            "homeassistant.components.network.async_get_source_ip",
+            AsyncMock(return_value="127.0.0.1"),
+        ),
+        patch(
+            "homeassistant.components.zeroconf.async_get_async_instance",
+            AsyncMock(return_value=MagicMock()),
+        ),
+        patch("pyhap.accessory_driver.AccessoryDriver.async_start", AsyncMock()),
+        patch("pyhap.accessory_driver.AccessoryDriver.async_stop", AsyncMock()),
+    ):
+        first = HomeKitIntercom(hass, data, 51800)
+        await first.async_start(rooms(hass, data.speakers))
+        assert sorted(first.drivers) == sorted(r["area_id"] for r in rooms(hass, data.speakers))
+        ports = sorted(d.state.port for d in first.drivers.values())
+        assert ports == list(range(51800, 51800 + len(ports)))
+        camera = next(iter(first.drivers.values())).accessory
+        assert camera.display_name.endswith("Intercom")
+        code = first.pincode
+        await first.async_stop()
+
+        second = HomeKitIntercom(hass, data, 51800)
+        await second.async_start(rooms(hass, data.speakers))
+        assert second.pincode == code  # same code after a restart
+        await second.async_stop()
+
+
+@needs_opus
+async def test_apple_home_live_call_reaches_the_room(hass: HomeAssistant, setup_roomcall, house):
+    from custom_components.roomcall.homekit import _LivePhrase
+
+    played = async_mock_service(hass, "media_player", "play_media")
+    data = hass.data[DOMAIN]
+    intercom = HomeKitIntercom(hass, data, 51900)
+    tone = bytes(range(256)) * 125  # 1 s of non-silent 16-bit audio
+    call = _LivePhrase(intercom, house["basement"], tone[:6400])
+    await hass.async_block_till_done()
+    call.feed(tone[6400:])
+    call.end()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert [c.data["entity_id"] for c in played] == ["media_player.basement_sonos"]
+    assert "/api/roomcall/live/" in played[0].data["media_content_id"]
+    record = data.history.records()[0]
+    assert record.from_room == "Apple Home"
+    assert record.has_audio

@@ -25,12 +25,15 @@ Track progress and vote on the [GitHub issues](https://github.com/daredoole/Room
 
 - [x] Rooms as cameras in the Home app with a talk button ([#15](https://github.com/daredoole/RoomCall/issues/15))
 
+## v0.5 — Live ✅
+
+- [x] Live calls: speakers play while you talk, from the card and Apple Home ([#13](https://github.com/daredoole/RoomCall/issues/13))
+
 ## Next
 
 - [ ] **Hands-free talk-back** from rooms with only a Sonos: a small mic station (Atom Echo,
       ESP32-S3, Home Assistant Voice) opens for a few seconds after each call
       ([#11](https://github.com/daredoole/RoomCall/issues/11))
-- [ ] **Live streaming** while you talk, for sub-second delay ([#13](https://github.com/daredoole/RoomCall/issues/13))
 - [ ] **Doorbell bridge**: answer the door from any room or your watch ([#21](https://github.com/daredoole/RoomCall/issues/21))
 - [ ] Brand icon in Home Assistant and the default HACS store ([#25](https://github.com/daredoole/RoomCall/issues/25))
 - [ ] Per-room chimes and voicemail for rooms where nobody answered

@@ -70,3 +70,20 @@ def test_long_monologue_is_cut():
 def test_pcm_to_wav_header():
     wav = pcm_to_wav(_tone(100))
     assert wav[:4] == b"RIFF" and wav[8:12] == b"WAVE"
+
+
+def test_live_hooks_follow_the_phrase():
+    events: list[tuple[str, int]] = []
+    seg = Segmenter(
+        lambda pcm: events.append(("phrase", len(pcm))),
+        on_start=lambda pcm: events.append(("start", len(pcm))),
+        on_audio=lambda pcm: events.append(("audio", len(pcm))),
+        on_end=lambda: events.append(("end", 0)),
+    )
+    seg.feed(_noise(500) + _tone(1000) + _noise(1000))
+    kinds = [k for k, _ in events]
+    assert kinds[0] == "start"
+    assert kinds[-2:] == ["end", "phrase"]
+    assert set(kinds[1:-2]) == {"audio"}
+    streamed = sum(n for k, n in events if k in ("start", "audio"))
+    assert streamed == dict(events)["phrase"]  # live audio == the whole phrase

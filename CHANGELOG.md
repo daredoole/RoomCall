@@ -4,6 +4,16 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.5.0 — 2026-10-20
+
+- **Live calls**: speakers start playing while you are still talking. The card streams 16 kHz
+  audio over Home Assistant's WebSocket (`roomcall/live`), RoomCall encodes it to MP3 as it
+  arrives — chime first — and speakers play one growing URL (`/api/roomcall/live/<id>.mp3`).
+  History, transcripts and notifications follow when you let go. On by default; set
+  `live: false` on the card for the previous record-then-send behaviour.
+- **Apple Home goes live too**: a call starts as soon as you start speaking in the Home app.
+- The card falls back to record-then-send against older RoomCall versions.
+
 ## 0.4.5 — 2026-10-20
 
 - Apple Home: cut talk-back delay from ~10 s to about 2 s. A phrase now ends 0.5 s after the iPhone stops sending (it stops instead of sending silence when the talk button is released), and ffmpeg runs without probing, buffering or a jitter queue.

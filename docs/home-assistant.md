@@ -83,6 +83,7 @@ rooms: [kitchen, living_room]  # limit the room buttons
 people: true                   # person buttons (true, false, or a list of person entities)
 history: 3                     # recent calls to show (0 to hide)
 layout: default                # default, compact or kiosk
+live: true                     # stream while you talk (false: record, then send)
 ```
 
 <div class="grid" markdown>
@@ -91,8 +92,10 @@ layout: default                # default, compact or kiosk
 ![Delivered](assets/ha-card-delivered.png){ width="240" }
 </div>
 
-Hold the button, talk, release. The card plays the chime and then your message in the chosen
-room, and reports which speakers played it. If your microphone records silence (wrong input
+Hold the button and talk. With **live calls** (the default) the speakers start playing about a
+second after you press, while you are still talking, and stop when you let go. Turn it off with
+`live: false` to record the whole message first and then send it. Either way the card reports
+which speakers played it. If your microphone records silence (wrong input
 selected), the card says so instead of sending an empty clip.
 
 - **Urgent** (top right) plays the next call at the urgent volume and ignores Do Not Disturb

@@ -40,7 +40,7 @@ Apple's Intercom only works on HomePods, Google's Broadcast only on Google speak
 no intercom at all. RoomCall turns **every speaker Home Assistant already controls** into one
 intercom, organised by your Home Assistant **areas**.
 
-- 🎙️ **Hold to talk** from the Home Assistant app or any browser — a dashboard card, no extra app.
+- 🎙️ **Hold to talk, live** — speakers start playing while you are still talking, from the Home Assistant app or any browser.
 - 🏠 **Rooms are your areas** — talk to one room, the whole house, or **a person** wherever they are.
 - ↩️ **Reply** — every call can notify your phones with a Reply button aimed back at the caller.
 - 🌙 **Do Not Disturb, quiet hours and urgent calls** — quieter nights, skipped bedrooms, and an override when it matters.

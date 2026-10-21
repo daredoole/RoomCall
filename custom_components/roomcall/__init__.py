@@ -21,7 +21,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
-from . import chimes
+from . import chimes, ws
 from .calls import CallError, CallRequest, place_call
 from .const import (
     API_CHIME,
@@ -78,10 +78,12 @@ from .http import (
     ClipView,
     HistoryClipView,
     HistoryView,
+    LiveView,
     RoomsView,
     TalkView,
     base_url,
 )
+from .live import LiveStore
 from .policy import QuietHours
 
 _LOGGER = logging.getLogger(__name__)
@@ -124,6 +126,7 @@ class RoomCallData:
     homekit_port: int = DEFAULT_HOMEKIT_PORT
     homekit: Any = None  # HomeKitIntercom while running
     clips: ClipStore = field(default_factory=ClipStore)
+    live: LiveStore = field(default_factory=LiveStore)
     history: History = field(default_factory=History)
     chime_cache: dict[str, bytes] = field(default_factory=dict)
 
@@ -187,8 +190,9 @@ def _message_chime(hass: HomeAssistant, data: RoomCallData) -> str | None:
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register HTTP views, the dashboard card and the broadcast action once."""
-    for view in (TalkView, RoomsView, ClipView, ChimeView, HistoryView, HistoryClipView):
+    for view in (TalkView, RoomsView, ClipView, LiveView, ChimeView, HistoryView, HistoryClipView):
         hass.http.register_view(view())
+    ws.async_register(hass)
     await hass.http.async_register_static_paths(
         [StaticPathConfig(URL_STATIC, str(Path(__file__).parent / "frontend"), False)]
     )
