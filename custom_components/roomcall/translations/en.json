@@ -95,12 +95,28 @@
             "data_description": {
               "port": "Change only if another HomeKit bridge already uses it."
             }
+          },
+          "communication": {
+            "name": "Communication",
+            "data": {
+              "aliases": "Physical speaker aliases",
+              "preferences": "Person preferences",
+              "adapters": "SIP and doorbell scripts",
+              "presence_max_age": "Maximum presence age (seconds)",
+              "presence_min_confidence": "Minimum presence confidence",
+              "max_volume": "Maximum announcement volume",
+              "voicemail": "Keep voicemail locally (opt in)",
+              "voicemail_retention": "Voicemail retention (seconds)",
+              "translation_entity": "Translation AI task provider (optional)",
+              "audio_processing": "Recorded speech processing"
+            }
           }
         }
       }
     },
     "error": {
-      "no_speakers": "Select at least one speaker."
+      "no_speakers": "Select at least one speaker.",
+      "invalid_settings": "Check aliases, preferences, and adapter settings."
     }
   },
   "selector": {
@@ -129,6 +145,115 @@
       "options": {
         "normal": "Normal",
         "urgent": "Urgent (ignores Do Not Disturb and quiet hours)"
+      }
+    },
+    "communication": {
+      "options": {
+        "invalid_request": "The request is invalid.",
+        "target_required": "Choose a room, person, or speaker.",
+        "content_required": "Provide a message or an audio URL.",
+        "no_targets": "No matching RoomCall endpoint was found.",
+        "forbidden": "You do not have access to this operation.",
+        "not_ready": "RoomCall is not ready yet.",
+        "presence_unknown": "The person's current room is unknown or out of date.",
+        "dnd_blocked": "Do Not Disturb blocks this message. Try again later.",
+        "quiet_hours_blocked": "Quiet hours block these rooms. Try again later.",
+        "tts_unavailable": "Configure a text-to-speech engine first.",
+        "provider_failed": "The provider failed. Check diagnostics and try again.",
+        "playback_failed": "The playback request failed.",
+        "queue_full": "The queue is full. Try again later.",
+        "expired": "The message expired.",
+        "idempotency_conflict": "This request key already belongs to a different message.",
+        "not_found": "This item was not found or has expired.",
+        "already_started": "Playback has started. It cannot be cancelled from the queue.",
+        "not_waiting": "This message is not waiting for an acknowledgment.",
+        "ack_timeout": "Nobody acknowledged the message before the deadline.",
+        "satellite_unavailable": "Choose an available satellite that supports questions.",
+        "station_in_use": "This station is already registered. Reconnect it.",
+        "station_unavailable": "This station is unavailable.",
+        "station_busy": "This station is already in a call.",
+        "consent_required": "The recipient must answer before audio can connect.",
+        "translation_unavailable": "Select a translation provider and target language first.",
+        "translation_failed": "Translation failed. The original message was not sent.",
+        "mixed_languages": "Send separate messages for recipients with different languages.",
+        "voicemail_disabled": "Enable voicemail in RoomCall settings first.",
+        "invalid_settings": "Check aliases, preferences, and adapter settings.",
+        "accepted": "Playback requests accepted: {count}. Audible playback is unconfirmed.",
+        "failed": "Playback request failed for {speakers}.",
+        "partial": "{accepted} playback requests accepted. Failed: {speakers}.",
+        "talk": "Talk",
+        "type": "Type",
+        "ask": "Ask",
+        "message": "Message",
+        "send": "Send",
+        "preview": "Preview recipients",
+        "setup": "Setup and sound tests",
+        "test": "Play test sound",
+        "heard": "I heard it",
+        "silent": "I heard nothing",
+        "queued": "Queued",
+        "running": "Requesting playback",
+        "completed": "Playback request accepted; audibility unconfirmed.",
+        "waiting_ack": "Waiting for acknowledgment",
+        "acknowledged": "Acknowledged",
+        "answered": "Answer received",
+        "cancelled": "Cancelled",
+        "acknowledge": "Acknowledge",
+        "cancel": "Cancel",
+        "require_ack": "Ask for acknowledgment",
+        "satellite": "Voice satellite",
+        "station": "Room station",
+        "connect_station": "Enable this station",
+        "call_station": "Call station",
+        "answer": "Answer",
+        "hangup": "Hang up",
+        "incoming": "Incoming call from {name}",
+        "calling": "Calling…",
+        "connected": "Connected",
+        "ended": "Call ended",
+        "empty": "Nothing to show yet.",
+        "recording_hint": "Pick a room, hold the button and speak.",
+        "request_hint": "A successful request does not confirm audible playback.",
+        "agent_prompt": "Discover capabilities first. Preview exact recipients before sending. Supply explicit targets. Reuse an idempotency key when retrying. Check status. Request acceptance is not proof of audibility or acknowledgment. Never upgrade a blocked message to urgent automatically.",
+        "tool_discover": "Discover available rooms, endpoints, stations and capabilities.",
+        "tool_preview": "Preview exact recipients and policy without playing audio.",
+        "tool_send": "Submit a message job. Use explicit targets and an idempotency key.",
+        "tool_ask": "Ask compatible voice satellites and collect transcribed answers.",
+        "tool_status": "Read message status, evidence and responses by ID.",
+        "tool_cancel": "Cancel a queued message before playback starts.",
+        "tool_acknowledge": "Explicitly acknowledge a message waiting for a reply.",
+        "tool_diagnose": "Read capabilities, policy blocks and local delivery metrics.",
+        "tool_sound_test": "Play a test sound on one configured speaker.",
+        "tool_confirm_test": "Record whether a human heard a previous sound test.",
+        "tool_adapter": "Invoke a configured SIP or doorbell adapter script.",
+        "tool_voicemail": "List, delete or replay your retained messages when enabled.",
+        "adapter_unavailable": "This adapter is not configured or is unavailable.",
+        "refresh": "Refresh",
+        "replay": "Replay",
+        "delete": "Delete",
+        "voicemail": "Voicemail"
+      }
+    },
+    "audio_processing": {
+      "options": {
+        "off": "Off",
+        "speech": "Noise reduction, normalization and limiter"
+      }
+    },
+    "communication_operation": {
+      "options": {
+        "discover": "Discover available rooms, endpoints, stations and capabilities.",
+        "preview": "Preview exact recipients and policy without playing audio.",
+        "send": "Submit a message job. Use explicit targets and an idempotency key.",
+        "ask": "Ask compatible voice satellites and collect transcribed answers.",
+        "status": "Read message status, evidence and responses by ID.",
+        "cancel": "Cancel a queued message before playback starts.",
+        "acknowledge": "Explicitly acknowledge a message waiting for a reply.",
+        "diagnose": "Read capabilities, policy blocks and local delivery metrics.",
+        "sound_test": "Play a test sound on one configured speaker.",
+        "confirm_test": "Record whether a human heard a previous sound test.",
+        "adapter": "Invoke a configured SIP or doorbell adapter script.",
+        "voicemail": "List, delete or replay your retained messages when enabled."
       }
     }
   },
@@ -184,6 +309,18 @@
         "speakers": {
           "name": "Speakers",
           "description": "Specific media players to play on, in addition to rooms and people."
+        }
+      }
+    },
+    "communicate": {
+      "name": "Communicate",
+      "description": "Discover capabilities first. Preview exact recipients before sending. Supply explicit targets. Reuse an idempotency key when retrying. Check status. Request acceptance is not proof of audibility or acknowledgment. Never upgrade a blocked message to urgent automatically.",
+      "fields": {
+        "operation": {
+          "name": "Operation"
+        },
+        "request": {
+          "name": "Request"
         }
       }
     }

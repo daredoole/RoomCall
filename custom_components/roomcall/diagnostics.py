@@ -64,5 +64,6 @@ async def async_get_config_entry_diagnostics(
         "recent_calls": async_redact_data(
             [r.summary() for r in data.history.records()] if data else [], TO_REDACT
         ),
+        "communication_metrics": data.metrics.summary() if data else {},
         "homekit": homekit,
     }

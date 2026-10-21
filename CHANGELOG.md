@@ -4,6 +4,32 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.8.1 — 2026-10-21
+
+- Size dashboard cards to their contents, wrap narrow columns, and contain forced-height
+  layouts so adjacent cards remain usable. Cover compact/default/kiosk layouts in browser QA.
+- Require 100% Python statement coverage for the integration and standalone server in CI,
+  including supported HA versions, failure recovery, adapters, and resource cleanup.
+
+## 0.8.0 — 2026-10-21
+
+- Explicit Home Assistant LLM tools, an older-HA RoomCall API, caller permissions
+  and exposure checks, structured errors, exact recipient previews and diagnostics.
+- Accurate Assist/card results: playback request acceptance, hosted audio fetches,
+  matching player reports and explicit human acknowledgment are separate evidence.
+- Bounded message jobs with IDs, idempotency, expiry, queued cancellation, endpoint
+  serialization, acknowledgment deadlines, configured phone fallback and satellite Q&A.
+- Talk/Type/Ask dashboard controls, keyboard push-to-talk, persistent human-confirmed
+  sound tests and conservative physical-speaker deduplication/explicit aliases.
+- Consent-based WebRTC audio between browser room stations, with authenticated
+  signaling, ownership checks, disconnect cleanup and session deadlines.
+- Presence freshness/confidence and person preferences; configured SIP/doorbell
+  script adapters. Adapter audio transport remains with the underlying integration.
+- Opt-in bounded local voicemail with expiry/deletion/replay, explicit translation
+  providers, TTS language preferences and optional ffmpeg recorded-speech processing.
+- Bounded local delivery/setup metrics; new copy translated into five languages.
+- HA compatibility tests on 2026.2.3/2026.10.2 and desktop/mobile browser/WebRTC QA.
+
 ## 0.7.2 — 2026-10-21
 
 - Fix "Configuration error" on the RoomCall card until the page is refreshed: the card is now registered as a dashboard resource (kept on the current version, duplicates removed), so dashboards load it before drawing. YAML-mode dashboards keep the previous loading method.

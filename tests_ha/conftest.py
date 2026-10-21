@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import custom_components
 import pytest
@@ -71,3 +72,12 @@ async def setup_roomcall(hass: HomeAssistant, house: dict[str, str]) -> MockConf
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     return entry
+
+
+@pytest.fixture(autouse=True)
+def mock_native_playback_duration(monkeypatch):
+    """Mocked media players do not produce playback events; queue tests set their own gate.
+
+    Receiver restoration and real ffmpeg/audio tests keep their actual implementations.
+    """
+    monkeypatch.setattr("custom_components.roomcall.scheduler.wait_for_playback", AsyncMock())

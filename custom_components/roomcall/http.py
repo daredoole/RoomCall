@@ -7,13 +7,14 @@ from typing import TYPE_CHECKING
 from aiohttp import web
 from homeassistant.components.ffmpeg import get_ffmpeg_manager
 from homeassistant.components.http import KEY_HASS, HomeAssistantView
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.network import get_url
 from homeassistant.util import dt as dt_util
 
 from . import chimes
 from .calls import CallError, place_recorded_call
+from .communication import execute
 from .const import (
     ALL_ROOMS,
     API_CHIME,
@@ -29,6 +30,7 @@ from .const import (
     PRIORITY_NORMAL,
 )
 from .core import friendly, mp3_seconds, render_chime, rooms
+from .localization import catalog
 
 if TYPE_CHECKING:
     from . import RoomCallData
@@ -43,15 +45,15 @@ def base_url(hass: HomeAssistant) -> str:
     return get_url(hass, allow_internal=True, allow_external=True, prefer_external=False)
 
 
-async def _read_body(request: web.Request) -> bytes:
+async def _read_body(request: web.Request, limit: int = MAX_UPLOAD_BYTES) -> bytes:
     """Read the whole upload, stopping just past the size limit.
 
     ``StreamReader.read(n)`` returns as soon as any data is buffered, so behind a reverse
     proxy (which forwards the body in pieces) a single read only gets the first chunk.
     """
     body = bytearray()
-    while len(body) <= MAX_UPLOAD_BYTES:
-        chunk = await request.content.read(MAX_UPLOAD_BYTES + 1 - len(body))
+    while len(body) <= limit:
+        chunk = await request.content.read(limit + 1 - len(body))
         if not chunk:
             break
         body += chunk
@@ -129,6 +131,9 @@ class TalkView(HomeAssistantView):
                 "results": [r.as_dict() for r in record.results],
                 "skipped": record.skipped,
                 "transcript": record.transcript,
+                "evidence": record.evidence,
+                "audible": None,
+                "delivery_semantics": "request_accepted",
             },
             status_code=200 if record.ok else 207,
         )
@@ -145,6 +150,7 @@ class ClipView(HomeAssistantView):
         found = _data(request).clips.get(clip.split(".", 1)[0])
         if found is None:
             return web.Response(status=404)
+        _data(request).evidence.fetched(request.query.get("roomcall_token"), request.path)
         return web.Response(
             body=found.data,
             content_type=found.content_type,
@@ -171,6 +177,7 @@ class LiveView(HomeAssistantView):
         live = _data(request).live.get(stream.removesuffix(".mp3"))
         if live is None:
             return web.Response(status=404)
+        _data(request).evidence.fetched(request.query.get("roomcall_token"), request.path)
         response = web.StreamResponse(
             headers={"Content-Type": "audio/mpeg", "Cache-Control": "no-store"}
         )
@@ -226,4 +233,47 @@ class HistoryClipView(HomeAssistantView):
             body=found.data,
             content_type=found.content_type,
             headers={"Cache-Control": "private, max-age=3600"},
+        )
+
+
+class CommandView(HomeAssistantView):
+    url = "/api/roomcall/command"
+    name = "api:roomcall:command"
+
+    async def post(self, request: web.Request) -> web.Response:
+        from .errors import Problem
+
+        hass = request.app[KEY_HASS]
+        try:
+            import json
+
+            raw = await _read_body(request, 65536)
+            if len(raw) > 65536:
+                raise ValueError("too large")
+            body = json.loads(raw)
+            if (
+                not isinstance(body, dict)
+                or not isinstance(body.get("request", {}), dict)
+                or not isinstance(body.get("operation"), str)
+            ):
+                raise ValueError("invalid request")
+        except (ValueError, TypeError):
+            return self.json(Problem("invalid_request").as_dict(hass), status_code=400)
+        user = request.get("hass_user")
+        result = await execute(
+            hass,
+            body.get("operation", ""),
+            body.get("request", {}),
+            Context(user_id=user.id if user else None),
+        )
+        return self.json(result)
+
+
+class LocaleView(HomeAssistantView):
+    url = "/api/roomcall/locale"
+    name = "api:roomcall:locale"
+
+    async def get(self, request: web.Request) -> web.Response:
+        return self.json(
+            catalog(request.query.get("language", request.app[KEY_HASS].config.language))
         )

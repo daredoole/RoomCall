@@ -40,3 +40,29 @@ broadcast:
           options:
             - normal
             - urgent
+
+communicate:
+  fields:
+    operation:
+      required: true
+      default: discover
+      selector:
+        select:
+          translation_key: communication_operation
+          options:
+            - discover
+            - diagnose
+            - preview
+            - send
+            - ask
+            - status
+            - cancel
+            - acknowledge
+            - sound_test
+            - confirm_test
+            - adapter
+            - voicemail
+    request:
+      default: {}
+      selector:
+        object:

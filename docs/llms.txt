@@ -13,6 +13,19 @@ APIs; no extra credentials.
   `message` or `media_url`, `priority` (`normal`|`urgent`), `volume`. Returns
   `{ok, id, results[], skipped}`.
 - Assist / LLM agents: intent `RoomCallAnnounce` (slots `message`, `area`, `urgent`).
+- Current HA: explicit `roomcall__*` LLM tools. Older HA: select the RoomCall LLM API.
+- Discover first: `roomcall__discover`; preview explicit recipients with `roomcall__preview`.
+- Send: `roomcall__send` with targets + message/media_url; returns a job id. Retry the
+  same payload with the same idempotency_key; check `roomcall__status` afterward.
+- Questions: `roomcall__ask` on compatible discovered satellites; actual transcribed responses.
+- Diagnose: `roomcall__diagnose`. Stable errors include dnd_blocked, quiet_hours_blocked,
+  presence_unknown, forbidden, expired and idempotency_conflict. Never silently use urgent.
+- HTTP: authenticated POST `/api/roomcall/command` with `{operation,request}`.
+- HA action: `roomcall.communicate` with `{operation,request}` and return_response.
+- Success means playback request acceptance, not audible playback. Inspect separate
+  audio_fetched_ms/playback_reported_ms evidence; human acknowledgment is explicit.
+- New send operations require areas/speakers/people or everywhere:true. HA permissions
+  and assistant exposure apply. Pending jobs/keys are bounded and in memory.
 - Speak in one room: `notify.send_message` on `notify.roomcall_<room>`.
 - Do Not Disturb: `switch.roomcall_do_not_disturb`.
 
@@ -35,4 +48,5 @@ APIs; no extra credentials.
 - [Home Assistant guide](https://daredoole.github.io/RoomCall/home-assistant/)
 - [Announcements](https://daredoole.github.io/RoomCall/announcements/)
 - [Managing RoomCall with AI](https://daredoole.github.io/RoomCall/ai/)
+- [Messages, jobs, room stations and adapters](https://daredoole.github.io/RoomCall/communication/)
 - [Apple Home intercom](https://daredoole.github.io/RoomCall/apple-home/)

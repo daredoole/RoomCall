@@ -4,16 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.ffmpeg import get_ffmpeg_manager
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.util import dt as dt_util
 
+from .capabilities import deduplicate
 from .const import ALL_ROOMS, API_CLIP, PRIORITY_NORMAL
 from .core import (
     CallRecord,
@@ -39,9 +41,10 @@ _LOGGER = logging.getLogger(__name__)
 class CallError(Exception):
     """A call could not be placed; the message is shown to the user."""
 
-    def __init__(self, message: str, status: int = 400) -> None:
+    def __init__(self, message: str, status: int = 400, code: str = "invalid_request") -> None:
         super().__init__(message)
         self.status = status
+        self.code = code
 
 
 @dataclass(slots=True)
@@ -61,6 +64,12 @@ class CallRequest:
     seconds: float | None = None  # clip length, when known
     live: LiveStream | None = None  # audio still being recorded
     on_delivered: Callable[[CallRecord], None] | None = None
+    on_dispatch: Callable[[], None] | None = None
+    deadline: float | None = None
+    call_id: str | None = None
+    language: str | None = None
+    audio_processing: str = "off"
+    require_ack: bool = False
 
 
 @dataclass(slots=True)
@@ -72,10 +81,18 @@ class Prepared:
 def _targets(hass: HomeAssistant, data: RoomCallData, request: CallRequest) -> list[str]:
     targets = [t for t in request.targets if t]
     for person in request.people or []:
-        area = person_area(hass, person)
+        preference = data.preferences.get(person, {})
+        area = person_area(
+            hass,
+            person,
+            max_age=data.presence_max_age,
+            min_confidence=data.presence_min_confidence,
+        ) or preference.get("room")
         if area is None:
             name = friendly(hass, person)
-            raise CallError(f"Can't tell which room {name} is in right now", 404)
+            raise CallError(
+                f"Can't tell which room {name} is in right now", 404, "presence_unknown"
+            )
         targets.append(area)
     if not targets:
         targets = [ALL_ROOMS]
@@ -86,8 +103,9 @@ def prepare_call(hass: HomeAssistant, data: RoomCallData, request: CallRequest) 
     """Resolve rooms and apply Do Not Disturb, quiet hours and priority (raises CallError)."""
     targets = _targets(hass, data, request)
     entity_ids = resolve(hass, data.speakers, targets)
+    entity_ids, duplicates = deduplicate(hass, entity_ids, data.aliases)
     if not entity_ids:
-        raise CallError(f"No RoomCall speakers in {', '.join(targets)}", 404)
+        raise CallError(f"No RoomCall speakers in {', '.join(targets)}", 404, "no_targets")
     try:
         routing = plan(
             hass,
@@ -100,8 +118,30 @@ def prepare_call(hass: HomeAssistant, data: RoomCallData, request: CallRequest) 
             now=dt_util.now(),
         )
     except DoNotDisturbError as err:
-        raise CallError(str(err), 423) from err
+        raise CallError(
+            str(err), 423, "quiet_hours_blocked" if quiet_active(data) else "dnd_blocked"
+        ) from err
+    routing.skipped.update(duplicates)
+    routing.volumes = {
+        e: _limited_volume(hass, e, v, data.max_volume) for e, v in routing.volumes.items()
+    }
     return Prepared(targets, routing)
+
+
+def _limited_volume(
+    hass: HomeAssistant, entity_id: str, value: float | None, maximum: float
+) -> float | None:
+    if value is None and maximum < 1:
+        state = hass.states.get(entity_id)
+        try:
+            value = float(state.attributes.get("volume_level", maximum)) if state else maximum
+        except (TypeError, ValueError):
+            value = maximum
+    return min(value, maximum) if value is not None else None
+
+
+def quiet_active(data: RoomCallData) -> bool:
+    return not data.dnd and data.quiet.active(dt_util.now())
 
 
 async def place_call(
@@ -112,6 +152,11 @@ async def place_call(
 ) -> CallRecord:
     prepared = prepared or prepare_call(hass, data, request)
     targets, routing = prepared.targets, prepared.routing
+    from .communication import permitted
+
+    for entity_id in routing.entity_ids:
+        if not await permitted(hass, entity_id, Context(user_id=request.caller_user_id)):
+            raise CallError("forbidden", 403, "forbidden")
     record = CallRecord(
         target=", ".join(targets),
         kind=request.kind,
@@ -120,7 +165,19 @@ async def place_call(
         priority=request.priority,
         skipped=routing.skipped,
         message=request.message,
+        owner=request.caller_user_id,
+        requires_ack=request.require_ack,
     )
+    if request.call_id:
+        record.call_id = request.call_id
+    data.metrics.counters["calls"] += 1
+    data.metrics.counters["duplicate_routes_suppressed"] += sum(
+        reason.startswith("duplicate:") for reason in routing.skipped.values()
+    )
+    started = time.monotonic()
+    media_ids = {e: data.evidence.url(request.media_id, record, e) for e in routing.entity_ids}
+    for entity_id, media_id in media_ids.items():
+        data.evidence.watch(hass, record, entity_id, media_id)
     delivery = fan_out(
         hass,
         routing.entity_ids,
@@ -136,6 +193,9 @@ async def place_call(
         until=request.live.wait_done if request.live is not None else None,
         volumes=routing.volumes,
         record=record,
+        media_ids=media_ids,
+        deadline=request.deadline,
+        on_dispatch=request.on_dispatch,
     )
     audio = request.audio
     if request.live is not None:
@@ -153,7 +213,21 @@ async def place_call(
         await delivery
     if request.on_delivered and request.live is None:
         request.on_delivered(record)
+    for result in record.results:
+        record.evidence.setdefault(result.entity_id, {})["request_accepted"] = result.ok
+        data.metrics.observe(f"request:{_route(hass, result.entity_id)}", result.elapsed_ms)
+        data.metrics.counters["requests_accepted" if result.ok else "requests_failed"] += 1
+        data.metrics.counters["retries"] += max(0, result.attempts - 1)
+    data.metrics.observe("call_request", (time.monotonic() - started) * 1000)
     data.history.add(record, audio)
+    if not record.ok and audio is not None and data.voicemail_enabled and data.mailbox:
+        await data.mailbox.add(
+            request.caller_user_id,
+            record.transcript or record.message or "",
+            record.target,
+            audio=audio,
+            request={"areas": request.targets, "people": request.people or []},
+        )
     call_finished(hass, record)
     if data.notify:
         names = {a.id: a.name for a in ar.async_get(hass).async_list_areas()}
@@ -170,6 +244,13 @@ async def place_call(
         except Exception:
             _LOGGER.exception("RoomCall could not send call notifications")
     return record
+
+
+def _route(hass: HomeAssistant, entity_id: str) -> str:
+    from homeassistant.helpers import entity_registry as er
+
+    entry = er.async_get(hass).async_get(entity_id)
+    return entry.platform if entry else "media_player"
 
 
 async def place_recorded_call(
@@ -194,6 +275,7 @@ async def place_recorded_call(
             data.gain_db,
             data.chime_style,
             data.chime_url,
+            data.audio_processing,
         )
     except TranscodeError as err:
         raise CallError(f"Could not convert recording: {err}", 422) from err

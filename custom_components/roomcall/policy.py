@@ -71,7 +71,14 @@ def plan(
     return Plan(keep, dict.fromkeys(keep, volume), skipped)
 
 
-def person_area(hass: HomeAssistant, entity_id: str) -> str | None:
+def person_area(
+    hass: HomeAssistant,
+    entity_id: str,
+    *,
+    max_age: int | None = None,
+    min_confidence: float = 0,
+    _visited: set[str] | None = None,
+) -> str | None:
     """Area a person (or tracker/sensor) is in right now.
 
     Works with room-presence integrations such as Bermuda: a person's device trackers are
@@ -81,23 +88,56 @@ def person_area(hass: HomeAssistant, entity_id: str) -> str | None:
     state = hass.states.get(entity_id)
     if state is None:
         return None
-    if area := area_id_for(hass, state.state):
+    visited = set() if _visited is None else set(_visited)
+    if entity_id in visited:
+        return None
+    visited.add(entity_id)
+    fresh = True
+    if max_age is not None:
+        from homeassistant.util import dt as dt_util
+
+        if (dt_util.utcnow() - state.last_updated).total_seconds() > max_age:
+            fresh = False
+    try:
+        if float(state.attributes.get("confidence", 1)) < min_confidence:
+            fresh = False
+    except (TypeError, ValueError):
+        fresh = False
+    if fresh and (area := area_id_for(hass, state.state)):
         return area
-    if (area := state.attributes.get("area")) and (area_id := area_id_for(hass, str(area))):
+    if (
+        fresh
+        and (area := state.attributes.get("area"))
+        and (area_id := area_id_for(hass, str(area)))
+    ):
         return area_id
     trackers = (
         state.attributes.get("device_trackers", []) if entity_id.startswith("person.") else []
     )
     registry = er.async_get(hass)
     for tracker in trackers:
-        if (area := person_area(hass, tracker)) is not None:
+        if (
+            area := person_area(
+                hass, tracker, max_age=max_age, min_confidence=min_confidence, _visited=visited
+            )
+        ) is not None:
             return area
         entry = registry.async_get(tracker)
         if entry is None or entry.device_id is None:
             continue
         for sibling in er.async_entries_for_device(registry, entry.device_id):
-            if sibling.domain == "sensor" and sibling.entity_id.endswith("_area"):
-                sensor = hass.states.get(sibling.entity_id)
-                if sensor and (area := area_id_for(hass, sensor.state)):
-                    return area
+            if (
+                sibling.domain == "sensor"
+                and sibling.entity_id.endswith("_area")
+                and (
+                    area := person_area(
+                        hass,
+                        sibling.entity_id,
+                        max_age=max_age,
+                        min_confidence=min_confidence,
+                        _visited=visited,
+                    )
+                )
+            ):
+                return area
     return None

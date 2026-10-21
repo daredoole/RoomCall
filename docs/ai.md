@@ -6,9 +6,26 @@ agent needs. A machine-readable summary is at [`/llms.txt`](llms.txt).
 
 ## 1. Talk through Assist (any LLM conversation agent)
 
-RoomCall registers the **`RoomCallAnnounce`** intent. Home Assistant offers registered intents to
-every LLM-based conversation agent (OpenAI, Anthropic, Google, Ollama…) as a tool, so once
-RoomCall is installed, users can just say *"tell the kitchen dinner is ready"*.
+RoomCall explicitly contributes `roomcall__*` tools through Home Assistant's LLM
+platform on current releases. On older supported releases, select the **RoomCall**
+LLM API in your conversation agent's options. The `RoomCallAnnounce` intent remains
+available for compatible Assist/intent workflows. Registering an intent alone is
+not sufficient for tool discovery on current Home Assistant.
+
+Expose the relevant media players, people and satellites to the assistant. Tools
+also respect the caller's Home Assistant entity permissions. External clients can
+use Home Assistant's MCP integration with the selected RoomCall API; no separate
+RoomCall credentials or server are needed. API availability depends on the HA
+version and MCP configuration.
+
+Start with **`roomcall__discover`**, then **`roomcall__preview`**, **`roomcall__send`**
+and **`roomcall__status`**. Use an explicit target and reuse the same
+`idempotency_key` when retrying an unchanged message. `diagnose` explains policy and
+capabilities; blocked messages must not be automatically promoted to urgent.
+`ask` collects actual satellite responses. The complete contract is in
+[Messages and room stations](communication.md).
+
+The legacy intent has these slots:
 
 | Slot | Required | Meaning |
 |---|---|---|
@@ -30,7 +47,9 @@ data:
 ```
 
 It **returns** `{ok, id, results: [{entity_id, speaker, ok, error, attempts}], skipped}`, so an
-agent can confirm delivery (`return_response: true` / `response_variable:`). Errors are
+agent can check request acceptance (`return_response: true` / `response_variable:`).
+Success is not proof of audible playback; inspect the independent `evidence` and
+explicit acknowledgment where available. Errors are
 `ServiceValidationError`s with a plain-language reason, for example *"Do Not Disturb is on. Send
 it as urgent to override."*
 

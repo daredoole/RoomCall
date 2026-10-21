@@ -95,12 +95,28 @@
             "data_description": {
               "port": "Nur ändern, wenn eine andere HomeKit-Bridge ihn bereits nutzt."
             }
+          },
+          "communication": {
+            "name": "Kommunikation",
+            "data": {
+              "aliases": "Aliasse physischer Lautsprecher",
+              "preferences": "Personeneinstellungen",
+              "adapters": "SIP- und Türklingelskripte",
+              "presence_max_age": "Maximales Anwesenheitsalter (Sekunden)",
+              "presence_min_confidence": "Mindestvertrauen der Anwesenheit",
+              "max_volume": "Maximale Ansagelautstärke",
+              "voicemail": "Sprachnachrichten lokal speichern (optional)",
+              "voicemail_retention": "Aufbewahrung von Nachrichten (Sekunden)",
+              "translation_entity": "KI-Übersetzungsanbieter (optional)",
+              "audio_processing": "Verarbeitung aufgenommener Sprache"
+            }
           }
         }
       }
     },
     "error": {
-      "no_speakers": "Wähle mindestens einen Lautsprecher."
+      "no_speakers": "Wähle mindestens einen Lautsprecher.",
+      "invalid_settings": "Prüfe Aliasse, Einstellungen und Adapter."
     }
   },
   "selector": {
@@ -129,6 +145,115 @@
       "options": {
         "normal": "Normal",
         "urgent": "Dringend (ignoriert Nicht stören und Ruhezeiten)"
+      }
+    },
+    "communication": {
+      "options": {
+        "invalid_request": "Die Anfrage ist ungültig.",
+        "target_required": "Wähle einen Raum, eine Person oder einen Lautsprecher.",
+        "content_required": "Gib eine Nachricht oder Audio-URL an.",
+        "no_targets": "Kein passendes RoomCall-Ziel gefunden.",
+        "forbidden": "Du darfst diese Aktion nicht ausführen.",
+        "not_ready": "RoomCall ist noch nicht bereit.",
+        "presence_unknown": "Der aktuelle Raum der Person ist unbekannt oder veraltet.",
+        "dnd_blocked": "Nicht stören blockiert diese Nachricht. Versuche es später.",
+        "quiet_hours_blocked": "Die Ruhezeiten sperren diese Räume. Versuche es später.",
+        "tts_unavailable": "Richte zuerst eine Sprachausgabe ein.",
+        "provider_failed": "Der Anbieter meldet einen Fehler. Prüfe die Diagnose.",
+        "playback_failed": "Die Wiedergabeanforderung ist fehlgeschlagen.",
+        "queue_full": "Die Warteschlange ist voll. Versuche es später.",
+        "expired": "Die Nachricht ist abgelaufen.",
+        "idempotency_conflict": "Dieser Anfrageschlüssel gehört bereits zu einer anderen Nachricht.",
+        "not_found": "Dieser Eintrag wurde nicht gefunden oder ist abgelaufen.",
+        "already_started": "Die Wiedergabe hat begonnen und kann nicht mehr aus der Warteschlange entfernt werden.",
+        "not_waiting": "Diese Nachricht wartet nicht auf eine Bestätigung.",
+        "ack_timeout": "Niemand hat die Nachricht rechtzeitig bestätigt.",
+        "satellite_unavailable": "Wähle einen verfügbaren Satelliten mit Fragenunterstützung.",
+        "station_in_use": "Diese Station ist bereits registriert. Verbinde sie erneut.",
+        "station_unavailable": "Diese Station ist nicht verfügbar.",
+        "station_busy": "Diese Station führt bereits ein Gespräch.",
+        "consent_required": "Der Empfänger muss vor der Audioverbindung annehmen.",
+        "translation_unavailable": "Wähle zuerst einen Übersetzungsanbieter und eine Zielsprache.",
+        "translation_failed": "Die Übersetzung ist fehlgeschlagen. Die Originalnachricht wurde nicht gesendet.",
+        "mixed_languages": "Sende getrennte Nachrichten an Empfänger mit unterschiedlichen Sprachen.",
+        "voicemail_disabled": "Aktiviere zuerst die Sprachnachrichten in RoomCall.",
+        "invalid_settings": "Prüfe Aliasse, Einstellungen und Adapter.",
+        "accepted": "Wiedergabeanforderungen angenommen: {count}. Hörbarkeit unbestätigt.",
+        "failed": "Wiedergabeanforderung für {speakers} fehlgeschlagen.",
+        "partial": "{accepted} Wiedergabeanforderungen angenommen. Fehlgeschlagen: {speakers}.",
+        "talk": "Sprechen",
+        "type": "Schreiben",
+        "ask": "Fragen",
+        "message": "Nachricht",
+        "send": "Senden",
+        "preview": "Empfänger prüfen",
+        "setup": "Einrichtung und Klangtests",
+        "test": "Testton abspielen",
+        "heard": "Ich habe es gehört",
+        "silent": "Ich habe nichts gehört",
+        "queued": "In Warteschlange",
+        "running": "Wiedergabe wird angefordert",
+        "completed": "Wiedergabe angefordert; Hörbarkeit unbestätigt.",
+        "waiting_ack": "Warte auf Bestätigung",
+        "acknowledged": "Bestätigt",
+        "answered": "Antwort erhalten",
+        "cancelled": "Abgebrochen",
+        "acknowledge": "Bestätigen",
+        "cancel": "Abbrechen",
+        "require_ack": "Bestätigung anfordern",
+        "satellite": "Sprachsatellit",
+        "station": "Raumstation",
+        "connect_station": "Diese Station aktivieren",
+        "call_station": "Station anrufen",
+        "answer": "Annehmen",
+        "hangup": "Auflegen",
+        "incoming": "Eingehender Anruf von {name}",
+        "calling": "Anruf läuft…",
+        "connected": "Verbunden",
+        "ended": "Anruf beendet",
+        "empty": "Noch keine Einträge.",
+        "recording_hint": "Raum wählen, Taste halten und sprechen.",
+        "request_hint": "Eine erfolgreiche Anfrage bestätigt keine hörbare Wiedergabe.",
+        "agent_prompt": "Zuerst Fähigkeiten ermitteln, dann Empfänger prüfen. Ziele ausdrücklich angeben. Bei Wiederholungen denselben Anfrageschlüssel verwenden. Status prüfen. Angenommen bedeutet nicht gehört oder bestätigt. Blockierte Nachrichten nie automatisch dringend senden.",
+        "tool_discover": "Verfügbare Räume, Geräte, Stationen und Fähigkeiten ermitteln.",
+        "tool_preview": "Empfänger und Regeln ohne Audiowiedergabe prüfen.",
+        "tool_send": "Nachricht mit ausdrücklichen Zielen und Anfrageschlüssel einreihen.",
+        "tool_ask": "Kompatible Sprachsatelliten fragen und Antworten sammeln.",
+        "tool_status": "Nachrichtenstatus, Belege und Antworten anhand der ID lesen.",
+        "tool_cancel": "Nachricht vor Beginn der Wiedergabe abbrechen.",
+        "tool_acknowledge": "Eine auf Antwort wartende Nachricht ausdrücklich bestätigen.",
+        "tool_diagnose": "Fähigkeiten, Sperren und lokale Zustellmetriken lesen.",
+        "tool_sound_test": "Testton auf einem eingerichteten Lautsprecher abspielen.",
+        "tool_confirm_test": "Erfassen, ob ein Mensch den Testton gehört hat.",
+        "tool_adapter": "Ein eingerichtetes SIP- oder Türklingel-Adapterskript ausführen.",
+        "tool_voicemail": "Eigene gespeicherte Nachrichten bei aktivierter Funktion lesen, löschen oder abspielen.",
+        "adapter_unavailable": "Dieser Adapter ist nicht eingerichtet oder nicht verfügbar.",
+        "refresh": "Aktualisieren",
+        "replay": "Wiedergeben",
+        "delete": "Löschen",
+        "voicemail": "Sprachnachrichten"
+      }
+    },
+    "audio_processing": {
+      "options": {
+        "off": "Aus",
+        "speech": "Rauschminderung, Normalisierung und Begrenzer"
+      }
+    },
+    "communication_operation": {
+      "options": {
+        "discover": "Verfügbare Räume, Geräte, Stationen und Fähigkeiten ermitteln.",
+        "preview": "Empfänger und Regeln ohne Audiowiedergabe prüfen.",
+        "send": "Nachricht mit ausdrücklichen Zielen und Anfrageschlüssel einreihen.",
+        "ask": "Kompatible Sprachsatelliten fragen und Antworten sammeln.",
+        "status": "Nachrichtenstatus, Belege und Antworten anhand der ID lesen.",
+        "cancel": "Nachricht vor Beginn der Wiedergabe abbrechen.",
+        "acknowledge": "Eine auf Antwort wartende Nachricht ausdrücklich bestätigen.",
+        "diagnose": "Fähigkeiten, Sperren und lokale Zustellmetriken lesen.",
+        "sound_test": "Testton auf einem eingerichteten Lautsprecher abspielen.",
+        "confirm_test": "Erfassen, ob ein Mensch den Testton gehört hat.",
+        "adapter": "Ein eingerichtetes SIP- oder Türklingel-Adapterskript ausführen.",
+        "voicemail": "Eigene gespeicherte Nachrichten bei aktivierter Funktion lesen, löschen oder abspielen."
       }
     }
   },
@@ -184,6 +309,18 @@
         "speakers": {
           "name": "Lautsprecher",
           "description": "Bestimmte Mediaplayer, zusätzlich zu Räumen und Personen."
+        }
+      }
+    },
+    "communicate": {
+      "name": "Kommunizieren",
+      "description": "Zuerst Fähigkeiten ermitteln, dann Empfänger prüfen. Ziele ausdrücklich angeben. Bei Wiederholungen denselben Anfrageschlüssel verwenden. Status prüfen. Angenommen bedeutet nicht gehört oder bestätigt. Blockierte Nachrichten nie automatisch dringend senden.",
+      "fields": {
+        "operation": {
+          "name": "Aktion"
+        },
+        "request": {
+          "name": "Anfrage"
         }
       }
     }

@@ -169,8 +169,6 @@ class LiveStream:
             if self.done:
                 return
             self._changed.clear()
-            if sent < len(self.mp3) or self.done:
-                continue
             await self._changed.wait()
 
 
@@ -193,3 +191,9 @@ class LiveStore:
         for stream_id, stream in list(self._streams.items()):
             if now - stream.created > MAX_SECONDS + LIVE_TTL_SECONDS:
                 del self._streams[stream_id]
+
+    async def close(self) -> None:
+        await asyncio.gather(
+            *(stream.abort() for stream in self._streams.values() if not stream.done)
+        )
+        self._streams.clear()

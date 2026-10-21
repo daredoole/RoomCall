@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from dataclasses import dataclass, field
 from datetime import time
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
 
-import voluptuous as vol
 from homeassistant.components import persistent_notification
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
@@ -20,11 +19,13 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.helpers.start import async_at_started
+from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from . import chimes, frontend, intents, repairs, ws
+from . import chimes, frontend, intents, localization, repairs, ws
 from .announcements import Announcer
-from .calls import CallError, CallRequest, place_call
+from .calls import CallError
+from .communication import SCHEMAS, execute
 from .const import (
     API_CHIME,
     ATTR_MEDIA_URL,
@@ -74,18 +75,28 @@ from .const import (
     URL_STATIC,
 )
 from .core import ClipStore, History
+from .errors import Problem
 from .http import (
     ChimeView,
     ClipView,
+    CommandView,
     HistoryClipView,
     HistoryView,
     LiveView,
+    LocaleView,
     RoomsView,
     TalkView,
     base_url,
 )
+from .jobs import Jobs
 from .live import LiveStore
+from .messages import send
 from .policy import QuietHours
+from .scheduler import Scheduler
+from .schema import vol
+from .stations import Stations
+from .telemetry import Evidence, Metrics
+from .voicemail import Mailbox
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -132,6 +143,28 @@ class RoomCallData:
     live: LiveStore = field(default_factory=LiveStore)
     history: History = field(default_factory=History)
     chime_cache: dict[str, bytes] = field(default_factory=dict)
+    aliases: dict[str, str] = field(default_factory=dict)
+    preferences: dict[str, dict[str, Any]] = field(default_factory=dict)
+    adapters: dict[str, dict[str, str]] = field(default_factory=dict)
+    presence_max_age: int = 300
+    presence_min_confidence: float = 0
+    max_volume: float = 1
+    voicemail_enabled: bool = False
+    voicemail_retention: int = 86400
+    translation_entity: str | None = None
+    audio_processing: str = "off"
+    metrics: Metrics = field(default_factory=Metrics)
+    evidence: Evidence = field(init=False)
+    scheduler: Scheduler | None = None
+    jobs: Jobs | None = None
+    stations: Stations | None = None
+    mailbox: Mailbox | None = None
+    sound_tests: dict[str, Any] = field(default_factory=dict)
+    tests: dict[str, tuple[str, float, str | None]] = field(default_factory=dict)
+    setup_store: Any = None
+
+    def __post_init__(self) -> None:
+        self.evidence = Evidence(self.metrics)
 
 
 def _time(value: Any) -> time | None:
@@ -151,6 +184,7 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
     quiet = opts.get(SECTION_QUIET) or {}
     replies = opts.get(SECTION_REPLY) or {}
     homekit = opts.get(SECTION_HOMEKIT) or {}
+    communication = opts.get("communication") or {}
     style = chime.get(CONF_CHIME_STYLE)
     if style is None:  # entries from 0.1.x only had an on/off switch
         style = DEFAULT_CHIME_STYLE if opts.get(CONF_CHIME, DEFAULT_CHIME) else chimes.OFF
@@ -176,6 +210,16 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         stt_engine=replies.get(CONF_STT_ENGINE) or None,
         homekit_enabled=bool(homekit.get(CONF_HOMEKIT_ENABLED, False)),
         homekit_port=int(homekit.get(CONF_HOMEKIT_PORT, DEFAULT_HOMEKIT_PORT)),
+        aliases=dict(communication.get("aliases") or {}),
+        preferences=dict(communication.get("preferences") or {}),
+        adapters=dict(communication.get("adapters") or {}),
+        presence_max_age=int(communication.get("presence_max_age", 300)),
+        presence_min_confidence=float(communication.get("presence_min_confidence", 0)),
+        max_volume=float(communication.get("max_volume", 1)),
+        voicemail_enabled=bool(communication.get("voicemail", False)),
+        voicemail_retention=int(communication.get("voicemail_retention", 86400)),
+        translation_entity=communication.get("translation_entity"),
+        audio_processing=communication.get("audio_processing", "off"),
     )
 
 
@@ -193,7 +237,18 @@ def _message_chime(hass: HomeAssistant, data: RoomCallData) -> str | None:
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register HTTP views, the dashboard card and the broadcast action once."""
-    for view in (TalkView, RoomsView, ClipView, LiveView, ChimeView, HistoryView, HistoryClipView):
+    await localization.async_load(hass)
+    for view in (
+        TalkView,
+        RoomsView,
+        ClipView,
+        LiveView,
+        ChimeView,
+        HistoryView,
+        HistoryClipView,
+        CommandView,
+        LocaleView,
+    ):
         hass.http.register_view(view())
     ws.async_register(hass)
     intents.async_register(hass)
@@ -215,51 +270,18 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         data: RoomCallData | None = hass.data.get(DOMAIN)
         if data is None:
             raise ServiceValidationError("RoomCall is not set up")
-        chime_message: dict[str, str] | None = None
-        message = call.data.get(ATTR_MESSAGE)
-        if message:
-            engine = data.tts_engine or next(iter(hass.states.async_entity_ids("tts")), None)
-            if engine is None:
-                raise ServiceValidationError("No text-to-speech engine is available")
-            media_id = f"media-source://tts/{engine}?message={quote(message)}&cache=true"
-            kind = "message"
-            chime_path = _message_chime(hass, data)
-            if chime_path and "chime_tts" in hass.config.components:
-                chime_message = {
-                    "message": message,
-                    "tts_platform": engine,
-                    "chime_path": chime_path,
-                }
-        elif media_url := call.data.get(ATTR_MEDIA_URL):
-            media_id, kind = media_url, "media"
-        else:
-            raise ServiceValidationError("Provide either message or media_url")
         try:
-            record = await place_call(
-                hass,
-                data,
-                CallRequest(
-                    targets=[
-                        *(call.data.get(ATTR_TARGET_AREAS) or []),
-                        *(call.data.get(ATTR_TARGET_SPEAKERS) or []),
-                    ],
-                    people=call.data.get(ATTR_TARGET_PEOPLE),
-                    media_id=media_id,
-                    kind=kind,
-                    priority=call.data[ATTR_PRIORITY],
-                    volume=call.data.get(ATTR_VOLUME),
-                    message=message,
-                    chime_message=chime_message,
-                    caller_user_id=call.context.user_id,
-                ),
-            )
-        except CallError as err:
+            record = await send(hass, data, dict(call.data), call.context)
+        except (CallError, Problem) as err:
             raise ServiceValidationError(str(err)) from err
         return {
             "ok": record.ok,
             "id": record.call_id,
             "results": [r.as_dict() for r in record.results],
             "skipped": record.skipped,
+            "evidence": record.evidence,
+            "audible": None,
+            "delivery_semantics": "request_accepted",
         }
 
     hass.services.async_register(
@@ -269,6 +291,26 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         schema=BROADCAST_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
+
+    async def _communicate(call: ServiceCall) -> ServiceResponse:
+        return await execute(
+            hass, call.data["operation"], call.data.get("request", {}), call.context
+        )
+
+    hass.services.async_register(
+        DOMAIN,
+        "communicate",
+        _communicate,
+        schema=vol.Schema(
+            {vol.Required("operation"): vol.In(SCHEMAS), vol.Optional("request", default={}): dict}
+        ),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    from homeassistant.helpers import llm
+
+    from .llm import RoomCallAPI
+
+    llm.async_register_api(hass, RoomCallAPI(hass))
     return True
 
 
@@ -277,6 +319,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if kept := hass.data.pop(_KEPT, None):  # history and Do Not Disturb survive a reload
         data.history, data.dnd = kept
     data.entry_id = entry.entry_id
+    data.scheduler = Scheduler(hass, data.aliases)
+    data.jobs = Jobs(hass, data)
+    data.stations = Stations(hass)
+    data.mailbox = Mailbox(hass, entry.entry_id, data.voicemail_enabled, data.voicemail_retention)
+    await data.mailbox.load()
+    data.setup_store = Store(hass, 1, f"roomcall.{entry.entry_id}.setup")
+    data.sound_tests = (await data.setup_store.async_load() or {}).get("sound_tests", {})
+
+    async def notification_action(event) -> None:
+        action = event.data.get("action", "")
+        if not isinstance(action, str) or not action.startswith("ROOMCALL_ACK_"):
+            return
+        if event.context.user_id:
+            with contextlib.suppress(Problem):
+                await data.jobs.acknowledge(action.removeprefix("ROOMCALL_ACK_"), event.context, "")
+
+    entry.async_on_unload(
+        hass.bus.async_listen("mobile_app_notification_action", notification_action)
+    )
     hass.data[DOMAIN] = data
     data.announcer = Announcer(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -323,6 +384,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if current is not None and current.homekit is not None:
         await current.homekit.async_stop()
         current.homekit = None
+    if current is not None:
+        await current.jobs.close()
+        await current.live.close()
+        await current.scheduler.close()
+        current.stations.close()
+        current.evidence.close()
+        current.mailbox.close()
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded and (data := hass.data.pop(DOMAIN, None)) is not None:
         hass.data[_KEPT] = (data.history, data.dnd)

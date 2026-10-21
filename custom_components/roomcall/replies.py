@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
 
 from .core import CallRecord
+from .localization import text as translate
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,13 +52,20 @@ async def notify_call(
     body = f"{origin} → {target}"
     if text := record.transcript or record.message:
         body += f": “{text}”"
-    data: dict[str, Any] = {"tag": "roomcall", "group": "roomcall"}
+    data: dict[str, Any] = {"tag": record.call_id, "group": "roomcall"}
     if dashboard_path:
         # Reply to the caller's room when it is a room; otherwise to everywhere.
         reply_to = record.from_room if record.from_room in room_names else None
         uri = reply_uri(dashboard_path, reply_to)
         data |= {"url": uri, "clickAction": uri}
         data["actions"] = [{"action": "URI", "title": "Reply", "uri": uri}]
+    if record.requires_ack:
+        data.setdefault("actions", []).append(
+            {
+                "action": f"ROOMCALL_ACK_{record.call_id}",
+                "title": translate(hass, "acknowledge"),
+            }
+        )
     if record.priority == "urgent":
         data["push"] = {"interruption-level": "time-sensitive"}
     sent = []

@@ -98,9 +98,37 @@
       text: "Laundry is done", has_audio: false },
   ];
   const states = { "switch.roomcall_do_not_disturb": { state: params.get("dnd") === "on" ? "on" : "off" } };
+  const requests = [];
+  const jobs = new Map();
+  const tests = new Map();
+  const stations = new Map();
+  const sessions = new Map();
   const hass = {
     states,
-    async callApi(method, path) {
+    language: "en",
+    async callApi(method, path, body) {
+      if (path.startsWith("roomcall/locale")) return (await (await fetch("/strings.json")).json()).selector.communication.options;
+      if (path === "roomcall/command") {
+        requests.push(body);
+        const request = body.request || {};
+        if (body.operation === "discover") return { ok:true, schema_version:1,
+          endpoints:ROOMS.map((r) => ({ entity_id:`media_player.${r.area_id}`,name:r.name,selected:true,
+            sound_test:tests.get(`media_player.${r.area_id}`) })),
+          areas:ROOMS.map((r) => ({id:r.area_id,name:r.name})),
+          satellites:[{entity_id:"assist_satellite.kitchen",name:"Kitchen Voice",available:true,can_ask:true}],
+          stations:[...stations.values()].map((s) => ({id:s.id,name:s.name,room:s.room})),features:{} };
+        if (body.operation === "preview") return {ok:true,endpoints:ROOMS.filter((r) => request.areas?.includes("all") || request.areas?.includes(r.area_id)).map((r) => `media_player.${r.area_id}`)};
+        if (["send","ask","sound_test"].includes(body.operation)) {
+          const id=crypto.randomUUID();
+          const job={ok:true,id,state:body.operation==="ask"?"answered":"completed",responses:body.operation==="ask"?[{sentence:"Pizza"}]:[]};
+          jobs.set(id,{...job,speaker:request.speaker});
+          return job;
+        }
+        if (body.operation === "status") return jobs.get(request.id);
+        if (body.operation === "confirm_test") {tests.set(jobs.get(request.id).speaker,{heard:request.heard});return {ok:true,heard:request.heard};}
+        if (body.operation === "voicemail") return {ok:true,messages:[]};
+        return {ok:true};
+      }
       if (path === "roomcall/history") return { calls: HISTORY };
       return {
         rooms: ROOMS, speakers: 5, dnd: false, dnd_entity: "switch.roomcall_do_not_disturb",
@@ -108,10 +136,32 @@
       };
     },
     async callService() {},
+    async callWS(msg) {
+      const station=stations.get(msg.station_id);
+      if (msg.action==="call") {
+        const peer=stations.get(msg.peer),id=crypto.randomUUID();
+        if (!peer) throw new Error("Station unavailable");
+        sessions.set(id,{caller:station,callee:peer});
+        peer.cb({type:"incoming",id,from:station.name,room:station.room});
+        station.cb({type:"calling",id});
+        return {id};
+      }
+      const session=sessions.get(msg.session_id);
+      if (!session) throw new Error("Unknown session");
+      const peer=session.caller===station?session.callee:session.caller;
+      if (msg.action==="answer") peer.cb({type:"accepted",id:msg.session_id});
+      if (msg.action==="signal") peer.cb({type:"signal",id:msg.session_id,signal:msg.signal});
+      if (msg.action==="hangup") {sessions.delete(msg.session_id);for(const s of [session.caller,session.callee])s.cb({type:"ended",id:msg.session_id});}
+      return {id:msg.session_id};
+    },
     // Live calls: ready → delivered while talking → done after the end-of-audio frame.
     connection: {
       _cb: null,
       async subscribeMessage(cb, msg) {
+        if(msg.type==="roomcall/station") {
+          stations.set(msg.station_id,{id:msg.station_id,name:msg.name,room:msg.room,cb});
+          return () => stations.delete(msg.station_id);
+        }
         this._cb = cb;
         const hit = ROOMS.filter((r) => msg.target === "all" || r.area_id === msg.target);
         setTimeout(() => cb({ type: "ready", handler_id: 1 }), 50);
@@ -137,6 +187,7 @@
       }), { headers: { "Content-Type": "application/json" } });
     },
   };
+  window.ROOMCALL_HARNESS={hass,requests,stations,sessions};
 
   const tile = (icon, color, name, state) =>
     `<div class="tile"><span class="mdi mdi-${icon}" style="color:${color};background:color-mix(in srgb, ${color} 18%, transparent)"></span>
@@ -171,6 +222,12 @@
       main.insertAdjacentHTML("beforeend",
         tile("lightbulb-group", "#ffc107", "Lights", "3 on") + tile("garage", "#4caf50", "Garage door", "Closed"));
     }
+  }
+  if(params.get("stations")==="2") {
+    const second=document.createElement("roomcall-card");
+    second.setConfig({title:"Basement",room:"basement",default_room:"basement"});
+    second.hass=hass;
+    main.append(second);
   }
 </script>
 </body>

@@ -1,21 +1,20 @@
-"""Assist intent: lets voice assistants and AI conversation agents make announcements.
-
-Home Assistant offers every registered intent to LLM-based conversation agents as a tool, so
-"tell the kitchen dinner is ready" works with any AI agent connected to Assist.
-"""
+"""Assist intent with truthful service results; explicit LLM tools live in llm.py."""
 
 from __future__ import annotations
 
 from typing import ClassVar
 
-import voluptuous as vol
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import intent
 
+from .communication import validate_targets
 from .const import DOMAIN, PRIORITY_NORMAL, PRIORITY_URGENT, SERVICE_BROADCAST
 from .core import area_id_for
+from .errors import Problem
+from .localization import text
+from .schema import vol
 
 INTENT_ANNOUNCE = "RoomCallAnnounce"
 
@@ -53,12 +52,40 @@ class AnnounceIntent(intent.IntentHandler):
         if area:
             area_id = area_id_for(hass, area)
             if area_id is None:
-                raise intent.IntentHandleError(f"There is no room called {area}")
+                raise intent.IntentHandleError(text(hass, "no_targets", intent_obj.language))
             data["areas"] = [area_id]
         try:
-            await hass.services.async_call(DOMAIN, SERVICE_BROADCAST, data, blocking=True)
-        except HomeAssistantError as err:
+            await validate_targets(
+                hass,
+                {**data, "everywhere": not bool(area)},
+                intent_obj.context,
+                "conversation" if intent_obj.platform == "conversation" else None,
+            )
+            result = await hass.services.async_call(
+                DOMAIN,
+                SERVICE_BROADCAST,
+                data,
+                blocking=True,
+                return_response=True,
+                context=intent_obj.context,
+            )
+        except (HomeAssistantError, Problem) as err:
             raise intent.IntentHandleError(str(err)) from err
         response = intent_obj.create_response()
-        response.async_set_speech(f"Announced in {area}." if area else "Announced everywhere.")
+        results = (result or {}).get("results", [])
+        failed = [r["speaker"] for r in results if not r["ok"]]
+        accepted = sum(r["ok"] for r in results)
+        if failed:
+            speech = text(
+                hass,
+                "partial" if accepted else "failed",
+                intent_obj.language,
+                accepted=accepted,
+                speakers=", ".join(failed),
+            )
+        elif accepted:
+            speech = text(hass, "accepted", intent_obj.language, count=accepted)
+        else:
+            speech = text(hass, "failed", intent_obj.language, speakers=area or "RoomCall")
+        response.async_set_speech(speech)
         return response

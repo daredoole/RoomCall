@@ -7,10 +7,10 @@ uses). An empty frame, or unsubscribing, ends the recording.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
 
-import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.components.ffmpeg import get_ffmpeg_manager
 from homeassistant.core import HomeAssistant, callback
@@ -19,7 +19,10 @@ from homeassistant.helpers.network import NoURLAvailableError
 from .calls import CallError, CallRequest, place_call, prepare_call
 from .const import ALL_ROOMS, API_LIVE, DOMAIN, PRIORITIES, PRIORITY_NORMAL
 from .core import CallRecord
+from .errors import Problem
 from .live import LiveStream
+from .schema import vol
+from .stations import Station
 
 if TYPE_CHECKING:
     from . import RoomCallData
@@ -30,6 +33,76 @@ _LOGGER = logging.getLogger(__name__)
 @callback
 def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_live)
+    websocket_api.async_register_command(hass, ws_station)
+    websocket_api.async_register_command(hass, ws_session)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "roomcall/station",
+        vol.Required("station_id"): vol.All(str, vol.Length(min=8, max=64)),
+        vol.Required("room"): str,
+        vol.Required("name"): vol.All(str, vol.Length(min=1, max=80)),
+    }
+)
+@websocket_api.async_response
+async def ws_station(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    data = hass.data.get(DOMAIN)
+    if data is None or connection.user is None:
+        connection.send_error(msg["id"], "not_ready", "RoomCall")
+        return
+    try:
+        data.stations.register(
+            Station(
+                msg["station_id"],
+                connection.user.id,
+                msg["room"],
+                msg["name"],
+                lambda event: connection.send_message(
+                    websocket_api.event_message(msg["id"], event)
+                ),
+            )
+        )
+    except Problem as err:
+        connection.send_error(msg["id"], err.code, err.as_dict(hass)["error"]["message"])
+        return
+    connection.subscriptions[msg["id"]] = lambda: data.stations.remove(msg["station_id"])
+    connection.send_result(msg["id"])
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "roomcall/session",
+        vol.Required("station_id"): str,
+        vol.Required("action"): vol.In(("call", "answer", "signal", "hangup")),
+        vol.Optional("peer"): str,
+        vol.Optional("session_id"): str,
+        vol.Optional("signal"): dict,
+    }
+)
+@websocket_api.async_response
+async def ws_session(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    data = hass.data.get(DOMAIN)
+    if data is None or connection.user is None:
+        connection.send_error(msg["id"], "not_ready", "RoomCall")
+        return
+    try:
+        if msg["action"] == "call":
+            session_id = data.stations.invite(
+                msg["station_id"], msg.get("peer", ""), connection.user.id
+            )
+        else:
+            session_id = msg.get("session_id", "")
+            data.stations.action(
+                msg["station_id"], connection.user.id, session_id, msg["action"], msg.get("signal")
+            )
+        connection.send_result(msg["id"], {"id": session_id})
+    except Problem as err:
+        connection.send_error(msg["id"], err.code, err.as_dict(hass)["error"]["message"])
 
 
 @websocket_api.websocket_command(
@@ -63,6 +136,7 @@ async def ws_live(
         from_room=msg.get("from"),
         volume=msg.get("volume"),
         caller_user_id=connection.user.id if connection.user else None,
+        deadline=asyncio.get_running_loop().time() + 120,
     )
     try:
         prepared = prepare_call(hass, data, request)
@@ -94,7 +168,11 @@ async def ws_live(
                 msg_id,
                 {
                     "type": "delivered",
+                    "id": record.call_id,
                     "ok": record.ok,
+                    "evidence": record.evidence,
+                    "audible": None,
+                    "delivery_semantics": "request_accepted",
                     "results": [r.as_dict() for r in record.results],
                     "skipped": record.skipped,
                 },
@@ -135,6 +213,8 @@ async def ws_live(
                         "id": record.call_id,
                         "seconds": round(len(stream.pcm) / 32000, 1),
                         "transcript": record.transcript,
+                        "ok": record.ok,
+                        "evidence": record.evidence,
                     },
                 )
             )

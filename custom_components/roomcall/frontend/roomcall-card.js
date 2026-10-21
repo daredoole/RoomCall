@@ -1,5 +1,5 @@
 /* RoomCall push-to-talk card for Home Assistant dashboards. */
-const CARD_VERSION = "0.7.2";
+const CARD_VERSION = "0.8.1";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
 const LAYOUTS = ["default", "compact", "kiosk"];
@@ -52,6 +52,8 @@ class RoomCallCard extends HTMLElement {
   }
 
   setConfig(config) {
+    this._communication?.close();
+    this._communication = null;
     if (config.layout && !LAYOUTS.includes(config.layout)) {
       throw new Error(`layout must be one of: ${LAYOUTS.join(", ")}`);
     }
@@ -70,6 +72,7 @@ class RoomCallCard extends HTMLElement {
     this._urgent = false;
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
     this._render();
+    if (this._hass) this._load();
   }
 
   set hass(hass) {
@@ -80,13 +83,14 @@ class RoomCallCard extends HTMLElement {
   }
 
   getCardSize() {
-    return this._config.layout === "compact" ? 3 : 7;
+    const height = this.shadowRoot?.querySelector("ha-card")?.getBoundingClientRect().height;
+    return height ? Math.ceil(height / 50) : this._config.layout === "compact" ? 3 : 7;
   }
 
   getGridOptions() {
-    if (this._config.layout === "compact") return { columns: 12, rows: 3, min_rows: 2 };
-    if (this._config.layout === "kiosk") return { columns: "full", rows: 8, min_rows: 6 };
-    return { columns: 12, rows: 7, min_rows: 5 };
+    // Room chips, forms and setup all change height. Fixed rows let the next card
+    // start underneath our contents, especially in narrow sections.
+    return { columns: this._config.layout === "kiosk" ? "full" : 12, rows: "auto" };
   }
 
   async _load() {
@@ -107,6 +111,36 @@ class RoomCallCard extends HTMLElement {
     this._renderRooms();
     this._renderToggles();
     this._loadHistory();
+    try {
+      const strings = await this._hass.callApi("GET", `roomcall/locale?language=${encodeURIComponent(this._hass.language || "en")}`);
+      this._strings = strings;
+      const { RoomCallControls } = await import(`./roomcall-controls.js?v=${CARD_VERSION}`);
+      if (this.isConnected && !this._communication) this._communication = new RoomCallControls(this, strings);
+    } catch (error) { console.warn("RoomCall communication controls", error); }
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener("blur", this._windowBlur);
+    this._communication?.close();
+    this._communication = null;
+    this._stream?.getTracks().forEach((track) => track.stop());
+    this._ctx?.close();
+    if (this._live) {
+      this._live.done = true;
+      if (this._live.handlerId !== null) this._endLiveAudio(this._live);
+      this._live.unsub?.();
+      this._live = null;
+    }
+  }
+
+  connectedCallback() {
+    this._windowBlur ||= () => this._stop({ preventDefault() {} });
+    window.addEventListener("blur", this._windowBlur);
+    if (this._hass && !this._communication) this._load();
+  }
+
+  _t(key, values = {}) {
+    return Object.entries(values).reduce((copy, [name, value]) => copy.replaceAll(`{${name}}`, value), this._strings?.[key] || key);
   }
 
   async _loadHistory() {
@@ -129,10 +163,12 @@ class RoomCallCard extends HTMLElement {
     const layout = this._config.layout;
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; }
-        ha-card { padding: 16px; display: flex; flex-direction: column; gap: 12px; height: 100%; box-sizing: border-box; }
-        .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-        .title { font-size: 18px; font-weight: 500; }
+        :host { display: block; min-width: 0; min-height: 0; height: 100%; }
+        ha-card { padding: 16px; display: flex; flex-direction: column; gap: 12px; height: 100%; box-sizing: border-box;
+          min-width: 0; min-height: 0; overflow: auto; }
+        ha-card > * { flex-shrink: 0; min-width: 0; }
+        .head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+        .title { font-size: 18px; font-weight: 500; overflow-wrap: anywhere; }
         .muted { color: var(--secondary-text-color); font-size: 13px; }
         .toggles { display: flex; gap: 6px; }
         .reply { display: none; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px;
@@ -144,6 +180,7 @@ class RoomCallCard extends HTMLElement {
           border: 1px solid var(--divider-color); background: var(--card-background-color);
           color: var(--primary-text-color); border-radius: 999px; padding: 8px 14px;
           font-family: inherit; font-size: 14px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center;
+          max-width: 100%; overflow-wrap: anywhere;
         }
         .chip.small { padding: 5px 10px; font-size: 12px; }
         .chip[aria-pressed="true"] { background: var(--primary-color); border-color: var(--primary-color); color: var(--text-primary-color, #fff); }
@@ -152,9 +189,10 @@ class RoomCallCard extends HTMLElement {
         .chip ha-icon { --mdc-icon-size: 18px; }
         .chip.small ha-icon { --mdc-icon-size: 16px; }
         .people:empty { display: none; }
-        .wrap { flex: 1; display: grid; place-items: center; min-height: 150px; }
+        .wrap { flex: 1 0 auto; display: grid; place-items: center; min-height: 150px; }
+        .wrap[hidden] { display:none }
         button.talk {
-          width: min(52vw, 170px); aspect-ratio: 1; border-radius: 50%; border: 0; cursor: pointer;
+          width: min(100%, 170px); aspect-ratio: 1; border-radius: 50%; border: 0; cursor: pointer;
           background: var(--primary-color); color: var(--text-primary-color, #fff);
           font-family: inherit; font-size: 17px; font-weight: 600; touch-action: none; user-select: none;
           -webkit-user-select: none; display: grid; place-items: center; align-content: center; gap: 6px; transition: transform 0.08s;
@@ -167,11 +205,11 @@ class RoomCallCard extends HTMLElement {
           box-shadow: 0 0 0 calc(var(--level, 0) * 30px) color-mix(in srgb, var(--error-color, #db4437) 25%, transparent);
         }
         button.talk:disabled { opacity: 0.55; cursor: progress; }
-        .status { text-align: center; min-height: 1.3em; font-size: 14px; }
+        .status { text-align: center; min-height: 1.3em; font-size: 14px; overflow-wrap: anywhere; }
         .ok { color: var(--success-color, #43a047); } .err { color: var(--error-color, #db4437); }
         .history { display: grid; gap: 6px; }
         .history:empty { display: none; }
-        .call { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+        .call { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center;
           padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
         .call .what { font-size: 13px; line-height: 1.3; overflow: hidden; }
         .call .text { color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -190,7 +228,7 @@ class RoomCallCard extends HTMLElement {
         :host([layout="kiosk"]) .title { font-size: 26px; }
         :host([layout="kiosk"]) .chip { padding: 14px 22px; font-size: 18px; }
         :host([layout="kiosk"]) .chip ha-icon { --mdc-icon-size: 24px; }
-        :host([layout="kiosk"]) button.talk { width: min(70vw, 340px); font-size: 26px; }
+        :host([layout="kiosk"]) button.talk { width: min(100%, 340px); font-size: 26px; }
         :host([layout="kiosk"]) button.talk ha-icon { --mdc-icon-size: 72px; }
         :host([layout="kiosk"]) .status { font-size: 18px; }
         :host([layout="kiosk"]) .history { display: none; }
@@ -220,6 +258,12 @@ class RoomCallCard extends HTMLElement {
     talk.addEventListener("pointerdown", (e) => this._start(e));
     for (const ev of ["pointerup", "pointerleave", "pointercancel"]) talk.addEventListener(ev, (e) => this._stop(e));
     talk.addEventListener("contextmenu", (e) => e.preventDefault());
+    talk.addEventListener("keydown", (e) => {
+      if ([" ", "Enter"].includes(e.key) && !e.repeat) this._start(e);
+    });
+    talk.addEventListener("keyup", (e) => {
+      if ([" ", "Enter"].includes(e.key)) this._stop(e);
+    });
     this.shadowRoot.querySelector(".reply button").addEventListener("click", () => {
       this._replyTo = null;
       this._target = this._config.default_room || "all";
@@ -313,6 +357,12 @@ class RoomCallCard extends HTMLElement {
         play.addEventListener("click", () => this._replay(call.id));
         actions.append(play);
       }
+      if (call.requires_ack && this._communication) {
+        actions.append(this._communication.button("acknowledge", async () => {
+          await this._communication.command("acknowledge", { id: call.id });
+          this._loadHistory();
+        }));
+      }
       if (call.from && (this._rooms || []).some((r) => r.area_id === call.from)) {
         const reply = document.createElement("button");
         reply.title = `Reply to ${from}`;
@@ -351,18 +401,26 @@ class RoomCallCard extends HTMLElement {
 
   async _start(e) {
     e.preventDefault();
-    if (this._recorder) return;
+    if (this._recorder || this._live || this._starting) return;
+    this._pressed = true;
+    this._starting = true;
     try {
       this._stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
     } catch (err) {
+      this._starting = false;
       this._setStatus(
         window.isSecureContext
           ? "Microphone blocked — allow mic access for Home Assistant."
           : "The microphone needs HTTPS — open Home Assistant over https:// or in the app.",
         "err",
       );
+      return;
+    }
+    this._starting = false;
+    if (!this._pressed || !this.isConnected) {
+      this._stream.getTracks().forEach((track) => track.stop());
       return;
     }
     const talk = this.shadowRoot.querySelector(".talk");
@@ -401,6 +459,7 @@ class RoomCallCard extends HTMLElement {
 
   _stop(e) {
     e.preventDefault();
+    this._pressed = false;
     if (this._live) {
       this._stopLive();
       return;
@@ -440,6 +499,7 @@ class RoomCallCard extends HTMLElement {
         );
       }
       await this._ctx.audioWorklet.addModule(RoomCallCard._workletUrl);
+      if (live.done) return;
       const node = new AudioWorkletNode(this._ctx, "roomcall-pcm16");
       const mute = this._ctx.createGain();
       mute.gain.value = 0;
@@ -455,6 +515,7 @@ class RoomCallCard extends HTMLElement {
       if (this._urgent) msg.priority = "urgent";
       if (this._config.room) msg.from = this._config.room;
       live.unsub = await this._hass.connection.subscribeMessage((ev) => this._onLive(live, ev, send), msg);
+      if (!this.isConnected) { live.unsub(); return; }
       if (live.done && live.handlerId !== null) this._endLiveAudio(live);
     } catch (err) {
       const unknown = err && (err.code === "unknown_command" || String(err.message).includes("Unknown command"));
@@ -476,14 +537,17 @@ class RoomCallCard extends HTMLElement {
       if (live.done) this._endLiveAudio(live);
     } else if (ev.type === "delivered") {
       const names = (ev.results || []).filter((r) => r.ok).map((r) => r.speaker);
-      if (!live.done) this._setStatus(`Live on ${names.join(", ") || "no speakers"} — keep talking`, "ok");
+      if (!live.done) this._setStatus(this._t("accepted", { count: names.length }), names.length ? "ok" : "err");
       const failed = (ev.results || []).filter((r) => !r.ok).map((r) => r.speaker);
       if (failed.length) this._setStatus(`Not delivered to: ${failed.join(", ")}`, "err");
       live.delivered = names;
+      live.failed = failed;
     } else if (ev.type === "done") {
       live.unsub && live.unsub();
       const where = (live.delivered || []).join(", ");
-      this._setStatus(`Delivered ${ev.seconds} s live${where ? ` to ${where}` : ""}.`, "ok");
+      const failed = live.failed || [];
+      this._setStatus(failed.length ? this._t("failed", { speakers: failed.join(", ") })
+        : this._t("accepted", { count: live.delivered?.length || 0 }), failed.length ? "err" : "ok");
       if (this._replyTo) {
         this._replyTo = null;
         this._renderRooms();
@@ -557,8 +621,8 @@ class RoomCallCard extends HTMLElement {
       const failed = results.filter((r) => !r.ok);
       const secs = body.seconds ? ` ${body.seconds} s` : "";
       const skipped = Object.keys(body.skipped || {});
-      if (res.ok) {
-        let text = `Delivered${secs} to ${results.map((r) => r.speaker).join(", ")}.`;
+      if (res.ok && !failed.length && results.length) {
+        let text = this._t("accepted", { count: results.length });
         if (skipped.length) text += ` Skipped (quiet hours): ${skipped.join(", ")}.`;
         this._setStatus(text, "ok");
         if (this._replyTo) {

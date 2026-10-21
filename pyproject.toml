@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "roomcall"
-version = "0.7.2"
+version = "0.8.1"
 description = "Push-to-talk home intercom for the speakers you already own: Sonos, AirPlay and Chromecast."
 readme = "README.md"
 license = "MIT"
@@ -36,6 +36,7 @@ cast = ["pychromecast>=14"]
 all = ["roomcall[sonos,airplay,cast]"]
 dev = [
   "pytest>=8",
+  "pytest-cov>=7",
   "pytest-asyncio>=0.24",
   "pytest-aiohttp>=1.0",
   "ruff>=0.7",
@@ -60,6 +61,14 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.coverage.run]
+relative_files = true
+
+[tool.coverage.report]
+fail_under = 100
+precision = 2
+show_missing = true
 
 [tool.ruff]
 line-length = 100

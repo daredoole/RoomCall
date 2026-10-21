@@ -57,11 +57,16 @@ intercom, organised by your Home Assistant **areas**.
 - 🗣️ **Automations and Siri** — `roomcall.broadcast` from automations, Shortcuts, Apple Watch and CarPlay.
 - 🖥️ **Visual card editor**, plus kiosk and compact layouts for wall tablets and busy dashboards.
 - ⏰ **Scheduled and triggered announcements** — "Bus in 10 minutes" on weekdays, "{{ name }} is on" when the porch light switches, "the garage has been open 10 minutes" — to rooms, specific speakers or people.
-- 🤖 **AI-ready** — any Assist LLM agent can announce ("tell the kitchen dinner is ready"), and agents can create and manage announcements through Home Assistant's own APIs ([guide](https://daredoole.github.io/RoomCall/ai/), [`llms.txt`](https://daredoole.github.io/RoomCall/llms.txt)).
+- 🤖 **AI-ready** — Assist agents can announce and inspect results through RoomCall's tools; agents can manage announcements through Home Assistant's APIs ([guide](https://daredoole.github.io/RoomCall/ai/), [`llms.txt`](https://daredoole.github.io/RoomCall/llms.txt)).
+- 💬 **Talk, Type or Ask** — preview recipients, queue messages, request acknowledgment, or collect a real answer from an Assist satellite.
+- ☎️ **Browser room stations** — call another open dashboard using WebRTC; the recipient answers before audio connects.
+- ✅ **Delivery evidence and sound tests** — distinguish playback requests, audio fetches, matching player reports and explicit human acknowledgment.
+- 🧰 **Agent tools** — discover capabilities, preview, send, inspect status and diagnose failures through HA's LLM/MCP APIs; retries can reuse an idempotency key.
+- 📬 **Optional voicemail and translation** — bounded local retention, per-person TTS languages, explicit translation providers and recorded speech processing.
 - 🔔 **A notify entity per room** (`notify.roomcall_kitchen`) and ready-made **blueprints** for the doorbell, laundry, bedtime and arrivals.
 - 🩺 **Diagnostics and Repairs** — problems show up in Home Assistant, not as silent calls.
 - 🌍 English, Español, Deutsch, Français, Nederlands.
-- 🔒 **Local only** — audio goes from your phone to Home Assistant to the speaker. No cloud, no account.
+- 🔒 **Local audio delivery** — recordings go from your phone to Home Assistant to the speaker. Optional speech and translation processing follows the providers you explicitly configure.
 
 <p align="center">
   <img src="docs/assets/ha-card-reply.png" alt="Replying from a notification" width="200">
@@ -122,6 +127,10 @@ title: Intercom
 ```
 
 That's it — no resources to register, the integration loads the card for you.
+
+Open **Setup and sound tests** on the card to verify each speaker. See
+[Messages and room stations](https://daredoole.github.io/RoomCall/communication/)
+for message jobs, acknowledgments, browser calls, permissions and adapter setup.
 
 <p align="center">
   <img src="docs/assets/ha-dashboard-desktop.png" alt="RoomCall card on a desktop dashboard" width="820">
