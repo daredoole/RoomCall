@@ -132,6 +132,8 @@ async def test_native_subentry_failures_and_bounded_keys(hass, setup_roomcall, h
     manager.announcement_keys = {str(i): {"id": "old", "digest": "old"} for i in range(128)}
     result = await create(hass, user)
     assert result["ok"] and len(manager.announcement_keys) == 128
+    reused = await create(hass, user, idempotency_key="recovered-create")
+    assert reused["reused"] and len(manager.announcement_keys) == 128
     await hass.async_block_till_done()
     item = (await call(hass, user, action="list"))["announcements"][0]
     with patch.object(

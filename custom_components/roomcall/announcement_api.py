@@ -132,6 +132,8 @@ async def execute(
             )
             if sub:
                 manager.announcement_keys[key] = {"digest": digest, "id": sub.subentry_id}
+                while len(manager.announcement_keys) > 128:
+                    manager.announcement_keys.pop(next(iter(manager.announcement_keys)))
                 await manager.save()
                 return {"ok": True, "announcement": summary(hass, sub), "reused": True}
             before = set(entry.subentries)
