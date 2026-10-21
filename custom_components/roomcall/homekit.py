@@ -33,6 +33,7 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_PORT = 21099
 STORE_KEY = "roomcall.homekit"
 TALK_PAYLOAD_TYPE = 110
+TALK_IDLE_SECONDS = 0.5
 
 
 def camera_options(address: str) -> dict[str, Any]:
@@ -117,6 +118,18 @@ def talk_command(ffmpeg: str) -> list[str]:
         "warning",
         "-protocol_whitelist",
         "pipe,udp,rtp,file,crypto",
+        # Low latency: no probing (the SDP describes the stream), no input buffering, and
+        # no jitter queue; decoded audio is flushed per packet instead of per 32 KB.
+        "-fflags",
+        "nobuffer",
+        "-flags",
+        "low_delay",
+        "-probesize",
+        "32",
+        "-analyzeduration",
+        "0",
+        "-reorder_queue_size",
+        "0",
         "-f",
         "sdp",
         "-i",
@@ -125,6 +138,8 @@ def talk_command(ffmpeg: str) -> list[str]:
         "1",
         "-ar",
         str(SAMPLE_RATE),
+        "-flush_packets",
+        "1",
         "-f",
         "s16le",
         "pipe:1",
@@ -284,7 +299,16 @@ async def talk_loop(
         await proc.stdin.drain()
         proc.stdin.close()
         received = 0
-        while chunk := await proc.stdout.read(3200):
+        while True:
+            try:
+                chunk = await asyncio.wait_for(proc.stdout.read(3200), TALK_IDLE_SECONDS)
+            except TimeoutError:
+                # The iPhone stops sending (rather than sending silence) when the talk button
+                # is released, so a gap in the audio ends the phrase.
+                segmenter.flush()
+                continue
+            if not chunk:
+                break
             received += len(chunk)
             segmenter.feed(chunk)
         await proc.wait()
