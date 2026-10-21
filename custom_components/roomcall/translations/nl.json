@@ -1,0 +1,176 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "RoomCall-intercom",
+        "description": "Kies de speakers die intercomberichten afspelen. Ruimtes komen uit het Home Assistant-gebied van elke speaker. Kies één entiteit per fysieke speaker zodat berichten niet dubbel klinken. Gong, stille uren en meldingen stel je daarna in onder Configureren.",
+        "data": {
+          "speakers": "Speakers",
+          "volume": "Volume van aankondigingen",
+          "gain_db": "Microfoonversterking (dB)",
+          "tts_engine": "Tekst-naar-spraak voor berichten"
+        },
+        "data_description": {
+          "volume": "Leeg laten om het huidige volume van elke speaker te houden. Ondersteund door Sonos.",
+          "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken."
+        }
+      }
+    },
+    "error": {
+      "no_speakers": "Kies minstens één speaker."
+    },
+    "abort": {
+      "single_instance_allowed": "RoomCall is al ingesteld."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "RoomCall",
+        "data": {
+          "speakers": "Speakers",
+          "volume": "Volume van aankondigingen",
+          "gain_db": "Microfoonversterking (dB)",
+          "tts_engine": "Tekst-naar-spraak voor berichten"
+        },
+        "data_description": {
+          "volume": "Leeg laten om het huidige volume van elke speaker te houden. Ondersteund door Sonos.",
+          "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken."
+        },
+        "sections": {
+          "chime_options": {
+            "name": "Gong",
+            "description": "Het geluid voor elke oproep.",
+            "data": {
+              "style": "Gong",
+              "custom_url": "Eigen gongbestand of URL"
+            },
+            "data_description": {
+              "custom_url": "Een MP3/WAV-URL of een pad zoals /config/www/chime.mp3. Vervangt de gong hierboven."
+            }
+          },
+          "delivery": {
+            "name": "Bezorging",
+            "data": {
+              "stagger_ms": "Vertraging tussen speakers",
+              "retry": "Mislukte speaker opnieuw proberen",
+              "urgent_volume": "Volume van dringende oproepen",
+              "restore": "Speakers daarna terugzetten"
+            },
+            "data_description": {
+              "stagger_ms": "Sommige speakers (meerdere Sonos in één huis) laten gelijktijdige aankondigingen vallen. Een korte verschuiving lost dat op.",
+              "restore": "Voor apparaten zonder aankondigingsmodus (AV-receivers, tv-boxen): ingang, volume, aan/uit en de open app herstellen."
+            }
+          },
+          "quiet_hours": {
+            "name": "Stille uren",
+            "description": "Tijdens stille uren klinken oproepen zachter en slaan ze de gekozen ruimtes over. Dringende oproepen negeren stille uren en Niet storen.",
+            "data": {
+              "start": "Begin",
+              "end": "Einde",
+              "volume": "Volume tijdens stille uren",
+              "skip_areas": "Ruimtes om over te slaan tijdens stille uren"
+            }
+          },
+          "replies": {
+            "name": "Meldingen en antwoorden",
+            "data": {
+              "notify": "Telefoons die meldingen krijgen",
+              "dashboard_path": "Dashboard met de RoomCall-kaart",
+              "stt_engine": "Spraak-naar-tekst voor transcripties"
+            },
+            "data_description": {
+              "notify": "Elke oproep stuurt een melding. De eigen telefoons van de beller worden overgeslagen.",
+              "dashboard_path": "Bijvoorbeeld /home-hub/home. Voegt een knop Antwoorden toe die de kaart op de ruimte van de beller richt.",
+              "stt_engine": "Optioneel. Voegt het gesprokene toe aan meldingen en geschiedenis."
+            }
+          },
+          "homekit": {
+            "name": "Apple Woning",
+            "description": "Toont elke ruimte in de Apple Woning-app als camera met een spreekknop. Gebruik de microfoon in Woning, op je Apple Watch of in het bedieningspaneel om in die ruimte te praten.",
+            "data": {
+              "enabled": "Ruimtes toevoegen aan Apple Woning",
+              "port": "HomeKit-poort"
+            },
+            "data_description": {
+              "port": "Alleen wijzigen als een andere HomeKit-bridge hem al gebruikt."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_speakers": "Kies minstens één speaker."
+    }
+  },
+  "selector": {
+    "chime_style": {
+      "options": {
+        "chirp": "Portofoonpiep",
+        "ding": "Ding",
+        "double": "Dubbele piep",
+        "rising": "Stijgende tonen",
+        "doorbell": "Deurbel",
+        "off": "Geen gong"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_call": {
+        "name": "Laatste oproep"
+      }
+    },
+    "switch": {
+      "do_not_disturb": {
+        "name": "Niet storen"
+      }
+    }
+  },
+  "services": {
+    "broadcast": {
+      "name": "Omroepen",
+      "description": "Spreek een bericht uit of speel een audio-URL af in ruimtes, of waar iemand is.",
+      "fields": {
+        "areas": {
+          "name": "Ruimtes",
+          "description": "Gebieden om naar om te roepen. Leeg laten (en geen personen) voor alle RoomCall-speakers."
+        },
+        "people": {
+          "name": "Personen",
+          "description": "Speelt in de ruimte waar iemand nu is (vereist aanwezigheid per ruimte, bijvoorbeeld Bermuda)."
+        },
+        "message": {
+          "name": "Bericht",
+          "description": "Tekst uitgesproken met de ingestelde tekst-naar-spraak."
+        },
+        "media_url": {
+          "name": "Media-URL",
+          "description": "URL van een audiobestand of media-source-ID om af te spelen in plaats van een bericht."
+        },
+        "volume": {
+          "name": "Volume",
+          "description": "Volume van de aankondiging (Sonos)."
+        },
+        "priority": {
+          "name": "Prioriteit",
+          "description": "Dringende oproepen klinken harder en negeren Niet storen en stille uren."
+        }
+      }
+    }
+  },
+  "issues": {
+    "missing_speakers": {
+      "title": "RoomCall-speakers zijn niet beschikbaar",
+      "description": "Deze RoomCall-speakers zijn niet beschikbaar of bestaan niet meer: {speakers}. Oproepen naar hun ruimtes worden niet afgespeeld. Zet ze aan of verwijder ze via Instellingen → Apparaten & diensten → RoomCall → Configureren."
+    },
+    "https_internal_url": {
+      "title": "Speakers bereiken Home Assistant misschien niet",
+      "description": "De interne URL van Home Assistant is {url}. Speakers halen elke oproep daar op, en de meeste weigeren HTTPS-certificaten die niet van een publieke instantie komen. Als oproepen \"bezorgd\" melden maar stil blijven, zet dan de lokale netwerk-URL onder Instellingen → Systeem → Netwerk op http://HOME-ASSISTANT-IP:8123."
+    },
+    "no_internal_url": {
+      "title": "RoomCall heeft een lokale netwerk-URL nodig",
+      "description": "Speakers halen elke oproep op bij Home Assistant, maar er is geen interne URL. Stel er een in onder Instellingen → Systeem → Netwerk."
+    }
+  }
+}

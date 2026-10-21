@@ -1,5 +1,5 @@
 /* RoomCall push-to-talk card for Home Assistant dashboards. */
-const CARD_VERSION = "0.5.0";
+const CARD_VERSION = "0.6.0";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
 const LAYOUTS = ["default", "compact", "kiosk"];
@@ -45,6 +45,10 @@ function timeAgo(iso) {
 class RoomCallCard extends HTMLElement {
   static getStubConfig() {
     return { title: "Intercom" };
+  }
+
+  static getConfigElement() {
+    return document.createElement("roomcall-card-editor");
   }
 
   setConfig(config) {
@@ -577,12 +581,99 @@ class RoomCallCard extends HTMLElement {
   }
 }
 
+const EDITOR_SCHEMA = [
+  { name: "title", selector: { text: {} } },
+  {
+    type: "grid",
+    name: "",
+    schema: [
+      { name: "room", selector: { area: {} } },
+      { name: "default_room", selector: { area: {} } },
+    ],
+  },
+  { name: "rooms", selector: { area: { multiple: true } } },
+  {
+    name: "layout",
+    selector: {
+      select: {
+        mode: "dropdown",
+        options: [
+          { value: "default", label: "Standard" },
+          { value: "compact", label: "Compact (one row)" },
+          { value: "kiosk", label: "Kiosk (big button for a wall tablet)" },
+        ],
+      },
+    },
+  },
+  {
+    type: "grid",
+    name: "",
+    schema: [
+      { name: "live", selector: { boolean: {} } },
+      { name: "people", selector: { boolean: {} } },
+    ],
+  },
+  { name: "history", selector: { number: { min: 0, max: 10, mode: "box" } } },
+];
+const EDITOR_LABELS = {
+  title: "Title",
+  room: "This card's room",
+  default_room: "Room selected at start",
+  rooms: "Only show these rooms",
+  layout: "Layout",
+  live: "Live calls (play while you talk)",
+  people: "Show people buttons",
+  history: "Recent calls to show",
+};
+const EDITOR_HELP = {
+  room: "Where this dashboard is (for example a wall tablet). Replies to its calls come back here.",
+  rooms: "Leave empty for every room with a RoomCall speaker.",
+  live: "Turn off to record the whole message first, then send it.",
+};
+
+class RoomCallCardEditor extends HTMLElement {
+  setConfig(config) {
+    this._config = { live: true, people: true, history: 3, layout: "default", ...config };
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (this._form) this._form.hass = hass;
+  }
+
+  _render() {
+    if (!this._form) {
+      this._form = document.createElement("ha-form");
+      this._form.computeLabel = (field) => EDITOR_LABELS[field.name] || field.name;
+      this._form.computeHelper = (field) => EDITOR_HELP[field.name];
+      this._form.addEventListener("value-changed", (ev) => {
+        const config = { ...ev.detail.value };
+        for (const key of ["room", "default_room"]) if (!config[key]) delete config[key];
+        if (Array.isArray(config.rooms) && !config.rooms.length) delete config.rooms;
+        this._config = config;
+        this.dispatchEvent(
+          new CustomEvent("config-changed", { detail: { config }, bubbles: true, composed: true }),
+        );
+      });
+      this.append(this._form);
+    }
+    this._form.hass = this._hass;
+    this._form.schema = EDITOR_SCHEMA;
+    this._form.data = this._config;
+  }
+}
+
 if (!customElements.get("roomcall-card")) customElements.define("roomcall-card", RoomCallCard);
+if (!customElements.get("roomcall-card-editor")) {
+  customElements.define("roomcall-card-editor", RoomCallCardEditor);
+}
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "roomcall-card",
   name: "RoomCall",
   description: "Hold-to-talk intercom: talk to a room, a person or the whole house.",
-  preview: false,
+  preview: true,
+  documentationURL: "https://daredoole.github.io/RoomCall/home-assistant/#3-add-the-push-to-talk-card",
 });
 console.info(`%c ROOMCALL-CARD %c ${CARD_VERSION} `, "background:#4f8cff;color:#fff", "");

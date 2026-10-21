@@ -108,6 +108,25 @@
       };
     },
     async callService() {},
+    // Live calls: ready → delivered while talking → done after the end-of-audio frame.
+    connection: {
+      _cb: null,
+      async subscribeMessage(cb, msg) {
+        this._cb = cb;
+        const hit = ROOMS.filter((r) => msg.target === "all" || r.area_id === msg.target);
+        setTimeout(() => cb({ type: "ready", handler_id: 1 }), 50);
+        setTimeout(() => cb({
+          type: "delivered", ok: true, skipped: {},
+          results: hit.flatMap((r) => r.speakers.map((s) => ({ speaker: s, ok: true }))),
+        }), 700);
+        return () => {};
+      },
+      socket: {
+        send(frame) {
+          if (frame.length === 1) setTimeout(() => hass.connection._cb({ type: "done", seconds: 3.2 }), 400);
+        },
+      },
+    },
     async fetchWithAuth(url) {
       await new Promise((r) => setTimeout(r, 400));
       const target = new URL(url, location.href).searchParams.get("target");

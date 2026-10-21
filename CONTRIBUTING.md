@@ -20,6 +20,12 @@ roomcall discover
 roomcall serve -v
 ```
 
+## Before you commit
+
+```bash
+pipx install pre-commit && pre-commit install   # ruff, JSON/YAML checks on every commit
+```
+
 ## Home Assistant integration
 
 The integration lives in `custom_components/roomcall/` and is tested with

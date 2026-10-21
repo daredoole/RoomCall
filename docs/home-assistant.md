@@ -71,7 +71,7 @@ Pick your speakers. Everything else is under **Configure** on the integration:
 ## 3. Add the push-to-talk card
 
 The integration registers the card automatically — no dashboard resource needed. Edit a
-dashboard → **Add card** → **RoomCall**, or paste:
+dashboard → **Add card** → **RoomCall** and set it up in the visual editor, or paste:
 
 ```yaml
 type: custom:roomcall-card
@@ -211,10 +211,19 @@ Siri, Apple Watch and CarPlay can call this too — see [Siri and Shortcuts](sir
 
 ## Entities
 
+- `notify.roomcall_<room>`: one per room — `notify.send_message` speaks the message there
+  (see [Blueprints](blueprints.md#room-notify-entities)).
 - `sensor.roomcall_last_call`: time of the last call, with attributes `target`, `from`, `kind`
   (`talk`, `message`, `media`), `priority`, `delivered`, `failed`, `skipped`, `text`, and
   `history` (the last 10 calls).
 - `switch.roomcall_do_not_disturb`: see above.
+
+## Diagnostics and Repairs
+
+- **Repairs** (Settings → System → Repairs) flag speakers that are unavailable, a missing local
+  network URL, or an HTTPS internal URL that speakers may refuse.
+- **Download diagnostics** on the RoomCall integration for bug reports. What people said
+  (messages and transcripts) and phone names are removed.
 
 ## How playback works
 

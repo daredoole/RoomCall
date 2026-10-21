@@ -19,17 +19,22 @@
   <a href="https://github.com/daredoole/RoomCall/actions/workflows/ci.yml"><img src="https://github.com/daredoole/RoomCall/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/daredoole/RoomCall/actions/workflows/validate.yml"><img src="https://github.com/daredoole/RoomCall/actions/workflows/validate.yml/badge.svg" alt="HACS and hassfest validation"></a>
   <a href="https://daredoole.github.io/RoomCall/"><img src="https://img.shields.io/badge/docs-online-4f8cff" alt="Documentation"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/daredoole/RoomCall"><img src="https://api.scorecard.dev/projects/github.com/daredoole/RoomCall/badge" alt="OpenSSF Scorecard"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/daredoole/RoomCall" alt="MIT license"></a>
   <a href="https://github.com/sponsors/daredoole"><img src="https://img.shields.io/github/sponsors/daredoole?logo=githubsponsors&label=Sponsor&color=EA4AAA" alt="GitHub Sponsors"></a>
   <a href="https://buymeacoffee.com/daredoole"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy me a coffee"></a>
 </p>
 
 <p align="center">
-  <img src="docs/assets/ha-card-mobile.png" alt="RoomCall card: pick a room and hold to talk" width="250">
+  <img src="docs/assets/demo.gif" alt="Pick a room, hold to talk, and it plays live" width="300">
+</p>
+
+<p align="center">
+  <img src="docs/assets/ha-card-mobile.png" alt="RoomCall card: pick a room and hold to talk" width="220">
   &nbsp;
-  <img src="docs/assets/ha-card-talking.png" alt="RoomCall card while talking" width="250">
+  <img src="docs/assets/ha-card-talking.png" alt="RoomCall card while talking live" width="220">
   &nbsp;
-  <img src="docs/assets/ha-card-delivered.png" alt="RoomCall card after delivery" width="250">
+  <img src="docs/assets/ha-card-delivered.png" alt="RoomCall card after delivery" width="220">
 </p>
 
 ---
@@ -50,7 +55,10 @@ intercom, organised by your Home Assistant **areas**.
 - 📺 **AV receivers and TV boxes** — Denon/HEOS and onn/Google TV play the call, then go back to the TV input, volume and app they were on.
 - 🍏 **Apple Home intercom** — every room is a camera tile in the Home app; tap the mic on your iPhone or Apple Watch to talk in that room.
 - 🗣️ **Automations and Siri** — `roomcall.broadcast` from automations, Shortcuts, Apple Watch and CarPlay.
-- 🖥️ **Kiosk and compact layouts** for wall tablets and busy dashboards.
+- 🖥️ **Visual card editor**, plus kiosk and compact layouts for wall tablets and busy dashboards.
+- 🔔 **A notify entity per room** (`notify.roomcall_kitchen`) and ready-made **blueprints** for the doorbell, laundry, bedtime and arrivals.
+- 🩺 **Diagnostics and Repairs** — problems show up in Home Assistant, not as silent calls.
+- 🌍 English, Español, Deutsch, Français, Nederlands.
 - 🔒 **Local only** — audio goes from your phone to Home Assistant to the speaker. No cloud, no account.
 
 <p align="center">
@@ -139,6 +147,15 @@ Play an audio file instead of text with `media_url:`. The action returns which s
 the message, and `sensor.roomcall_last_call` records every call. More examples in the
 [Home Assistant guide](https://daredoole.github.io/RoomCall/home-assistant/), and
 "Hey Siri, intercom basement" in [Siri and Shortcuts](https://daredoole.github.io/RoomCall/siri-shortcuts/).
+
+## Blueprints
+
+| Blueprint | What it does | |
+|---|---|---|
+| **Announce the doorbell** | Doorbell press → "Someone is at the front door" in the rooms you pick (optional urgent). | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdaredoole%2FRoomCall%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Froomcall%2Fdoorbell.yaml) |
+| **Appliance finished** | Washer/dryer/dishwasher power drops after running → "The laundry is done." | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdaredoole%2FRoomCall%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Froomcall%2Fappliance_done.yaml) |
+| **Do Not Disturb at bedtime** | Turns RoomCall's Do Not Disturb on at night and off in the morning. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdaredoole%2FRoomCall%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Froomcall%2Fbedtime_dnd.yaml) |
+| **Announce arrivals** | "Alex is home." when someone arrives. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdaredoole%2FRoomCall%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Froomcall%2Farrival.yaml) |
 
 ## Options
 

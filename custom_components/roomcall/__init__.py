@@ -21,7 +21,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
-from . import chimes, ws
+from . import chimes, repairs, ws
 from .calls import CallError, CallRequest, place_call
 from .const import (
     API_CHIME,
@@ -88,7 +88,7 @@ from .policy import QuietHours
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.SENSOR, Platform.SWITCH]
+PLATFORMS = [Platform.NOTIFY, Platform.SENSOR, Platform.SWITCH]
 _KEPT = f"{DOMAIN}_kept"
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -264,6 +264,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data.entry_id = entry.entry_id
     hass.data[DOMAIN] = data
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    repairs.async_check(hass, data.speakers)
     if data.homekit_enabled:
         await _start_homekit(hass, data)
     return True

@@ -1,0 +1,74 @@
+blueprint:
+  name: RoomCall – Announce the doorbell
+  description: >-
+    When the doorbell is pressed, RoomCall plays the doorbell chime and says who is at the door
+    in the rooms you choose. Works with any doorbell that has a button entity, binary sensor or
+    event entity.
+  domain: automation
+  source_url: https://github.com/daredoole/RoomCall/blob/main/blueprints/automation/roomcall/doorbell.yaml
+  author: daredoole
+  homeassistant:
+    min_version: "2025.6.0"
+  input:
+    doorbell:
+      name: Doorbell
+      description: The doorbell's button, binary sensor or event entity.
+      selector:
+        entity:
+          filter:
+            - domain: [binary_sensor, event, button, input_button]
+    rooms:
+      name: Rooms
+      description: Where to announce it. Leave empty for every RoomCall speaker.
+      default: []
+      selector:
+        area:
+          multiple: true
+    message:
+      name: Message
+      default: Someone is at the front door.
+      selector:
+        text:
+    urgent:
+      name: Urgent
+      description: Play even during Do Not Disturb and quiet hours.
+      default: false
+      selector:
+        boolean:
+    cooldown:
+      name: Cooldown
+      description: Ignore repeated presses within this time.
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: s
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input doorbell
+
+conditions:
+  # A binary sensor rings when it turns on; buttons and events ring on every new state.
+  - condition: template
+    value_template: >-
+      {{ trigger.to_state is not none
+         and trigger.to_state.state not in ['unavailable', 'unknown', 'off']
+         and (trigger.from_state is none
+              or trigger.from_state.state not in ['unavailable', 'unknown']) }}
+
+actions:
+  - action: roomcall.broadcast
+    data:
+      areas: !input rooms
+      message: !input message
+      priority: "{{ 'urgent' if urgent else 'normal' }}"
+  - delay:
+      seconds: !input cooldown
+
+variables:
+  urgent: !input urgent

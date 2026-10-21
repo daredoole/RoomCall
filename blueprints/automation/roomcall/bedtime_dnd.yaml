@@ -1,0 +1,52 @@
+blueprint:
+  name: RoomCall – Do Not Disturb at bedtime
+  description: >-
+    Turn RoomCall's Do Not Disturb on at bedtime and off in the morning. Urgent calls still play.
+  domain: automation
+  source_url: https://github.com/daredoole/RoomCall/blob/main/blueprints/automation/roomcall/bedtime_dnd.yaml
+  author: daredoole
+  homeassistant:
+    min_version: "2025.6.0"
+  input:
+    dnd_switch:
+      name: RoomCall Do Not Disturb switch
+      default: switch.roomcall_do_not_disturb
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: roomcall
+    bedtime:
+      name: Bedtime
+      default: "22:00:00"
+      selector:
+        time:
+    wake:
+      name: Morning
+      default: "07:00:00"
+      selector:
+        time:
+
+mode: single
+
+triggers:
+  - trigger: time
+    at: !input bedtime
+    id: bedtime
+  - trigger: time
+    at: !input wake
+    id: wake
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: bedtime
+        sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: !input dnd_switch
+    default:
+      - action: switch.turn_off
+        target:
+          entity_id: !input dnd_switch

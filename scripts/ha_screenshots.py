@@ -9,6 +9,8 @@ Needs:  pip install playwright && playwright install chromium
 
 from __future__ import annotations
 
+import subprocess
+import tempfile
 from pathlib import Path
 
 from playwright.sync_api import Page, Route, sync_playwright
@@ -43,6 +45,52 @@ def open_card(page: Page, layout: str, scheme: str, extra: str = "") -> None:
         "?.querySelectorAll('.rooms .chip').length > 3"
     )
     page.wait_for_timeout(700)  # icon font
+
+
+def record_demo(browser, viewport: dict[str, int]) -> None:
+    """Short looping GIF: pick a room, talk live, delivered."""
+    with tempfile.TemporaryDirectory() as tmp:
+        context = browser.new_context(
+            viewport=viewport, record_video_dir=tmp, record_video_size=viewport
+        )
+        context.grant_permissions(["microphone"], origin=ORIGIN)
+        page = context.new_page()
+        open_card(page, "mobile", "dark")
+        card = page.locator("roomcall-card")
+        page.wait_for_timeout(900)
+        card.locator(".rooms .chip", has_text="Basement").click()
+        page.wait_for_timeout(700)
+        card.locator("button.talk").hover()
+        page.mouse.down()
+        page.wait_for_timeout(2200)
+        page.mouse.up()
+        page.wait_for_timeout(1800)
+        video = page.video.path()
+        context.close()
+        palette = Path(tmp) / "palette.png"
+        crop = "crop=iw:ih*0.72:0:0,fps=12,scale=360:-1:flags=lanczos"
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-loglevel",
+                "error",
+                "-i",
+                video,
+                "-vf",
+                f"{crop},palettegen",
+                palette,
+            ],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-loglevel", "error", "-i", video, "-i", palette,
+                "-lavfi", f"{crop}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=4",
+                "-loop", "0", OUT / "demo.gif",
+            ],
+            check=True,
+        )  # fmt: skip
 
 
 def main() -> int:
@@ -82,9 +130,14 @@ def main() -> int:
         page.wait_for_timeout(1500)
         page.screenshot(path=OUT / "ha-card-talking.png")
         page.mouse.up()
-        page.locator("roomcall-card").locator(".status.ok").wait_for(timeout=10000)
+        page.wait_for_function(
+            "document.querySelector('roomcall-card').shadowRoot"
+            ".querySelector('.status').textContent.startsWith('Delivered')"
+        )
         page.screenshot(path=OUT / "ha-card-delivered.png")
         page.close()
+
+        record_demo(browser, phone)
 
         page = browser.new_page(viewport={"width": 512, "height": 512})
         page.route(f"{ORIGIN}/**", serve)
