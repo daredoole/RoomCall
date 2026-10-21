@@ -4,6 +4,9 @@ on:
   push:
     tags: ["v*"]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -38,9 +41,12 @@ jobs:
           name: dist
           path: dist/
       - name: Signed build provenance for every release file
+        id: attest
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
         with:
           subject-path: dist/*
+      - name: Attach the signed provenance to the release
+        run: cp "${{ steps.attest.outputs.bundle-path }}" dist/roomcall.intoto.jsonl
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           files: dist/*

@@ -11,6 +11,15 @@ Please **do not open a public issue**. Use GitHub's
 instead. You will get a reply within a week, and a fix or mitigation plan as soon as the issue is
 confirmed.
 
+## Verifying a release
+
+Every release file has signed build provenance (SLSA v1) created by this repository's release
+workflow:
+
+```bash
+gh attestation verify roomcall.zip --repo daredoole/RoomCall
+```
+
 ## Design notes
 
 - Push-to-talk uploads (`/api/roomcall/talk`) and the room list require a logged-in Home Assistant
