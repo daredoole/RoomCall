@@ -109,6 +109,15 @@ SCHEMAS = {
             vol.Optional("response", default=""): vol.All(cv.string, vol.Length(max=500)),
         }
     ),
+    "tasks": vol.Schema(
+        {
+            vol.Optional("action", default="list"): vol.In(("list", "complete", "snooze")),
+            vol.Optional("id"): cv.string,
+            vol.Optional("minutes", default=30): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=1440)
+            ),
+        }
+    ),
     "sound_test": vol.Schema({vol.Required("speaker"): cv.entity_id}),
     "confirm_test": vol.Schema({vol.Required("id"): cv.string, vol.Required("heard"): cv.boolean}),
     "adapter": vol.Schema(
@@ -178,6 +187,44 @@ async def validate_targets(
     }
 
 
+async def task_permitted(
+    hass: HomeAssistant, task_id: str, context: Context, assistant: str | None = None
+) -> bool:
+    """Changing a task needs control of its Mark done button, wherever the request comes from."""
+    from homeassistant.helpers import entity_registry as er
+
+    button = er.async_get(hass).async_get_entity_id("button", DOMAIN, f"{task_id}_complete")
+    return not button or await permitted(hass, button, context, assistant)
+
+
+async def _tasks(
+    hass: HomeAssistant, data, values: dict[str, Any], context: Context, assistant: str | None
+) -> dict:
+    """Announcement tasks the caller may see; changing one needs its Mark done button."""
+    from homeassistant.helpers import entity_registry as er
+
+    registry = er.async_get(hass)
+    announcer = data.announcer
+    if values["action"] != "list":
+        task_id = values.get("id", "")
+        if not await task_permitted(hass, task_id, context, assistant):
+            raise Problem("forbidden")
+        if values["action"] == "complete":
+            await announcer.async_complete(task_id, context)
+        else:
+            await announcer.async_snooze(task_id, values["minutes"])
+    tasks = []
+    for sid, item in announcer.items.items():
+        sensor = registry.async_get_entity_id("sensor", DOMAIN, f"{sid}_task")
+        if (
+            item.task
+            and sensor
+            and await permitted(hass, sensor, context, assistant, control=False)
+        ):
+            tasks.append({**item.task_summary(), "entity_id": sensor})
+    return {"ok": True, "tasks": tasks}
+
+
 async def execute(
     hass: HomeAssistant,
     operation: str,
@@ -217,6 +264,8 @@ async def _execute(hass, operation, values, context, *, assistant=None):
         data = hass.data.get(DOMAIN)
         if data is None:
             raise Problem("not_ready", retryable=True)
+        if operation == "tasks":
+            return await _tasks(hass, data, values, context, assistant)
         if operation in ("discover", "diagnose"):
             from .shortcuts import room_choices
 

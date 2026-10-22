@@ -49,6 +49,13 @@ APIs; no extra credentials.
   `{"handler": [entry_id, "scheduled"]}`, then POST the fields to `.../flow/<flow_id>`.
 - List/delete: WebSocket `config_entries/subentries/list` / `config_entries/subentries/delete`.
 - Each announcement has `button.*_play_now` and `switch.*_enabled` (attributes describe it).
+- Optional `task` (text someone confirms, e.g. "Took out the dry clothes") and `remind_every`
+  (minutes, 0 = once): the announcement stays open and repeats until confirmed. Task
+  announcements add `sensor.*_task` (idle/open/done, opened, done, done_by) and
+  `button.*_mark_done`; completion fires `roomcall_task_completed`.
+- `roomcall__tasks`: action list (default) / complete / snooze (`id`, optional `minutes`).
+  Complete only when a person says they did it; hearing or dismissing an alert is not doing it.
+  HA permissions and assistant exposure apply.
 
 ## Read
 

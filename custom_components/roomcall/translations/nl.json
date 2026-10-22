@@ -214,7 +214,7 @@
         "empty": "Nog niets om te tonen.",
         "recording_hint": "Kies een kamer, houd de knop vast en spreek.",
         "request_hint": "Een geslaagd verzoek bevestigt niet dat het hoorbaar was.",
-        "agent_prompt": "Roep eerst roomcall__catalog aan voor schema’s en de eerste configuratiestappen. Ontdek eerst mogelijkheden en bekijk ontvangers voordat je verstuurt. Geef expliciete doelen op. Hergebruik de sleutel bij herhalen. Controleer de status. Geaccepteerd betekent niet gehoord of bevestigd. Maak geblokkeerde berichten nooit automatisch dringend. Beheerdersinstallatie: ontdekken, plannen, hervatten, toepassen, testen, bevestigen, controleren of terugdraaien. Plannen verlopen na 24 uur; leid hoorbaarheid nooit af. Beheer aankondigingen: schema’s, lijst, zonder duplicaten maken, wijzigen, in-/uitschakelen of verwijderen. Huidige revisie en verwijderbevestiging vereist.",
+        "agent_prompt": "Roep eerst roomcall__catalog aan voor schema’s en de eerste configuratiestappen. Ontdek eerst mogelijkheden en bekijk ontvangers voordat je verstuurt. Geef expliciete doelen op. Hergebruik de sleutel bij herhalen. Controleer de status. Geaccepteerd betekent niet gehoord of bevestigd. Maak geblokkeerde berichten nooit automatisch dringend. Beheerdersinstallatie: ontdekken, plannen, hervatten, toepassen, testen, bevestigen, controleren of terugdraaien. Plannen verlopen na 24 uur; leid hoorbaarheid nooit af. Beheer aankondigingen: schema’s, lijst, zonder duplicaten maken, wijzigen, in-/uitschakelen of verwijderen. Huidige revisie en verwijderbevestiging vereist. Taken van omroepberichten: rond er alleen een af als iemand zegt dat die gedaan is.",
         "tool_discover": "Beschikbare kamers, apparaten, stations en mogelijkheden ontdekken.",
         "tool_preview": "Ontvangers en regels bekijken zonder audio af te spelen.",
         "tool_send": "Bericht inplannen met expliciete doelen en verzoeksleutel.",
@@ -347,7 +347,7 @@
         "shortcut_signing_failed": "Ondertekenen mislukt. Controleer je HubSign-account of download de broncode om lokaal te ondertekenen.",
         "shortcut_everywhere": "Overal",
         "tts_preparation_failed": "Spraak met de ingestelde gong kon niet worden voorbereid. Controleer de spraakdienst en het aangepaste gongbestand.",
-        "shortcut_format_native": "Native Perform Action-sjabloon — lokaal ondertekenen",
+        "shortcut_format_native": "Native Perform Action-sjabloon — niet ondertekend, onderteken op een Mac",
         "shortcut_native_ask": "1. Voeg in Apple Opdrachten Vraag om invoer (Tekst) toe met de vraag: {prompt}",
         "shortcut_native_dictionary": "Vaste bestemming: {name} ({room}). De native sjabloon bevat het berichtenwoordenboek al.",
         "shortcut_native_action": "3. Voeg Home Assistant → Perform Action toe. Kies je server en roomcall.broadcast. Gebruik de Woordenboek-variabele als actiegegevens. Noem de opdracht RoomCall {name}.",
@@ -363,7 +363,14 @@
         "shortcut_choose_destination": "Waar moet ik het bericht omroepen?",
         "shortcut_live_help": "De native sjabloon haalt bij elke uitvoering de toegestane RoomCall-kamers op. Kies op naam; ID’s en het berichtenwoordenboek worden automatisch ingevuld. Overal is een expliciete keuze.",
         "shortcut_input_help": "Geef tekst door met Voer opdracht uit of het deelmenu. Er wordt geen bericht gevraagd; RoomCall weigert lege invoer.",
-        "shortcut_native_import": "Onderteken en importeer de sjabloon. Kies per Home Assistant-stap de server en aangegeven actie: roomcall.communicate voor beide selectiestappen of roomcall.broadcast voor een vaste kamer. Server-ID’s en inloggegevens worden niet opgenomen."
+        "shortcut_native_import": "Onderteken en importeer de sjabloon. Kies per Home Assistant-stap de server en aangegeven actie: roomcall.communicate voor beide selectiestappen of roomcall.broadcast voor een vaste kamer. Server-ID’s en inloggegevens worden niet opgenomen.",
+        "task_not_open": "Niets te bevestigen: deze taak staat niet open.",
+        "remind_later": "Herinner me later",
+        "tasks": "Te doen",
+        "task_announced": "Omgeroepen {time}",
+        "tool_tasks": "Openstaande taken van omroepberichten tonen, bevestigen dat er een gedaan is (complete) of later opnieuw herinneren (snooze). Rond een taak alleen af als iemand zegt dat die gedaan is; neem het nooit aan.",
+        "station_room": "Ruimte van dit dashboard",
+        "no_stations": "Geen andere stations geopend. Open RoomCall op een ander dashboard en schakel daar het station in om het te bellen."
       }
     },
     "audio_processing": {
@@ -382,6 +389,7 @@
         "cancel": "Bericht annuleren voordat het afspelen begint.",
         "acknowledge": "Een bericht dat op antwoord wacht expliciet bevestigen.",
         "diagnose": "Mogelijkheden, blokkades en lokale bezorgmetingen lezen.",
+        "tasks": "Taken van omroepberichten tonen, afronden of uitstellen.",
         "sound_test": "Testgeluid afspelen op een ingestelde luidspreker.",
         "confirm_test": "Vastleggen of iemand het vorige testgeluid heeft gehoord.",
         "adapter": "Een ingesteld SIP- of deurbeladapterscript uitvoeren.",
@@ -397,6 +405,14 @@
     "sensor": {
       "last_call": {
         "name": "Laatste oproep"
+      },
+      "task": {
+        "name": "Taak",
+        "state": {
+          "idle": "Niets te doen",
+          "open": "Open",
+          "done": "Gedaan"
+        }
       }
     },
     "switch": {
@@ -410,6 +426,9 @@
     "button": {
       "play_announcement": {
         "name": "Nu afspelen"
+      },
+      "complete_task": {
+        "name": "Markeren als gedaan"
       }
     }
   },
@@ -493,13 +512,17 @@
             "people": "Personen",
             "priority": "Prioriteit",
             "time": "Tijd",
-            "days": "Dagen"
+            "days": "Dagen",
+            "task": "Te bevestigen taak",
+            "remind_every": "Herinner elke"
           },
           "data_description": {
             "message": "Uitgesproken met tekst-naar-spraak. Templates werken, bijvoorbeeld: Het is buiten {{ states('sensor.outdoor_temperature') }} graden.",
             "rooms": "Laat ruimtes, speakers en personen leeg om overal af te spelen.",
             "target_speakers": "Specifieke speakers, naast de ruimtes.",
-            "people": "Speelt waar iemand nu is (vereist aanwezigheid per ruimte)."
+            "people": "Speelt waar iemand nu is (vereist aanwezigheid per ruimte).",
+            "task": "Optioneel. Wat iemand bevestigt gedaan te hebben, bijvoorbeeld: Droge was eruit gehaald. Het omroepbericht herhaalt tot iemand het bevestigt; de melding wegvegen telt niet.",
+            "remind_every": "Zolang de taak openstaat, het omroepbericht zo vaak opnieuw afspelen. 0 speelt het één keer."
           }
         },
         "reconfigure": {
@@ -513,13 +536,17 @@
             "people": "Personen",
             "priority": "Prioriteit",
             "time": "Tijd",
-            "days": "Dagen"
+            "days": "Dagen",
+            "task": "Te bevestigen taak",
+            "remind_every": "Herinner elke"
           },
           "data_description": {
             "message": "Uitgesproken met tekst-naar-spraak. Templates werken, bijvoorbeeld: Het is buiten {{ states('sensor.outdoor_temperature') }} graden.",
             "rooms": "Laat ruimtes, speakers en personen leeg om overal af te spelen.",
             "target_speakers": "Specifieke speakers, naast de ruimtes.",
-            "people": "Speelt waar iemand nu is (vereist aanwezigheid per ruimte)."
+            "people": "Speelt waar iemand nu is (vereist aanwezigheid per ruimte).",
+            "task": "Optioneel. Wat iemand bevestigt gedaan te hebben, bijvoorbeeld: Droge was eruit gehaald. Het omroepbericht herhaalt tot iemand het bevestigt; de melding wegvegen telt niet.",
+            "remind_every": "Zolang de taak openstaat, het omroepbericht zo vaak opnieuw afspelen. 0 speelt het één keer."
           }
         }
       },
@@ -550,7 +577,9 @@
             "entity": "Wanneer dit verandert",
             "to_state": "Naar deze status",
             "for": "Minstens gedurende",
-            "cooldown": "Afkoeltijd"
+            "cooldown": "Afkoeltijd",
+            "task": "Te bevestigen taak",
+            "remind_every": "Herinner elke"
           },
           "data_description": {
             "message": "Uitgesproken met tekst-naar-spraak. Templates werken; {{ name }} en {{ state }} zijn de naam en nieuwe status van de entiteit.",
@@ -560,7 +589,9 @@
             "entity": "Elke entiteit: lichtschakelaar, deursensor, bewegingssensor, wasmachine...",
             "to_state": "Alleen bij wijziging naar deze status, bijvoorbeeld on, off, open. Leeg laten voor elke wijziging.",
             "for": "Optioneel: alleen als het zo lang in die status blijft (bijvoorbeeld een openstaande deur).",
-            "cooldown": "Herhaal deze aankondiging niet vaker dan dit."
+            "cooldown": "Herhaal deze aankondiging niet vaker dan dit.",
+            "task": "Optioneel. Wat iemand bevestigt gedaan te hebben, bijvoorbeeld: Droge was eruit gehaald. Het omroepbericht herhaalt tot iemand het bevestigt; de melding wegvegen telt niet.",
+            "remind_every": "Zolang de taak openstaat, het omroepbericht zo vaak opnieuw afspelen. 0 speelt het één keer."
           }
         },
         "reconfigure": {
@@ -576,7 +607,9 @@
             "entity": "Wanneer dit verandert",
             "to_state": "Naar deze status",
             "for": "Minstens gedurende",
-            "cooldown": "Afkoeltijd"
+            "cooldown": "Afkoeltijd",
+            "task": "Te bevestigen taak",
+            "remind_every": "Herinner elke"
           },
           "data_description": {
             "message": "Uitgesproken met tekst-naar-spraak. Templates werken; {{ name }} en {{ state }} zijn de naam en nieuwe status van de entiteit.",
@@ -586,7 +619,9 @@
             "entity": "Elke entiteit: lichtschakelaar, deursensor, bewegingssensor, wasmachine...",
             "to_state": "Alleen bij wijziging naar deze status, bijvoorbeeld on, off, open. Leeg laten voor elke wijziging.",
             "for": "Optioneel: alleen als het zo lang in die status blijft (bijvoorbeeld een openstaande deur).",
-            "cooldown": "Herhaal deze aankondiging niet vaker dan dit."
+            "cooldown": "Herhaal deze aankondiging niet vaker dan dit.",
+            "task": "Optioneel. Wat iemand bevestigt gedaan te hebben, bijvoorbeeld: Droge was eruit gehaald. Het omroepbericht herhaalt tot iemand het bevestigt; de melding wegvegen telt niet.",
+            "remind_every": "Zolang de taak openstaat, het omroepbericht zo vaak opnieuw afspelen. 0 speelt het één keer."
           }
         }
       },

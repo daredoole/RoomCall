@@ -69,6 +69,7 @@ class CallRequest:
     language: str | None = None
     audio_processing: str = "off"
     require_ack: bool = False
+    notify: bool = True  # False when the caller sends its own phone notification
 
 
 @dataclass(slots=True)
@@ -227,7 +228,7 @@ async def place_call(
             request={"areas": request.targets, "people": request.people or []},
         )
     call_finished(hass, record)
-    if data.notify:
+    if data.notify and request.notify:
         names = {a.id: a.name for a in ar.async_get(hass).async_list_areas()}
         names[ALL_ROOMS] = "Everywhere"
         try:

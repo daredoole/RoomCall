@@ -114,6 +114,32 @@ selected), the card says so instead of sending an empty clip.
 
 `compact` fits a single row of a dashboard. `kiosk` is a big button for a wall tablet.
 
+### Settings panel
+
+Tap the sliders icon next to Talk / Type / Ask for **Settings**:
+
+<div class="grid" markdown>
+![Setup and sound tests](assets/ha-settings.png){ width="200" }
+![Siri Shortcuts](assets/ha-settings-shortcuts.png){ width="200" }
+![Room stations](assets/ha-settings-stations.png){ width="200" }
+![Voicemail](assets/ha-settings-voicemail.png){ width="200" }
+</div>
+
+- **Setup and sound tests** — guided setup (scan, review a plan, apply, undo) and a test
+  sound per speaker that you confirm you heard ([details](agent-setup.md)).
+- **Siri Shortcuts** — per-room or live-picker shortcuts ([guide](siri-shortcuts.md)).
+- **Room stations** — make this dashboard callable from other dashboards ([details](communication.md#browser-room-stations)).
+- **Voicemail** — appears when voicemail is enabled in the options.
+
+### To do
+
+![The To do list with a task to confirm](assets/ha-card-tasks.png){ width="260" align=right }
+
+Announcements with a **task to confirm** appear at the top of the card while they're open.
+The green button carries the task's own words (*Took out the dry clothes*); the snooze icon
+reminds again in 30 minutes. There is deliberately no dismiss button
+([how tasks work](announcements.md#tasks-confirm-it-was-actually-done)).
+
 Cards use automatic height in Sections dashboards so wrapped room buttons, messaging
 forms and expanded setup push the next card down. If an existing dashboard pins a
 row count, the card scrolls within that space. Remove the saved row count, or set

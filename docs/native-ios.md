@@ -1,5 +1,17 @@
 # Native iOS prototype
 
+<div class="grid" markdown>
+![Sign in with Home Assistant](assets/ios-sign-in-light.png){ width="180" }
+![Choose where to speak](assets/ios-rooms-light.png){ width="180" }
+![Talking to the kitchen](assets/ios-talking-light.png){ width="180" }
+</div>
+
+<div class="grid" markdown>
+![Sign in, dark](assets/ios-sign-in-dark.png){ width="180" }
+![Rooms, dark](assets/ios-rooms-dark.png){ width="180" }
+![Talking, dark](assets/ios-talking-dark.png){ width="180" }
+</div>
+
 RoomCall includes a SwiftUI iPhone/iPad prototype in `ios/RoomCall`. It broadcasts
 microphone audio to HA-controlled speakers using Apple's Push to Talk framework
 and RoomCall's existing live WebSocket endpoint. It does not emulate a camera.
@@ -109,3 +121,14 @@ execution. Web browser QA independently covers narrow/fixed-height layouts,
 - [Controls](https://developer.apple.com/documentation/widgetkit/controls-collection)
 - [Local push connectivity](https://developer.apple.com/documentation/networkextension/local-push-connectivity)
 - [Home Assistant authentication](https://developers.home-assistant.io/docs/auth_api/)
+
+## Screenshots
+
+The images above are real iOS Simulator captures, not drawings. The
+`testScreenshot*` UI tests launch a debug-only demo mode (`-RoomCallDemo`, sample
+rooms, no server or credentials; release builds don't include it) and CI exports the
+captures with the `roomcall-ios-simulator` artifact. Frame them for the docs with:
+
+```bash
+python scripts/ios_mockups.py path/to/ios-screenshots
+```

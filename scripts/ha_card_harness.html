@@ -98,6 +98,9 @@
       text: "Laundry is done", has_audio: false },
   ];
   const states = { "switch.roomcall_do_not_disturb": { state: params.get("dnd") === "on" ? "on" : "off" } };
+  const tasks = [{ id: "laundry", name: "Laundry", task: "Took out the dry clothes",
+    state: params.get("tasks") === "open" ? "open" : "idle", opened: ago(12), done: null, done_by: null,
+    remind_every: 15, entity_id: "sensor.laundry_task" }];
   const requests = [];
   const jobs = new Map();
   const tests = new Map();
@@ -121,6 +124,14 @@
         requests.push(body);
         const request = body.request || {};
         if(body.operation==="doctor")return {ok:true,findings:[],alternatives:[]};
+        if(body.operation==="tasks") {
+          const task=tasks.find(t=>t.id===request.id);
+          if(request.action==="complete") {
+            if(task?.state!=="open")return {ok:false,error:{code:"task_not_open",message:"Nothing to confirm"}};
+            Object.assign(task,{state:"done",done:new Date().toISOString(),done_by:"Alex",opened:null});
+          }
+          return {ok:true,tasks};
+        }
         if(body.operation==="setup") {
           const plan=setupPlans.get(request.id);
           if(request.action==="discover")return {ok:true,discovery:{
@@ -155,7 +166,8 @@
             sound_test:tests.get(`media_player.${r.area_id}`) })),
           areas:ROOMS.map((r) => ({id:r.area_id,name:r.name})),
           satellites:[{entity_id:"assist_satellite.kitchen",name:"Kitchen Voice",available:true,can_ask:true}],
-          stations:[...stations.values()].map((s) => ({id:s.id,name:s.name,room:s.room})),features:{} };
+          stations:[...stations.values()].map((s) => ({id:s.id,name:s.name,room:s.room})),
+          features:{voicemail:params.get("voicemail")==="on"} };
         if (body.operation === "preview") return {ok:true,endpoints:ROOMS.filter((r) => request.areas?.includes("all") || request.areas?.includes(r.area_id)).map((r) => `media_player.${r.area_id}`)};
         if (["send","ask","sound_test"].includes(body.operation)) {
           const id=crypto.randomUUID();
@@ -165,7 +177,9 @@
         }
         if (body.operation === "status") return jobs.get(request.id);
         if (body.operation === "confirm_test") {tests.set(jobs.get(request.id).speaker,{heard:request.heard});return {ok:true,heard:request.heard};}
-        if (body.operation === "voicemail") return {ok:true,messages:[]};
+        if (body.operation === "voicemail") return {ok:true,messages:params.get("voicemail")==="on"?[
+          {id:"v1",message:"Can someone grab the packages from the porch?"},
+          {id:"v2",message:"Dinner moved to 7, see you then"}]:[]};
         return {ok:true};
       }
       if (path === "roomcall/history") return { calls: HISTORY };
@@ -232,7 +246,7 @@
       }), { headers: { "Content-Type": "application/json" } });
     },
   };
-  window.ROOMCALL_HARNESS={hass,requests,stations,sessions};
+  window.ROOMCALL_HARNESS={hass,requests,stations,sessions,tasks};
 
   const tile = (icon, color, name, state) =>
     `<div class="tile"><span class="mdi mdi-${icon}" style="color:${color};background:color-mix(in srgb, ${color} 18%, transparent)"></span>

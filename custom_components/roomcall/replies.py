@@ -83,6 +83,82 @@ async def notify_call(
     return sent
 
 
+def task_tag(subentry_id: str) -> str:
+    return f"roomcall_task_{subentry_id}"
+
+
+def _task_services(hass: HomeAssistant, services: list[str], people: list[str]) -> list[str]:
+    """The phones of the announcement's people, or every phone when none of them has one."""
+    names = [name.removeprefix("notify.") for name in services]
+    users = _service_users(hass)
+    wanted = {
+        state.attributes.get("user_id")
+        for person in people
+        if (state := hass.states.get(person)) is not None
+    } - {None}
+    mine = [name for name in names if users.get(name) in wanted]
+    return [name for name in mine or names if hass.services.has_service("notify", name)]
+
+
+async def notify_task(
+    hass: HomeAssistant,
+    services: list[str],
+    *,
+    subentry_id: str,
+    title: str,
+    message: str,
+    task: str,
+    people: list[str],
+    urgent: bool,
+) -> list[str]:
+    """A notification that stays until someone confirms the task, or asks for a reminder.
+
+    Swiping it away is not confirmation: the task stays open and reminders continue.
+    """
+    data: dict[str, Any] = {
+        "tag": task_tag(subentry_id),
+        "group": "roomcall",
+        # Android keeps it until an action is chosen; iOS relies on the reminders.
+        "sticky": "true",
+        "persistent": True,
+        "actions": [
+            {"action": f"ROOMCALL_TASK_DONE_{subentry_id}", "title": task},
+            {
+                "action": f"ROOMCALL_TASK_SNOOZE_{subentry_id}",
+                "title": translate(hass, "remind_later"),
+            },
+        ],
+    }
+    if urgent:
+        data["push"] = {"interruption-level": "time-sensitive"}
+    sent = _task_services(hass, services, people)
+    for service in sent:
+        await hass.services.async_call(
+            "notify", service, {"title": title, "message": message, "data": data}, blocking=False
+        )
+    return sent
+
+
+async def clear_task(
+    hass: HomeAssistant,
+    services: list[str],
+    *,
+    subentry_id: str,
+    people: list[str],
+    notified: list[str] | tuple[str, ...] = (),
+) -> None:
+    """Unpin it from today's recipients and from every phone that was told about it."""
+    names = _task_services(hass, services, people)
+    names += [n for n in notified if n not in names and hass.services.has_service("notify", n)]
+    for service in names:
+        await hass.services.async_call(
+            "notify",
+            service,
+            {"message": "clear_notification", "data": {"tag": task_tag(subentry_id)}},
+            blocking=False,
+        )
+
+
 async def transcribe(hass: HomeAssistant, engine_id: str, pcm: bytes) -> str | None:
     """Run 16 kHz mono PCM through a speech-to-text entity."""
     engine = stt.async_get_speech_to_text_entity(hass, engine_id)

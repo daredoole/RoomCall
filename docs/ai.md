@@ -128,6 +128,7 @@ POST /api/config/config_entries/subentries/flow/<flow_id>
 | `priority` | both | `normal` or `urgent` |
 | `time`, `days` | scheduled | `HH:MM:SS`; `mon`…`sun` |
 | `entity`, `to_state`, `for`, `cooldown` | triggered | `for` is a duration dict; `cooldown` seconds |
+| `task`, `remind_every` | both | Optional task someone must confirm (e.g. `Took out the dry clothes`); repeat every N minutes while open (0 = once) |
 
 - **List:** WebSocket `config_entries/subentries/list` with `entry_id`.
 - **Change:** start a `reconfigure` subentry flow (same fields).
@@ -143,6 +144,12 @@ Saving any of these reloads RoomCall automatically.
 | `switch.roomcall_do_not_disturb` | Do Not Disturb |
 | `switch.<announcement>_enabled` | On/off, plus attributes: kind, message, targets, schedule or trigger, `last_played`, `last_error` |
 | `button.<announcement>_play_now` | Press to test an announcement |
+| `sensor.<announcement>_task` | Task announcements: `idle`, `open` or `done`, with `task`, `opened`, `done`, `done_by` |
+| `button.<announcement>_mark_done` | Confirms the task was done (no effect when nothing is open) |
+
+Use `roomcall__tasks` to list open tasks, `complete` one, or `snooze` it. Only complete a task
+when a person says they did it; hearing or dismissing an alert is not doing the chore. Completion
+fires `roomcall_task_completed` with `announcement_id`, `name`, `task`, `user_id` and `opened`.
 | `notify.roomcall_<room>` | `notify.send_message` speaks in that room |
 
 ## 5. Change settings

@@ -11,6 +11,15 @@ final class AppModel: ObservableObject {
     let login = OAuthLogin()
 
     init() {
+        #if DEBUG
+        if Demo.enabled {
+            // Documentation screenshots: sample rooms, no server, no credentials.
+            rooms = Demo.rooms
+            selected = rooms.first { $0.id == Demo.value("-RoomCallDemoRoom") }
+            connected = true
+            return
+        }
+        #endif
         do {
             if let credentials = try SecureStore.load() {
                 client = HAClient(credentials)
@@ -82,7 +91,17 @@ struct RoomCallApp: App {
                     ptt.leave()
                     model.open(url)
                 }
-                .task { await model.refresh() }
+                .task {
+                    #if DEBUG
+                    if Demo.enabled, Demo.arguments.contains("-RoomCallDemoJoined"), let room = model.selected {
+                        // Let the channel manager settle first, so its status does not replace ours.
+                        try? await Task.sleep(for: .seconds(1))
+                        ptt.showDemo(room: room, transmitting: Demo.arguments.contains("-RoomCallDemoTalking"))
+                    }
+                    #endif
+                    await model.refresh()
+                }
+                .demoAppearance()
                 .onReceive(NotificationCenter.default.publisher(for: Notification.Name("roomcall.openRoom"))) { _ in
                     ptt.leave()
                     model.consumePendingRoom()
@@ -176,5 +195,36 @@ struct ContentView: View {
                 Button("ios_ok") { model.error = nil }
             } message: { Text(model.error ?? "") }
         }
+    }
+}
+
+#if DEBUG
+/// Launch arguments used only by the documentation screenshot UI test.
+enum Demo {
+    static let arguments = ProcessInfo.processInfo.arguments
+    static var enabled: Bool { arguments.contains("-RoomCallDemo") }
+    static func value(_ name: String) -> String? {
+        guard let index = arguments.firstIndex(of: name), index + 1 < arguments.count else { return nil }
+        return arguments[index + 1]
+    }
+    static var rooms: [Room] {
+        [Room.everywhere] + [("basement", "Basement"), ("garage", "Garage"), ("kitchen", "Kitchen"),
+                             ("living_room", "Living Room"), ("office", "Office")]
+            .map { Room(area_id: $0.0, name: $0.1) }
+    }
+}
+#endif
+
+extension View {
+    @ViewBuilder func demoAppearance() -> some View {
+        #if DEBUG
+        switch Demo.value("-RoomCallDemoAppearance") {
+        case "dark": preferredColorScheme(.dark)
+        case "light": preferredColorScheme(.light)
+        default: self
+        }
+        #else
+        self
+        #endif
     }
 }

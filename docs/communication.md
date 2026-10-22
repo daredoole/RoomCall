@@ -87,6 +87,7 @@ and `media_url`.
 | `status` | `id`. Returns job state, results, evidence and actual responses. |
 | `cancel` | `id`. Cancels a queued job; active playback cannot be cancelled this way. |
 | `acknowledge` | `id`, optional `response`. Requires a signed-in user and a waiting message. |
+| `tasks` | `action`: `list` (default), `complete` or `snooze`; announcement `id`; optional `minutes` (snooze, default 30). Returns every announcement task. Complete only when a person says it was done. |
 | `sound_test` | `speaker`. Plays a test sound and returns its job ID. |
 | `confirm_test` | Test `id`, `heard` boolean. Records a human observation. |
 | `adapter` | Configured `adapter` ID and `action`: `call`, `answer`, or `hangup`. |
@@ -146,6 +147,8 @@ processing. An unanswered question expires; RoomCall does not invent an answer.
 
 ## Browser room stations
 
+![Room stations in Settings](assets/ha-settings-stations.png){ width="300" }
+
 In **Settings → Room stations**, select the current room and enable the station.
 Enable a station on another open dashboard, refresh the station list, and call it.
 The recipient must press **Answer** before signaling audio. Microphone capture
@@ -172,7 +175,8 @@ available phone. Speakers without an accessible microphone remain playback-only.
   on room-location states (0–1). Missing confidence defaults to 1.
 - **Maximum announcement volume:** caps the volume requested from the playback
   integration. Device-specific volume support still applies.
-- **Voicemail:** opt-in retention of unsuccessful recorded calls and message jobs
+- **Voicemail:** listed, replayed and deleted in the card's **Settings → Voicemail**
+  ([screenshot](assets/ha-settings-voicemail.png)). Opt-in retention of unsuccessful recorded calls and message jobs
   explicitly requesting `voicemail: true`. Up to 20 items; audio is limited to
   1 MiB per item. Stored locally in HA storage, subject to HA backup/storage access.
   Retention is configurable (300–604800 seconds), with automatic expiry. Turning

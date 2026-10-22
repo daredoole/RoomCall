@@ -1,4 +1,4 @@
-"""Sensor that reports the most recent RoomCall broadcast and recent call history."""
+"""The most recent RoomCall broadcast with recent history, and each announcement's task."""
 
 from __future__ import annotations
 
@@ -11,7 +11,9 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, SIGNAL_CALL_FINISHED
+from .announcements import Announcer
+from .button import announcement_device
+from .const import DOMAIN, SIGNAL_ANNOUNCEMENT, SIGNAL_CALL_FINISHED
 from .core import CallRecord
 
 HISTORY_ATTRIBUTE_SIZE = 10
@@ -21,6 +23,12 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     async_add_entities([LastCallSensor(entry)])
+    announcer: Announcer = hass.data[DOMAIN].announcer
+    for subentry_id, item in announcer.items.items():
+        if item.task:
+            async_add_entities(
+                [TaskSensor(entry, announcer, subentry_id)], config_subentry_id=subentry_id
+            )
 
 
 class LastCallSensor(SensorEntity):
@@ -75,3 +83,38 @@ class LastCallSensor(SensorEntity):
             "text": summary["text"],
             "history": [r.summary() for r in history],
         }
+
+
+class TaskSensor(SensorEntity):
+    """idle, open (waiting for someone to do it) or done, with who did it and when."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "task"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_icon = "mdi:clipboard-check-outline"
+
+    def __init__(self, entry: ConfigEntry, announcer: Announcer, subentry_id: str) -> None:
+        self._attr_options = ["idle", "open", "done"]
+        self._item = announcer.items[subentry_id]
+        self._attr_unique_id = f"{subentry_id}_task"
+        self._attr_device_info = announcement_device(entry, subentry_id)
+
+    async def async_added_to_hass(self) -> None:
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, f"{SIGNAL_ANNOUNCEMENT}_{self._item.subentry_id}", self._updated
+            )
+        )
+
+    @callback
+    def _updated(self) -> None:
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> str | None:
+        return self._item.task_state
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        summary = self._item.task_summary()
+        return {key: summary[key] for key in ("task", "opened", "done", "done_by")}

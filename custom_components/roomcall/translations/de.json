@@ -214,7 +214,7 @@
         "empty": "Noch keine Einträge.",
         "recording_hint": "Raum wählen, Taste halten und sprechen.",
         "request_hint": "Eine erfolgreiche Anfrage bestätigt keine hörbare Wiedergabe.",
-        "agent_prompt": "Rufe zuerst roomcall__catalog für Schemas und die ersten Einrichtungsschritte auf. Zuerst Fähigkeiten ermitteln, dann Empfänger prüfen. Ziele ausdrücklich angeben. Bei Wiederholungen denselben Anfrageschlüssel verwenden. Status prüfen. Angenommen bedeutet nicht gehört oder bestätigt. Blockierte Nachrichten nie automatisch dringend senden. Administrative Einrichtung: suchen, planen, fortsetzen, anwenden, testen, bestätigen, prüfen oder rückgängig machen. Pläne gelten 24 Stunden; Hörbarkeit niemals ableiten. Durchsagen verwalten: Schemas, auflisten, ohne Duplikate erstellen, ändern, ein-/ausschalten oder löschen. Aktuelle Revision und Löschbestätigung erforderlich.",
+        "agent_prompt": "Rufe zuerst roomcall__catalog für Schemas und die ersten Einrichtungsschritte auf. Zuerst Fähigkeiten ermitteln, dann Empfänger prüfen. Ziele ausdrücklich angeben. Bei Wiederholungen denselben Anfrageschlüssel verwenden. Status prüfen. Angenommen bedeutet nicht gehört oder bestätigt. Blockierte Nachrichten nie automatisch dringend senden. Administrative Einrichtung: suchen, planen, fortsetzen, anwenden, testen, bestätigen, prüfen oder rückgängig machen. Pläne gelten 24 Stunden; Hörbarkeit niemals ableiten. Durchsagen verwalten: Schemas, auflisten, ohne Duplikate erstellen, ändern, ein-/ausschalten oder löschen. Aktuelle Revision und Löschbestätigung erforderlich. Aufgaben von Durchsagen: nur abschließen, wenn eine Person sagt, dass sie sie erledigt hat.",
         "tool_discover": "Verfügbare Räume, Geräte, Stationen und Fähigkeiten ermitteln.",
         "tool_preview": "Empfänger und Regeln ohne Audiowiedergabe prüfen.",
         "tool_send": "Nachricht mit ausdrücklichen Zielen und Anfrageschlüssel einreihen.",
@@ -347,7 +347,7 @@
         "shortcut_signing_failed": "Signieren fehlgeschlagen. Prüfe dein HubSign-Konto oder lade den Quelltext zum lokalen Signieren herunter.",
         "shortcut_everywhere": "Überall",
         "tts_preparation_failed": "Sprache mit dem eingestellten Signalton konnte nicht vorbereitet werden. Sprachdienst und eigene Tondatei prüfen.",
-        "shortcut_format_native": "Native Perform-Action-Vorlage — lokal signieren",
+        "shortcut_format_native": "Native Perform-Action-Vorlage — unsigniert, auf einem Mac signieren",
         "shortcut_native_ask": "1. Füge in Apple Kurzbefehle Nach Eingabe fragen (Text) mit dieser Frage hinzu: {prompt}",
         "shortcut_native_dictionary": "Festes Ziel: {name} ({room}). Die native Vorlage enthält bereits das Nachrichten-Wörterbuch.",
         "shortcut_native_action": "3. Füge Home Assistant → Perform Action hinzu. Wähle deinen Server und roomcall.broadcast. Verwende die Wörterbuch-Variable als Aktionsdaten. Nenne den Kurzbefehl RoomCall {name}.",
@@ -363,7 +363,14 @@
         "shortcut_choose_destination": "Wo soll ich die Nachricht ansagen?",
         "shortcut_live_help": "Die native Vorlage lädt bei jedem Aufruf die erlaubten RoomCall-Räume. Wähle nach Namen; IDs und das Nachrichten-Wörterbuch werden automatisch eingesetzt. Überall ist eine ausdrückliche Auswahl.",
         "shortcut_input_help": "Übergib Text über Kurzbefehl ausführen oder das Teilen-Menü. Es wird kein Text abgefragt; RoomCall lehnt leere Eingaben ab.",
-        "shortcut_native_import": "Signiere und importiere die Vorlage. Wähle pro Home-Assistant-Schritt den Server und die angegebene Aktion: roomcall.communicate für beide Auswahlschritte oder roomcall.broadcast für einen festen Raum. Server-ID und Zugangsdaten sind nicht enthalten."
+        "shortcut_native_import": "Signiere und importiere die Vorlage. Wähle pro Home-Assistant-Schritt den Server und die angegebene Aktion: roomcall.communicate für beide Auswahlschritte oder roomcall.broadcast für einen festen Raum. Server-ID und Zugangsdaten sind nicht enthalten.",
+        "task_not_open": "Nichts zu bestätigen: Diese Aufgabe ist nicht offen.",
+        "remind_later": "Später erinnern",
+        "tasks": "Zu erledigen",
+        "task_announced": "Angesagt {time}",
+        "tool_tasks": "Offene Aufgaben von Durchsagen auflisten, bestätigen, dass eine erledigt ist (complete), oder später erneut erinnern (snooze). Eine Aufgabe nur abschließen, wenn eine Person sagt, dass sie sie erledigt hat; niemals vermuten.",
+        "station_room": "Raum dieses Dashboards",
+        "no_stations": "Keine anderen Stationen geöffnet. Öffne RoomCall auf einem anderen Dashboard und aktiviere dort die Station, um sie anzurufen."
       }
     },
     "audio_processing": {
@@ -382,6 +389,7 @@
         "cancel": "Nachricht vor Beginn der Wiedergabe abbrechen.",
         "acknowledge": "Eine auf Antwort wartende Nachricht ausdrücklich bestätigen.",
         "diagnose": "Fähigkeiten, Sperren und lokale Zustellmetriken lesen.",
+        "tasks": "Aufgaben von Durchsagen auflisten, abschließen oder verschieben.",
         "sound_test": "Testton auf einem eingerichteten Lautsprecher abspielen.",
         "confirm_test": "Erfassen, ob ein Mensch den Testton gehört hat.",
         "adapter": "Ein eingerichtetes SIP- oder Türklingel-Adapterskript ausführen.",
@@ -397,6 +405,14 @@
     "sensor": {
       "last_call": {
         "name": "Letzte Durchsage"
+      },
+      "task": {
+        "name": "Aufgabe",
+        "state": {
+          "idle": "Nichts zu tun",
+          "open": "Offen",
+          "done": "Erledigt"
+        }
       }
     },
     "switch": {
@@ -410,6 +426,9 @@
     "button": {
       "play_announcement": {
         "name": "Jetzt abspielen"
+      },
+      "complete_task": {
+        "name": "Als erledigt markieren"
       }
     }
   },
@@ -493,13 +512,17 @@
             "people": "Personen",
             "priority": "Priorität",
             "time": "Uhrzeit",
-            "days": "Tage"
+            "days": "Tage",
+            "task": "Zu bestätigende Aufgabe",
+            "remind_every": "Erinnern alle"
           },
           "data_description": {
             "message": "Wird per Sprachausgabe gesprochen. Vorlagen funktionieren, zum Beispiel: Draußen sind es {{ states('sensor.outdoor_temperature') }} Grad.",
             "rooms": "Räume, Lautsprecher und Personen leer lassen, um überall abzuspielen.",
             "target_speakers": "Bestimmte Lautsprecher, zusätzlich zu den Räumen.",
-            "people": "Spielt dort, wo die Person gerade ist (benötigt Raumerkennung)."
+            "people": "Spielt dort, wo die Person gerade ist (benötigt Raumerkennung).",
+            "task": "Optional. Was jemand als erledigt bestätigt, zum Beispiel: Trockene Wäsche herausgenommen. Die Durchsage wiederholt sich, bis es jemand bestätigt; das Wegwischen der Benachrichtigung zählt nicht.",
+            "remind_every": "Solange die Aufgabe offen ist, die Durchsage in diesem Abstand wiederholen. 0 spielt sie einmal."
           }
         },
         "reconfigure": {
@@ -513,13 +536,17 @@
             "people": "Personen",
             "priority": "Priorität",
             "time": "Uhrzeit",
-            "days": "Tage"
+            "days": "Tage",
+            "task": "Zu bestätigende Aufgabe",
+            "remind_every": "Erinnern alle"
           },
           "data_description": {
             "message": "Wird per Sprachausgabe gesprochen. Vorlagen funktionieren, zum Beispiel: Draußen sind es {{ states('sensor.outdoor_temperature') }} Grad.",
             "rooms": "Räume, Lautsprecher und Personen leer lassen, um überall abzuspielen.",
             "target_speakers": "Bestimmte Lautsprecher, zusätzlich zu den Räumen.",
-            "people": "Spielt dort, wo die Person gerade ist (benötigt Raumerkennung)."
+            "people": "Spielt dort, wo die Person gerade ist (benötigt Raumerkennung).",
+            "task": "Optional. Was jemand als erledigt bestätigt, zum Beispiel: Trockene Wäsche herausgenommen. Die Durchsage wiederholt sich, bis es jemand bestätigt; das Wegwischen der Benachrichtigung zählt nicht.",
+            "remind_every": "Solange die Aufgabe offen ist, die Durchsage in diesem Abstand wiederholen. 0 spielt sie einmal."
           }
         }
       },
@@ -550,7 +577,9 @@
             "entity": "Wenn sich das ändert",
             "to_state": "Zu diesem Zustand",
             "for": "Mindestens für",
-            "cooldown": "Sperrzeit"
+            "cooldown": "Sperrzeit",
+            "task": "Zu bestätigende Aufgabe",
+            "remind_every": "Erinnern alle"
           },
           "data_description": {
             "message": "Wird per Sprachausgabe gesprochen. Vorlagen funktionieren; {{ name }} und {{ state }} sind Name und neuer Zustand der Entität.",
@@ -560,7 +589,9 @@
             "entity": "Jede Entität: Lichtschalter, Türsensor, Bewegungsmelder, Waschmaschine ...",
             "to_state": "Nur bei Wechsel in diesen Zustand, z. B. on, off, open. Leer lassen für jede Änderung.",
             "for": "Optional: nur wenn es so lange in diesem Zustand bleibt (z. B. eine offene Tür).",
-            "cooldown": "Diese Durchsage nicht öfter als in diesem Abstand wiederholen."
+            "cooldown": "Diese Durchsage nicht öfter als in diesem Abstand wiederholen.",
+            "task": "Optional. Was jemand als erledigt bestätigt, zum Beispiel: Trockene Wäsche herausgenommen. Die Durchsage wiederholt sich, bis es jemand bestätigt; das Wegwischen der Benachrichtigung zählt nicht.",
+            "remind_every": "Solange die Aufgabe offen ist, die Durchsage in diesem Abstand wiederholen. 0 spielt sie einmal."
           }
         },
         "reconfigure": {
@@ -576,7 +607,9 @@
             "entity": "Wenn sich das ändert",
             "to_state": "Zu diesem Zustand",
             "for": "Mindestens für",
-            "cooldown": "Sperrzeit"
+            "cooldown": "Sperrzeit",
+            "task": "Zu bestätigende Aufgabe",
+            "remind_every": "Erinnern alle"
           },
           "data_description": {
             "message": "Wird per Sprachausgabe gesprochen. Vorlagen funktionieren; {{ name }} und {{ state }} sind Name und neuer Zustand der Entität.",
@@ -586,7 +619,9 @@
             "entity": "Jede Entität: Lichtschalter, Türsensor, Bewegungsmelder, Waschmaschine ...",
             "to_state": "Nur bei Wechsel in diesen Zustand, z. B. on, off, open. Leer lassen für jede Änderung.",
             "for": "Optional: nur wenn es so lange in diesem Zustand bleibt (z. B. eine offene Tür).",
-            "cooldown": "Diese Durchsage nicht öfter als in diesem Abstand wiederholen."
+            "cooldown": "Diese Durchsage nicht öfter als in diesem Abstand wiederholen.",
+            "task": "Optional. Was jemand als erledigt bestätigt, zum Beispiel: Trockene Wäsche herausgenommen. Die Durchsage wiederholt sich, bis es jemand bestätigt; das Wegwischen der Benachrichtigung zählt nicht.",
+            "remind_every": "Solange die Aufgabe offen ist, die Durchsage in diesem Abstand wiederholen. 0 spielt sie einmal."
           }
         }
       },
