@@ -22,7 +22,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import Context, Event, EventStateChangedData, HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, TemplateError
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     async_call_later,
@@ -402,9 +402,19 @@ class Announcer:
             # Reminders replay with the values of the change that opened the task.
             variables = item._variables
         # Render first: a template that fails must not leave a task open without reminders.
-        message = Template(str(item.data.get(CONF_MESSAGE) or ""), self.hass).async_render(
-            variables or {}, parse_result=False
-        )
+        try:
+            message = Template(str(item.data.get(CONF_MESSAGE) or ""), self.hass).async_render(
+                variables or {}, parse_result=False
+            )
+        except TemplateError as err:
+            if not reminder:
+                raise
+            # The task stays open: record the problem and keep the reminders coming.
+            item.last_error = str(err)
+            self._remind(item)
+            await self._save()
+            async_dispatcher_send(self.hass, f"{SIGNAL_ANNOUNCEMENT}_{subentry_id}")
+            return {"ok": False, "error": str(err)}
         if item.task:
             if item.task_opened is None:
                 item.task_opened, item.task_done, item.task_done_by = dt_util.utcnow(), None, None

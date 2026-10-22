@@ -465,6 +465,12 @@ async def test_task_actions_permissions_templates_and_former_recipients(
     assert [c.data["message"] for c in alex] == ["clear_notification"]
     assert [c.data["message"] for c in sam] == ["clear_notification"]
 
+    # A reminder whose template starts failing keeps the task open and reminding.
+    item.task_opened, item.data["message"] = dt_util.utcnow(), "{{ 1 / 0 }}"
+    result = await announcer.async_play(sid, reminder=True)
+    assert result["ok"] is False and item.last_error and item._reminder is not None
+    await announcer.async_complete(sid, Context(user_id=hass_admin_user.id))
+
     # A template that fails at runtime does not leave an open task behind.
     item.data["message"] = "{{ 1 / 0 }}"
     with pytest.raises(TemplateError):
