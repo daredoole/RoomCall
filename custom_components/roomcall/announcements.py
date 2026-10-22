@@ -405,7 +405,8 @@ class Announcer:
             item.last_error = str(err)
             _LOGGER.warning("RoomCall announcement %s not played: %s", item.title, err)
             result = {"ok": False, "error": str(err)}
-        if item.task:
+        # Someone may have confirmed it while it played: then there is nothing to remind.
+        if item.task and item.task_opened:
             # Phones are told even when no speaker could play: the task still needs doing.
             await notify_task(
                 self.hass,

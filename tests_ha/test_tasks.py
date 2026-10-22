@@ -7,12 +7,14 @@ from datetime import timedelta
 from unittest.mock import patch
 from urllib.parse import unquote
 
+from custom_components.roomcall import announcements
 from custom_components.roomcall.communication import execute
 from custom_components.roomcall.errors import Problem
 from homeassistant import config_entries
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
+from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -339,3 +341,52 @@ async def test_task_notifies_phones_even_when_no_speaker_can_play(
     assert item.last_error and item.task_state == "open"
     # The listed person has no phone: everyone is told rather than no one.
     assert len(alex) == 1
+
+
+async def test_task_phones_follow_home_assistant_person_links(
+    hass: HomeAssistant, house, hass_admin_user
+):
+    alex = async_mock_service(hass, "notify", "mobile_app_alex_phone")
+    sam = async_mock_service(hass, "notify", "mobile_app_sam_phone")
+    entry = await _setup(hass, hass_admin_user.id)
+    async_mock_service(hass, "media_player", "play_media")
+    # A real person entry: Home Assistant publishes its linked user as the user_id attribute.
+    assert await async_setup_component(
+        hass,
+        "person",
+        {"person": [{"id": "robin", "name": "Robin", "user_id": hass_admin_user.id}]},
+    )
+    await hass.async_block_till_done()
+    assert hass.states.get("person.robin").attributes["user_id"] == hass_admin_user.id
+    await _add(hass, entry, "triggered", {**LAUNDRY, "people": ["person.robin"]})
+    hass.states.async_set("sensor.dryer", "done", {"friendly_name": "Dryer"})
+    await hass.async_block_till_done()
+    assert len(alex) == 1 and not sam
+
+
+async def test_confirming_while_it_plays_does_not_reopen_the_task(
+    hass: HomeAssistant, house, hass_admin_user
+):
+    alex = async_mock_service(hass, "notify", "mobile_app_alex_phone")
+    sam = async_mock_service(hass, "notify", "mobile_app_sam_phone")
+    entry = await _setup(hass, hass_admin_user.id)
+    played = async_mock_service(hass, "media_player", "play_media")
+    sid = await _add(hass, entry, "triggered", {**LAUNDRY, "rooms": [house["kitchen"]]})
+    announcer = hass.data[DOMAIN].announcer
+    real_send = announcements.send
+
+    async def send_then_confirm(*args, **kwargs):
+        record = await real_send(*args, **kwargs)
+        await announcer.async_complete(sid, Context(user_id=hass_admin_user.id))
+        return record
+
+    with patch("custom_components.roomcall.announcements.send", send_then_confirm):
+        hass.states.async_set("sensor.dryer", "done", {"friendly_name": "Dryer"})
+        await hass.async_block_till_done()
+    item = announcer.items[sid]
+    assert item.task_state == "done" and item._reminder is None
+    # Only the clear for the confirmation; no fresh task notification afterwards.
+    assert [c.data["message"] for c in [*alex, *sam]] == ["clear_notification"] * 2
+    played.clear()
+    await _advance(hass, 60)
+    assert not played and item.task_state == "done"
