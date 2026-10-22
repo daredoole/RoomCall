@@ -38,6 +38,7 @@ final class AppModel: ObservableObject {
             rooms = [.everywhere] + (try JSONDecoder().decode([Room].self, from: data))
             RoomCache.save(rooms)
             if let selected, !rooms.contains(selected) { self.selected = nil }
+            consumePendingRoom()
         } catch { self.error = error.localizedDescription }
     }
     func signOut() async {
@@ -61,6 +62,13 @@ final class AppModel: ObservableObject {
               let id = parts.queryItems?.first(where: { $0.name == "room" })?.value else { return }
         selected = rooms.first { $0.id == id }
     }
+    func consumePendingRoom() {
+        if let id = RoomCache.defaults.string(forKey: "pendingRoom"),
+           let room = rooms.first(where: { $0.id == id }) {
+            selected = room
+            RoomCache.defaults.removeObject(forKey: "pendingRoom")
+        }
+    }
 }
 
 @main
@@ -75,6 +83,10 @@ struct RoomCallApp: App {
                     model.open(url)
                 }
                 .task { await model.refresh() }
+                .onReceive(NotificationCenter.default.publisher(for: Notification.Name("roomcall.openRoom"))) { _ in
+                    ptt.leave()
+                    model.consumePendingRoom()
+                }
         }
     }
 }

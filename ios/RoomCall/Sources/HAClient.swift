@@ -88,7 +88,7 @@ actor LiveConnection {
         let task = URLSession.shared.webSocketTask(with: websocketURL(server))
         task.resume()
         defer { task.cancel(with: .normalClosure, reason: nil) }
-        let hello = try await decode(task.receive())
+        let hello = try decode(await task.receive())
         guard supportsPKCE(hello) else { throw NativeFailure.unsupportedServer }
     }
     func open(client: HAClient, room: Room) async throws {
@@ -97,14 +97,14 @@ actor LiveConnection {
         socket = task
         task.resume()
         do {
-            let hello = try await Self.decode(task.receive())
+            let hello = try Self.decode(await task.receive())
             guard hello["type"] as? String == "auth_required" else { throw NativeFailure.protocolError }
             try await send(["type": "auth", "access_token": token])
-            let authenticated = try await Self.decode(task.receive())
+            let authenticated = try Self.decode(await task.receive())
             guard authenticated["type"] as? String == "auth_ok" else { throw NativeFailure.unauthorized }
             try await send(["id": 1, "type": "roomcall/live", "target": room.id, "from": "RoomCall iOS"])
             for _ in 0..<8 {
-                let message = try await Self.decode(task.receive())
+                let message = try Self.decode(await task.receive())
                 if message["success"] as? Bool == false {
                     let error = message["error"] as? [String: Any]
                     throw NativeFailure.backend(error?["message"] as? String ?? L("ios_connection_failed"))
@@ -126,9 +126,9 @@ actor LiveConnection {
         let data = try JSONSerialization.data(withJSONObject: object)
         try await socket.send(.string(String(decoding: data, as: UTF8.self)))
     }
-    static func decode(_ message: @autoclosure () async throws -> URLSessionWebSocketTask.Message) async throws -> [String: Any] {
+    static func decode(_ message: URLSessionWebSocketTask.Message) throws -> [String: Any] {
         let data: Data
-        switch try await message() {
+        switch message {
         case .data(let bytes): data = bytes
         case .string(let value): data = Data(value.utf8)
         @unknown default: throw NativeFailure.protocolError
@@ -146,7 +146,7 @@ actor LiveConnection {
         guard let socket, let handler else { throw NativeFailure.protocolError }
         try await socket.send(.data(Data([handler])))
         for _ in 0..<16 {
-            let message = try await Self.decode(socket.receive())
+            let message = try Self.decode(await socket.receive())
             if let event = message["event"] as? [String: Any] {
                 if event["type"] as? String == "error" {
                     throw NativeFailure.backend(event["message"] as? String ?? L("ios_connection_failed"))

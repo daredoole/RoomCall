@@ -21,11 +21,17 @@ struct RoomQuery: EntityStringQuery {
     }
 }
 
-struct OpenRoomCallIntent: AppIntent {
+struct OpenRoomCallIntent: OpenIntent {
     static var title: LocalizedStringResource = "ios_open"
     static var description = IntentDescription("ios_open_description")
-    @Parameter(title: "ios_room") var room: RoomEntity?
-    func perform() async throws -> some IntentResult & OpensIntent {
-        .result(opensIntent: OpenURLIntent(RoomCache.route(room?.id)))
+    @Parameter(title: "ios_room") var target: RoomEntity
+    init() { target = RoomEntity(id: "all", name: L("ios_everywhere")) }
+    init(target: RoomEntity) { self.target = target }
+    func perform() async throws -> some IntentResult {
+        await MainActor.run {
+            RoomCache.defaults.set(target.id, forKey: "pendingRoom")
+            NotificationCenter.default.post(name: Notification.Name("roomcall.openRoom"), object: nil)
+        }
+        return .result()
     }
 }
