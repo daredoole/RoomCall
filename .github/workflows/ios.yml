@@ -30,6 +30,10 @@ jobs:
           if iphone['state'] != 'Booted':
               subprocess.run(['xcrun', 'simctl', 'boot', iphone['udid']], check=True)
           subprocess.run(['xcrun', 'simctl', 'bootstatus', iphone['udid'], '-b'], check=True)
+          # A clean, consistent status bar for documentation screenshots.
+          subprocess.run(['xcrun', 'simctl', 'status_bar', iphone['udid'], 'override', '--time', '9:41',
+                          '--batteryState', 'charged', '--batteryLevel', '100',
+                          '--cellularBars', '4', '--wifiBars', '3'], check=True)
           PY
       - name: Build and test native app and controls
         run: |
@@ -40,6 +44,12 @@ jobs:
             -parallel-testing-enabled NO -test-timeouts-enabled YES \
             -default-test-execution-time-allowance 60 -maximum-test-execution-time-allowance 120 \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES | tee /tmp/roomcall-ios-build.log
+      - name: Export documentation screenshots
+        if: always()
+        run: |
+          mkdir -p /tmp/ios-screenshots
+          xcrun xcresulttool export attachments --path /tmp/RoomCall.xcresult --output-path /tmp/ios-screenshots
+          ls -la /tmp/ios-screenshots
       - name: Package simulator app
         run: ditto -c -k --sequesterRsrc --keepParent /tmp/roomcall-ios-build/Build/Products/Debug-iphonesimulator/RoomCall.app /tmp/RoomCall-simulator.zip
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -50,3 +60,4 @@ jobs:
             /tmp/RoomCall.xcresult
             /tmp/roomcall-ios-build.log
             /tmp/RoomCall-simulator.zip
+            /tmp/ios-screenshots

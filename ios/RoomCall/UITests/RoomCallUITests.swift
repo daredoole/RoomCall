@@ -25,4 +25,51 @@ final class RoomCallUITests: XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
     }
+
+    // Real simulator captures for the README and docs (exported from the result bundle in CI).
+    func testScreenshotSignIn() {
+        for appearance in ["light", "dark"] {
+            let app = launch(["-RoomCallDemoAppearance", appearance])
+            let field = app.textFields["server-url"]
+            XCTAssertTrue(field.waitForExistence(timeout: 30))
+            field.tap()
+            field.typeText("https://homeassistant.local:8123\n")
+            keep("ios-sign-in-\(appearance)")
+            app.terminate()
+        }
+    }
+
+    func testScreenshotRooms() {
+        for appearance in ["light", "dark"] {
+            let app = launch(["-RoomCallDemo", "-RoomCallDemoRoom", "kitchen", "-RoomCallDemoAppearance", appearance])
+            XCTAssertTrue(app.buttons["Kitchen"].waitForExistence(timeout: 30))
+            keep("ios-rooms-\(appearance)")
+            app.terminate()
+        }
+    }
+
+    func testScreenshotTalking() {
+        for appearance in ["light", "dark"] {
+            let app = launch(["-RoomCallDemo", "-RoomCallDemoRoom", "kitchen", "-RoomCallDemoJoined",
+                              "-RoomCallDemoTalking", "-RoomCallDemoAppearance", appearance])
+            XCTAssertTrue(app.staticTexts["ptt-status"].waitForExistence(timeout: 30))
+            sleep(2)
+            keep("ios-talking-\(appearance)")
+            app.terminate()
+        }
+    }
+
+    private func launch(_ arguments: [String]) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"] + arguments
+        app.launch()
+        return app
+    }
+
+    private func keep(_ name: String) {
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = name
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
 }

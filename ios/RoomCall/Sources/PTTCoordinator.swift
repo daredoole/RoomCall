@@ -64,6 +64,16 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
         manager.requestJoinChannel(channelUUID: id,
             descriptor: PTChannelDescriptor(name: room.name, image: UIImage(systemName: "waveform")))
     }
+    #if DEBUG
+    /// Documentation screenshots only: show a joined channel without the system framework.
+    func showDemo(room: Room, transmitting: Bool) {
+        joined = true
+        activeRoomName = room.name
+        requested = transmitting
+        self.transmitting = transmitting
+        status = L(transmitting ? "ios_transmitting" : "ios_ready")
+    }
+    #endif
     func leave() {
         stop()
         if let channel { manager?.leaveChannel(channelUUID: channel) }
