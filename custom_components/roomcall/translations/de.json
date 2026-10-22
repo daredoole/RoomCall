@@ -347,7 +347,7 @@
         "shortcut_signing_failed": "Signieren fehlgeschlagen. Prüfe dein HubSign-Konto oder lade den Quelltext zum lokalen Signieren herunter.",
         "shortcut_everywhere": "Überall",
         "tts_preparation_failed": "Sprache mit dem eingestellten Signalton konnte nicht vorbereitet werden. Sprachdienst und eigene Tondatei prüfen.",
-        "shortcut_format_native": "Native Perform-Action-Vorlage — lokal signieren",
+        "shortcut_format_native": "Native Perform-Action-Vorlage — unsigniert, auf einem Mac signieren",
         "shortcut_native_ask": "1. Füge in Apple Kurzbefehle Nach Eingabe fragen (Text) mit dieser Frage hinzu: {prompt}",
         "shortcut_native_dictionary": "Festes Ziel: {name} ({room}). Die native Vorlage enthält bereits das Nachrichten-Wörterbuch.",
         "shortcut_native_action": "3. Füge Home Assistant → Perform Action hinzu. Wähle deinen Server und roomcall.broadcast. Verwende die Wörterbuch-Variable als Aktionsdaten. Nenne den Kurzbefehl RoomCall {name}.",
@@ -368,7 +368,9 @@
         "remind_later": "Später erinnern",
         "tasks": "Zu erledigen",
         "task_announced": "Angesagt {time}",
-        "tool_tasks": "Offene Aufgaben von Durchsagen auflisten, bestätigen, dass eine erledigt ist (complete), oder später erneut erinnern (snooze). Eine Aufgabe nur abschließen, wenn eine Person sagt, dass sie sie erledigt hat; niemals vermuten."
+        "tool_tasks": "Offene Aufgaben von Durchsagen auflisten, bestätigen, dass eine erledigt ist (complete), oder später erneut erinnern (snooze). Eine Aufgabe nur abschließen, wenn eine Person sagt, dass sie sie erledigt hat; niemals vermuten.",
+        "station_room": "Raum dieses Dashboards",
+        "no_stations": "Keine anderen Stationen geöffnet. Öffne RoomCall auf einem anderen Dashboard und aktiviere dort die Station, um sie anzurufen."
       }
     },
     "audio_processing": {

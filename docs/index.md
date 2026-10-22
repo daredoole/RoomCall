@@ -6,9 +6,10 @@ talk, and your voice plays in the room you picked — on Sonos, AirPlay and Goog
 [![Open your Home Assistant instance and open RoomCall in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=daredoole&repository=RoomCall&category=integration)
 
 <div class="grid" markdown>
-![Pick a room and hold to talk](assets/ha-card-mobile.png){ width="240" }
-![Talking](assets/ha-card-talking.png){ width="240" }
-![Delivery report per speaker](assets/ha-card-delivered.png){ width="240" }
+![Pick a room and hold to talk](assets/ha-card-mobile.png){ width="200" }
+![Talking](assets/ha-card-talking.png){ width="200" }
+![A task to confirm on the To do list](assets/ha-card-tasks.png){ width="200" }
+![Settings panel](assets/ha-settings.png){ width="200" }
 </div>
 
 ## What you get
@@ -21,14 +22,24 @@ talk, and your voice plays in the room you picked — on Sonos, AirPlay and Goog
   iPhone, Apple Watch and Control Center.
 - **[Announcements](announcements.md)** — scheduled ("bus in 10 minutes" on weekdays) and
   triggered ("the garage has been open 10 minutes"), with live values in the message.
+- **[Tasks you have to confirm](announcements.md#tasks-confirm-it-was-actually-done)** —
+  "the laundry is done" keeps reminding until someone taps *Took out the dry clothes*;
+  swiping the notification away doesn't count.
+- **Talk, Type or Ask** — speak, type for text-to-speech, or ask an Assist satellite and get
+  the answer back ([messages](communication.md)).
+- **One Settings panel on the card** — guided setup and sound tests, Siri Shortcuts, room
+  stations and voicemail ([tour](home-assistant.md#settings-panel)).
+- **[Siri](siri-shortcuts.md)** — "Hey Siri, run RoomCall Basement", or one shortcut with a
+  live room picker. A [native iOS prototype](native-ios.md) adds Push to Talk.
 - **Reply** from a phone notification, straight back to the caller's room.
 - **Do Not Disturb, quiet hours and urgent calls.**
 - **Call history** with replay and speech-to-text transcripts.
 - **Works with receivers and TV boxes** — Denon/HEOS and Google TV go back to what they were doing.
 - **Automations and AI** — `roomcall.broadcast`, a notify entity per room,
-  [blueprints](blueprints.md), Siri Shortcuts, and an Assist intent for AI agents
-  ([managing RoomCall with AI](ai.md)).
-- **Local only** — no cloud, no accounts; audio never leaves your network.
+  [blueprints](blueprints.md), and explicit tools for Assist and MCP agents, including
+  [guided setup](agent-setup.md) ([managing RoomCall with AI](ai.md)).
+- **Local audio** — calls go from your phone to Home Assistant to the speaker. Optional
+  speech, translation and shortcut signing use only providers you choose.
 
 [Set it up in Home Assistant →](home-assistant.md){ .md-button .md-button--primary }
 [Run it without Home Assistant](getting-started.md){ .md-button }

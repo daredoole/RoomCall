@@ -63,6 +63,15 @@ Details and hardware boundaries: [Messages and room stations](communication.md).
 
 Details: [Agent setup](agent-setup.md).
 
+## v0.10 — Adaptive card, Siri and iOS ✅
+
+- [x] Card layout follows its width; Talk/Type/Ask everywhere and one keyboard-accessible Settings panel
+- [x] Room-specific Siri setup and native Perform Action shortcuts with a live room picker
+- [x] Configured chime before typed, Siri, notify and scheduled announcements
+- [x] Native iOS prototype: HA sign-in, Push to Talk, Siri announcements, Control Center
+
+Details: [Siri and Shortcuts](siri-shortcuts.md), [Native iOS prototype](native-ios.md).
+
 ## v0.11 — Tasks ✅
 
 - [x] Announcements that stay open until someone confirms the chore was done, with reminders,

@@ -22,6 +22,7 @@ export class RoomCallControls {
       .communication .test-row { display:flex; align-items:center; flex-wrap:wrap; gap:6px }
       .communication .result,.communication .settings-result { overflow-wrap:anywhere; white-space:pre-wrap }
       .communication button { min-height:44px; min-width:44px }
+      .communication button:disabled { opacity:.5; cursor:not-allowed }
       .communication nav[data-toolbar] { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 44px; gap:4px;
         background:var(--secondary-background-color,var(--card-background-color)); padding:4px; border-radius:14px; }
       .communication nav[data-toolbar] button { justify-content:center; padding:6px; border-color:transparent; border-radius:10px; }
@@ -43,6 +44,13 @@ export class RoomCallControls {
       .communication.settings-surface { display:contents; }
       .setup-review { overflow-wrap:anywhere; }
       .shortcut-builder,.shortcut-instructions { display:grid; gap:12px; min-width:0; }
+      .panel-section { display:grid; gap:10px; min-width:0; margin-bottom:12px; padding:14px;
+        border:1px solid var(--divider-color); border-radius:14px; }
+      .panel-section h3 { margin:0; font-size:0.9375rem; font-weight:600; }
+      .panel-field { display:grid; gap:6px; min-width:0; color:var(--secondary-text-color); font-size:0.8125rem; }
+      .panel-note { margin:0; color:var(--secondary-text-color); font-size:0.875rem; overflow-wrap:anywhere; }
+      .message-row { display:grid; gap:8px; padding-top:10px; border-top:1px solid var(--divider-color); }
+      .message-row p { margin:0; overflow-wrap:anywhere; }
       .shortcut-builder label { display:grid; gap:6px; min-width:0; }
       .shortcut-builder .remote-consent { display:flex; align-items:flex-start; gap:8px; }
       .shortcut-builder p { margin:0; overflow-wrap:anywhere; }
@@ -198,7 +206,7 @@ export class RoomCallControls {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "chip small";
-    if (["send", "apply_plan", "create_plan"].includes(key)) button.classList.add("primary-action");
+    if (["send", "apply_plan", "create_plan", "connect_station"].includes(key)) button.classList.add("primary-action");
     button.textContent = this.t(key);
     button.addEventListener("click", () => Promise.resolve().then(action).catch((e) => this.error(e)));
     return button;
@@ -207,6 +215,26 @@ export class RoomCallControls {
     const select = document.createElement("select");
     select.setAttribute("aria-label", this.t(key));
     return select;
+  }
+  section(key, ...children) {
+    const section = document.createElement("section");
+    section.className = "panel-section";
+    const title = document.createElement("h3");
+    title.textContent = this.t(key);
+    section.append(title, ...children);
+    return section;
+  }
+  field(key, control) {
+    const label = document.createElement("label");
+    label.className = "panel-field";
+    label.append(this.t(key), control);
+    return label;
+  }
+  note(text) {
+    const note = document.createElement("p");
+    note.className = "panel-note";
+    note.textContent = text;
+    return note;
   }
   async command(operation, request = {}) {
     const result = await this.card._hass.callApi("POST", "roomcall/command", { operation, request });
@@ -280,7 +308,6 @@ export class RoomCallControls {
     this.setup.replaceChildren();
     this.quickTests.replaceChildren();
     this.quickTests.hidden = this.wizard.active?.state === "applied";
-    this.setup.append(this.button("refresh", () => this.refresh()));
     for (const endpoint of this.capabilities.endpoints.filter((e) => e.selected)) {
       const row = document.createElement("div");
       row.className = "test-row";
@@ -298,41 +325,53 @@ export class RoomCallControls {
       if (endpoint.sound_test) row.append(document.createTextNode(this.t(endpoint.sound_test.heard ? "heard" : "silent")));
       this.quickTests.append(row);
     }
-    const room = this.select("station");
+    const room = this.select("station_room");
     room.append(...this.capabilities.areas.map((a) => new Option(a.name, a.id)));
     if (this.card._config.room) room.value = this.card._config.room;
     const peers = this.select("call_station");
-    peers.append(...this.capabilities.stations.filter((s) => s.id !== this.station?.id).map((s) => new Option(s.name, s.id)));
-    this.setup.append(room, this.button("connect_station", async () => {
-      if (this.station) await this.station.close();
-      this.station = new StationClient(this);
-      await this.station.register(room.value);
-      await this.refresh();
-    }), peers, this.button("call_station", async () => {
+    const others = this.capabilities.stations.filter((s) => s.id !== this.station?.id);
+    peers.append(...others.map((s) => new Option(s.name, s.id)));
+    const call = this.button("call_station", async () => {
       if (!this.station) throw new Error(this.t("station_unavailable"));
       await this.station.call(peers.value);
       this.dialog.close();
-    }));
+    });
+    call.disabled = !others.length;
+    const empty = this.note(this.t("no_stations"));
+    empty.hidden = Boolean(others.length);
+    peers.hidden = !others.length;
+    this.setup.append(
+      this.section("station", this.field("station_room", room), this.button("connect_station", async () => {
+        if (this.station) await this.station.close();
+        this.station = new StationClient(this);
+        await this.station.register(room.value);
+        await this.refresh();
+      })),
+      this.section("call_station", empty, peers, call),
+      this.button("refresh", () => this.refresh()));
     this.settingsTabs.querySelector('[data-panel="voicemail"]').hidden = !this.capabilities.features.voicemail;
     if (this.capabilities.features.voicemail) {
       const mail = await this.command("voicemail");
-      const label = document.createElement("div");
-      label.textContent = this.t("voicemail");
-      this.panels.voicemail.replaceChildren(label);
+      const list = this.section("voicemail");
+      if (!mail.messages.length) list.append(this.note(this.t("empty")));
       for (const item of mail.messages) {
         const row = document.createElement("div");
-        row.className = "test-row";
-        const message = document.createElement("span");
+        row.className = "message-row";
+        const message = document.createElement("p");
         message.textContent = item.message;
-        row.append(message, this.button("replay", async () => {
+        const actions = document.createElement("div");
+        actions.className = "test-row";
+        actions.append(this.button("replay", async () => {
           const job = await this.command("voicemail", { action: "replay", id: item.id });
           this.watch(job.id);
         }), this.button("delete", async () => {
           await this.command("voicemail", { action: "delete", id: item.id });
           await this.refresh();
         }));
-        this.panels.voicemail.append(row);
+        row.append(message, actions);
+        list.append(row);
       }
+      this.panels.voicemail.replaceChildren(list);
     }
   }
   close() {

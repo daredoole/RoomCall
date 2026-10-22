@@ -347,7 +347,7 @@
         "shortcut_signing_failed": "La firma falló. Revisa tu cuenta HubSign o descarga el código para firmarlo localmente.",
         "shortcut_everywhere": "En todas partes",
         "tts_preparation_failed": "No se pudo preparar la voz con el sonido configurado. Revisa el proveedor de voz y el archivo de sonido personalizado.",
-        "shortcut_format_native": "Plantilla nativa Perform Action — firma local",
+        "shortcut_format_native": "Plantilla nativa Perform Action — sin firmar, firmar en un Mac",
         "shortcut_native_ask": "1. En Atajos de Apple, añade Solicitar entrada (Texto) con la pregunta: {prompt}",
         "shortcut_native_dictionary": "Destino fijo: {name} ({room}). La plantilla nativa ya incluye el diccionario del mensaje.",
         "shortcut_native_action": "3. Añade Home Assistant → Perform Action. Selecciona tu servidor y roomcall.broadcast. Usa la variable Diccionario como datos. Nómbralo RoomCall {name}.",
@@ -368,7 +368,9 @@
         "remind_later": "Recordármelo más tarde",
         "tasks": "Pendiente",
         "task_announced": "Anunciado {time}",
-        "tool_tasks": "Lista las tareas de anuncios pendientes, confirma que una se hizo (complete) o recuérdala más tarde (snooze). Completa una tarea solo cuando una persona diga que la hizo; nunca lo supongas."
+        "tool_tasks": "Lista las tareas de anuncios pendientes, confirma que una se hizo (complete) o recuérdala más tarde (snooze). Completa una tarea solo cuando una persona diga que la hizo; nunca lo supongas.",
+        "station_room": "Sala de este panel",
+        "no_stations": "No hay otras estaciones abiertas. Abre RoomCall en otro panel y activa su estación para llamarla."
       }
     },
     "audio_processing": {

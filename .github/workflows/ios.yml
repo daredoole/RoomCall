@@ -8,7 +8,7 @@ permissions:
 jobs:
   simulator:
     runs-on: macos-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Check native translation catalogs
@@ -30,16 +30,41 @@ jobs:
           if iphone['state'] != 'Booted':
               subprocess.run(['xcrun', 'simctl', 'boot', iphone['udid']], check=True)
           subprocess.run(['xcrun', 'simctl', 'bootstatus', iphone['udid'], '-b'], check=True)
+          # A clean, consistent status bar for documentation screenshots.
+          subprocess.run(['xcrun', 'simctl', 'status_bar', iphone['udid'], 'override', '--time', '9:41',
+                          '--batteryState', 'charged', '--batteryLevel', '100',
+                          '--cellularBars', '4', '--wifiBars', '3'], check=True)
           PY
-      - name: Build and test native app and controls
+      - name: Build native app and tests
         run: |
           set -o pipefail
-          xcodebuild test -project ios/RoomCall/RoomCall.xcodeproj -scheme RoomCall \
+          xcodebuild build-for-testing -project ios/RoomCall/RoomCall.xcodeproj -scheme RoomCall \
+            -destination "platform=iOS Simulator,id=$ROOMCALL_SIMULATOR" \
+            -derivedDataPath /tmp/roomcall-ios-build \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES | tee /tmp/roomcall-ios-build.log
+      - name: Warm up the app on the simulator
+        run: |
+          # The first launch of a fresh install can exceed XCUITest's launch timeout.
+          app=/tmp/roomcall-ios-build/Build/Products/Debug-iphonesimulator/RoomCall.app
+          xcrun simctl install "$ROOMCALL_SIMULATOR" "$app"
+          xcrun simctl launch "$ROOMCALL_SIMULATOR" com.daredoole.RoomCall
+          sleep 10
+          xcrun simctl terminate "$ROOMCALL_SIMULATOR" com.daredoole.RoomCall
+      - name: Test native app and controls
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building -project ios/RoomCall/RoomCall.xcodeproj -scheme RoomCall \
             -destination "platform=iOS Simulator,id=$ROOMCALL_SIMULATOR" \
             -derivedDataPath /tmp/roomcall-ios-build -resultBundlePath /tmp/RoomCall.xcresult \
             -parallel-testing-enabled NO -test-timeouts-enabled YES \
             -default-test-execution-time-allowance 60 -maximum-test-execution-time-allowance 120 \
-            CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES | tee /tmp/roomcall-ios-build.log
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES | tee -a /tmp/roomcall-ios-build.log
+      - name: Export documentation screenshots
+        if: always()
+        run: |
+          mkdir -p /tmp/ios-screenshots
+          xcrun xcresulttool export attachments --path /tmp/RoomCall.xcresult --output-path /tmp/ios-screenshots
+          ls -la /tmp/ios-screenshots
       - name: Package simulator app
         run: ditto -c -k --sequesterRsrc --keepParent /tmp/roomcall-ios-build/Build/Products/Debug-iphonesimulator/RoomCall.app /tmp/RoomCall-simulator.zip
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -50,3 +75,4 @@ jobs:
             /tmp/RoomCall.xcresult
             /tmp/roomcall-ios-build.log
             /tmp/RoomCall-simulator.zip
+            /tmp/ios-screenshots

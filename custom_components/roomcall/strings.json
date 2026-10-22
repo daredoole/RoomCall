@@ -347,7 +347,7 @@
         "shortcut_signing_failed": "Signing failed. Check your HubSign account or download a source file for local signing.",
         "shortcut_everywhere": "Everywhere",
         "tts_preparation_failed": "Could not prepare speech with the configured chime. Check the speech provider and custom chime file.",
-        "shortcut_format_native": "Native Perform Action template — local signing",
+        "shortcut_format_native": "Native Perform Action template — unsigned, sign on a Mac",
         "shortcut_native_ask": "1. In Apple Shortcuts, add Ask for Input (Text) with the prompt: {prompt}",
         "shortcut_native_dictionary": "Fixed destination: {name} ({room}). The generated native template already includes the message Dictionary.",
         "shortcut_native_action": "3. Add Home Assistant → Perform Action. Select your server and roomcall.broadcast. Set Action data to the Dictionary variable. Name it RoomCall {name}.",
@@ -368,7 +368,9 @@
         "remind_later": "Remind me later",
         "tasks": "To do",
         "task_announced": "Announced {time}",
-        "tool_tasks": "List announcement tasks waiting to be done, confirm one was done (complete) or remind again later (snooze). Complete a task only when a person says they did it; never infer it."
+        "tool_tasks": "List announcement tasks waiting to be done, confirm one was done (complete) or remind again later (snooze). Complete a task only when a person says they did it; never infer it.",
+        "station_room": "This dashboard's room",
+        "no_stations": "No other stations are open. Open RoomCall on another dashboard and enable its station to call it."
       }
     },
     "audio_processing": {
