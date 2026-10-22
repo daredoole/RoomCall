@@ -297,14 +297,14 @@ async def test_satellite_question_returns_actual_response(hass, setup_roomcall, 
     assert job.state == state and job.responses[0]["sentence"] == sentence
 
 
-async def test_translation_and_language_preferences_are_explicit(hass, setup_roomcall):
+async def test_translation_and_language_preferences_are_explicit(hass, setup_roomcall, tts_audio):
     data = hass.data["roomcall"]
     hass.states.async_set("tts.piper", "unknown")
-    data.preferences = {"person.alex": {"language": "es"}}
+    data.preferences = {"person.alex": {"language": "es", "room": "kitchen"}}
     request = await request_for(
         hass, data, {"people": ["person.alex"], "message": "Hello"}, Context()
     )
-    assert "language=es" in request.media_id
+    assert request.language == "es" and "language=es" in tts_audio.await_args.args[1]
     with pytest.raises(Problem, match="translation_unavailable"):
         await request_for(hass, data, {"message": "Hello", "translate": True}, Context())
     data.translation_entity = "ai_task.local"
@@ -319,7 +319,7 @@ async def test_translation_and_language_preferences_are_explicit(hass, setup_roo
     request = await request_for(
         hass, data, {"message": "Hello", "translate": True, "language": "es"}, Context()
     )
-    assert request.message == "Hola" and "language=es" in request.media_id
+    assert request.message == "Hola" and "language=es" in tts_audio.await_args.args[1]
     data.preferences["person.sam"] = {"language": "nl"}
     with pytest.raises(Problem, match="mixed_languages"):
         await request_for(

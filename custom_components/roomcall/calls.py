@@ -7,7 +7,7 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from homeassistant.components.ffmpeg import get_ffmpeg_manager
 from homeassistant.core import Context, HomeAssistant
@@ -57,7 +57,6 @@ class CallRequest:
     from_room: str | None = None
     volume: float | None = None
     message: str | None = None
-    chime_message: dict[str, Any] | None = None
     audio: bytes | None = None  # MP3 kept for replay
     recording: bytes | None = None  # original upload, for speech-to-text
     caller_user_id: str | None = None
@@ -185,7 +184,6 @@ async def place_call(
         None,
         target=record.target,
         kind=request.kind,
-        chime_message=request.chime_message,
         stagger=data.stagger_ms / 1000,
         retry=data.retry,
         restore=data.restore,

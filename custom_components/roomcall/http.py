@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from urllib.parse import quote
 
 from aiohttp import web
 from homeassistant.components.ffmpeg import get_ffmpeg_manager
@@ -30,6 +31,7 @@ from .const import (
     PRIORITY_NORMAL,
 )
 from .core import friendly, mp3_seconds, render_chime, rooms
+from .errors import Problem
 from .localization import catalog
 
 if TYPE_CHECKING:
@@ -296,4 +298,38 @@ class LocaleView(HomeAssistantView):
     async def get(self, request: web.Request) -> web.Response:
         return self.json(
             catalog(request.query.get("language", request.app[KEY_HASS].config.language))
+        )
+
+
+class ShortcutView(HomeAssistantView):
+    """Authenticated export; no HA URL, token or message leaves the instance."""
+
+    url = "/api/roomcall/shortcut"
+    name = "api:roomcall:shortcut"
+
+    async def post(self, request: web.Request) -> web.Response:
+        from .shortcuts import generate
+
+        hass = request.app[KEY_HASS]
+        try:
+            import json
+
+            raw = await _read_body(request, 65536)
+            if len(raw) > 65536:
+                raise ValueError("too large")
+            values = json.loads(raw)
+            user = request["hass_user"]
+            payload, filename = await generate(hass, values, Context(user_id=user.id))
+        except (ValueError, UnicodeDecodeError):
+            return self.json(Problem("invalid_request").as_dict(hass), status_code=400)
+        except Problem as err:
+            return self.json(err.as_dict(hass), status_code=400)
+        return web.Response(
+            body=payload,
+            content_type="application/octet-stream",
+            headers={
+                "Content-Disposition": "attachment; filename*=UTF-8''" + quote(filename),
+                "Cache-Control": "no-store",
+                "X-Content-Type-Options": "nosniff",
+            },
         )

@@ -37,8 +37,10 @@ async def _add(hass: HomeAssistant, entry: MockConfigEntry, kind: str, data: dic
     )
 
 
-def _spoken(calls) -> list[str]:
-    return [unquote(c.data["media_content_id"].split("message=")[1].split("&")[0]) for c in calls]
+def _spoken(tts_audio) -> list[str]:
+    return [
+        unquote(c.args[1].split("message=")[1].split("&")[0]) for c in tts_audio.await_args_list
+    ]
 
 
 def _local(hour: int, minute: int, weekday: int) -> datetime:
@@ -50,7 +52,9 @@ def _local(hour: int, minute: int, weekday: int) -> datetime:
     return dt_util.as_utc(day)
 
 
-async def test_scheduled_announcement_plays_on_its_days(hass: HomeAssistant, setup_roomcall, house):
+async def test_scheduled_announcement_plays_on_its_days(
+    hass: HomeAssistant, setup_roomcall, house, tts_audio
+):
     hass.states.async_set("tts.piper", "unknown")
     hass.states.async_set("sensor.outdoor_temperature", "54")
     played = async_mock_service(hass, "media_player", "play_media")
@@ -69,7 +73,8 @@ async def test_scheduled_announcement_plays_on_its_days(hass: HomeAssistant, set
     )
     async_fire_time_changed(hass, _local(7, 30, 0))  # Monday
     await hass.async_block_till_done()
-    assert _spoken(played) == ["Bus in 10 minutes. It is 54 out."] * 2  # two kitchen speakers
+    assert _spoken(tts_audio) == ["Bus in 10 minutes. It is 54 out."]
+    assert len(played) == 2  # synthesize once for both kitchen speakers
     played.clear()
     async_fire_time_changed(hass, _local(7, 30, 5))  # Saturday
     await hass.async_block_till_done()
@@ -93,7 +98,7 @@ async def test_scheduled_announcement_plays_on_its_days(hass: HomeAssistant, set
 
 
 async def test_triggered_announcement_follows_a_light_switch(
-    hass: HomeAssistant, setup_roomcall, house
+    hass: HomeAssistant, setup_roomcall, house, tts_audio
 ):
     hass.states.async_set("tts.piper", "unknown")
     hass.states.async_set("switch.porch_light", "off", {"friendly_name": "Porch light"})
@@ -114,7 +119,8 @@ async def test_triggered_announcement_follows_a_light_switch(
     )
     hass.states.async_set("switch.porch_light", "on", {"friendly_name": "Porch light"})
     await hass.async_block_till_done()
-    assert _spoken(played) == ["Porch light is on"]
+    assert _spoken(tts_audio) == ["Porch light is on"]
+    assert len(played) == 1
 
     # Off is not the chosen state; on again within the cooldown is ignored.
     hass.states.async_set("switch.porch_light", "off", {"friendly_name": "Porch light"})

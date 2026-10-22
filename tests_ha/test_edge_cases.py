@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from custom_components.roomcall import _message_chime, core, policy, restore
+from custom_components.roomcall import core, policy, restore
 from custom_components.roomcall.calls import CallError, CallRequest, _limited_volume, place_call
 from custom_components.roomcall.capabilities import can_play, deduplicate, physical_key
 from custom_components.roomcall.communication import execute
@@ -114,13 +114,13 @@ async def test_message_provider_errors_and_chime_language(hass, setup_roomcall):
         )
     hass.states.async_set("tts.piper", "unknown")
     data.chime_url = "http://ha.local/chime.mp3"
-    assert _message_chime(hass, data) == data.chime_url
-    hass.config.components.add("chime_tts")
-    request = await request_for(hass, data, {"message": "Hola", "language": "es"}, Context())
-    assert request.chime_message["language"] == "es"
-    data.chime_url = None
-    with patch("custom_components.roomcall.base_url", side_effect=NoURLAvailableError):
-        assert _message_chime(hass, data) is None
+    with patch(
+        "custom_components.roomcall.messages.to_playable",
+        AsyncMock(return_value=(b"audio", "audio/mpeg")),
+    ) as prepare:
+        request = await request_for(hass, data, {"message": "Hola", "language": "es"}, Context())
+    assert request.audio == b"audio" and request.language == "es"
+    assert prepare.call_args.args[5] == "http://ha.local/chime.mp3"
 
 
 async def test_controls_not_ready_whitespace_and_provider_error(hass):
@@ -182,17 +182,17 @@ async def test_scheduler_limits_cancellation_and_live_wait(hass, setup_roomcall)
     scheduler.pending = 128
     with pytest.raises(RuntimeError, match="queue_full"):
         await scheduler.acquire("media_player.kitchen_sonos", None)
-    result = await core._play_one(hass, "media_player.kitchen_sonos", "http://clip", None, None)
+    result = await core._play_one(hass, "media_player.kitchen_sonos", "http://clip", None)
     assert result.error_code == "queue_full"
     scheduler.pending = 0
     with patch.object(scheduler, "acquire", side_effect=TimeoutError):
-        result = await core._play_one(hass, "media_player.kitchen_sonos", "http://clip", None, None)
+        result = await core._play_one(hass, "media_player.kitchen_sonos", "http://clip", None)
         assert result.error_code == "expired"
     lock = asyncio.Lock()
     await lock.acquire()
     with patch.object(scheduler, "acquire", AsyncMock(return_value=lock)):
         result = await core._play_one(
-            hass, "media_player.kitchen_sonos", "http://clip", None, None, deadline=0
+            hass, "media_player.kitchen_sonos", "http://clip", None, deadline=0
         )
         assert result.error_code == "expired" and not lock.locked()
     with (

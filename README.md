@@ -86,7 +86,7 @@ intercom, organised by your Home Assistant **areas**.
 | Home Assistant | 2025.6 or newer |
 | Speakers | Any `media_player` that can play an MP3 URL: Sonos, Google Cast / Nest, AirPlay, … |
 | Microphone | Open the dashboard over **HTTPS** (Nabu Casa, a reverse proxy, Tailscale) or in the Home Assistant mobile app. Browsers block the mic on plain `http://`. |
-| Optional | [Chime TTS](https://github.com/nimroddolev/chime_tts) (typed messages get the chime too), a speech-to-text engine (transcripts), room presence such as [Bermuda](https://github.com/agittins/bermuda) (call a person) |
+| Optional | A speech-to-text engine (transcripts), room presence such as [Bermuda](https://github.com/agittins/bermuda) (call a person) |
 
 ## Install
 
@@ -160,7 +160,7 @@ data:
 Play an audio file instead of text with `media_url:`. The action returns which speakers played
 the message, and `sensor.roomcall_last_call` records every call. More examples in the
 [Home Assistant guide](https://daredoole.github.io/RoomCall/home-assistant/), and
-"Hey Siri, intercom basement" in [Siri and Shortcuts](https://daredoole.github.io/RoomCall/siri-shortcuts/).
+"Hey Siri, run RoomCall Basement" in [Siri and Shortcuts](https://daredoole.github.io/RoomCall/siri-shortcuts/).
 
 ## Blueprints
 

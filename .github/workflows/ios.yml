@@ -18,7 +18,7 @@ jobs:
           brew install xcodegen
           xcodegen generate --spec ios/RoomCall/project.yml
           xcodebuild -version
-      - name: Select available iPhone simulator
+      - name: Select and boot available iPhone simulator
         run: |
           python3 - <<'PY'
           import json, os, subprocess
@@ -27,6 +27,9 @@ jobs:
                         for device in group if device['name'].startswith('iPhone'))
           with open(os.environ['GITHUB_ENV'], 'a') as handle:
               handle.write('ROOMCALL_SIMULATOR=' + iphone['udid'] + '\n')
+          if iphone['state'] != 'Booted':
+              subprocess.run(['xcrun', 'simctl', 'boot', iphone['udid']], check=True)
+          subprocess.run(['xcrun', 'simctl', 'bootstatus', iphone['udid'], '-b'], check=True)
           PY
       - name: Build and test native app and controls
         run: |

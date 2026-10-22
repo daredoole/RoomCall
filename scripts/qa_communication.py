@@ -70,6 +70,52 @@ def check_guided_setup(browser, errors) -> None:
         context.close()
 
 
+def check_shortcuts(browser, errors) -> None:
+    for width in (240, 390, 900):
+        context = browser.new_context(viewport={"width": width, "height": 820})
+        page = context.new_page()
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        open_card(page, "mobile", "dark")
+        card = page.locator("roomcall-card")
+        card.get_by_role("button", name="Settings", exact=True).click()
+        card.get_by_role("tab", name="Siri Shortcuts", exact=True).click()
+        panel = card.locator(".shortcut-builder")
+        panel.get_by_role("combobox", name="Destination room", exact=True).select_option("basement")
+        expect(panel).to_contain_text("Set areas to Text: basement")
+        if width == 390:
+            card.locator("dialog").screenshot(path=OUT / "ha-siri-shortcuts.png")
+        expect(panel.get_by_role("button", name="Generate shortcut", exact=True)).to_be_hidden()
+        panel.get_by_role("combobox", name="Setup method", exact=True).select_option("cherri")
+        with page.expect_download() as pending:
+            panel.get_by_role("button", name="Generate shortcut", exact=True).click()
+        download = pending.value
+        assert download.suggested_filename == "RoomCall basement.cherri"
+        assert "basement" in download.path().read_text()
+        expect(panel).to_contain_text("Sign it before importing")
+        assert panel.evaluate("e=>e.scrollWidth<=e.clientWidth")
+        panel.get_by_role("combobox", name="Setup method", exact=True).select_option("signed")
+        panel.get_by_role("button", name="Generate shortcut", exact=True).click()
+        expect(panel).to_contain_text("require a HubSign key")
+        assert (
+            page.evaluate("ROOMCALL_HARNESS.requests.filter(r=>r.operation==='shortcut').length")
+            == 1
+        )
+        panel.get_by_role("textbox", name="HubSign API key (not saved)", exact=True).fill("bad")
+        panel.get_by_role("checkbox").check()
+        panel.get_by_role("button", name="Generate shortcut", exact=True).click()
+        expect(panel).to_contain_text("Signing failed")
+        expect(
+            panel.get_by_role("textbox", name="HubSign API key (not saved)", exact=True)
+        ).to_have_value("")
+        panel.get_by_role("textbox", name="HubSign API key (not saved)", exact=True).fill("test")
+        with page.expect_download() as pending:
+            panel.get_by_role("button", name="Generate shortcut", exact=True).click()
+        assert pending.value.suggested_filename == "RoomCall basement.shortcut"
+        expect(panel).to_contain_text("Signed shortcut downloaded")
+        page.keyboard.press("Escape")
+        context.close()
+
+
 def main() -> None:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
@@ -83,6 +129,7 @@ def main() -> None:
         check_layout(browser)
         check_large_text(browser)
         check_guided_setup(browser, errors)
+        check_shortcuts(browser, errors)
         for width, height in [(390, 844), (1280, 900)]:
             context = browser.new_context(viewport={"width": width, "height": height})
             context.grant_permissions(["microphone"], origin=ORIGIN)

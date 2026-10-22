@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import io
+import math
+import struct
+import wave
 from pathlib import Path
 from unittest.mock import AsyncMock
 
@@ -81,3 +85,24 @@ def mock_native_playback_duration(monkeypatch):
     Receiver restoration and real ffmpeg/audio tests keep their actual implementations.
     """
     monkeypatch.setattr("custom_components.roomcall.scheduler.wait_for_playback", AsyncMock())
+
+
+@pytest.fixture(autouse=True)
+def tts_audio(monkeypatch):
+    """Mock the external voice provider; all chime composition uses real ffmpeg."""
+    output = io.BytesIO()
+    with wave.open(output, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(22050)
+        wav.writeframes(
+            b"".join(
+                struct.pack("<h", int(6000 * math.sin(i * 2 * math.pi * 440 / 22050)))
+                for i in range(22050)
+            )
+        )
+    provider = AsyncMock(return_value=("wav", output.getvalue()))
+    monkeypatch.setattr(
+        "custom_components.roomcall.messages.async_get_media_source_audio", provider
+    )
+    return provider

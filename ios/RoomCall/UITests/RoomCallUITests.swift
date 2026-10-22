@@ -2,6 +2,8 @@ import XCTest
 
 final class RoomCallUITests: XCTestCase {
     func testSignInRequiresAValidServerAtAccessibilityTextSize() {
+        // A cold CI automation session can consume most of the one-minute default.
+        executionTimeAllowance = 120
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(en)", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()

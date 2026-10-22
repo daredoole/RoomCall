@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import shutil
 import wave
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from custom_components.roomcall import core, ws
@@ -146,3 +147,15 @@ async def test_websocket_audio_failure_cleans_up(hass, setup_roomcall, hass_ws_c
     for stream in hass.data["roomcall"].live._streams.values():
         await stream.wait_done(5)
     assert all(stream.done for stream in hass.data["roomcall"].live._streams.values())
+
+
+async def test_cancelled_transcode_reaps_child():
+    proc = Mock(returncode=None)
+    proc.communicate = AsyncMock(side_effect=[asyncio.CancelledError(), (b"", b"")])
+    with (
+        patch.object(core.asyncio, "create_subprocess_exec", AsyncMock(return_value=proc)),
+        pytest.raises(asyncio.CancelledError),
+    ):
+        await core.to_playable("ffmpeg", b"speech", "audio/webm", 0)
+    proc.kill.assert_called_once()
+    assert proc.communicate.await_count == 2

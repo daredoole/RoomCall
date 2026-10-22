@@ -23,14 +23,20 @@ RoomCall records independent evidence:
 | Observation | What it establishes |
 |---|---|
 | `request_accepted` | The media-player action returned successfully. |
-| `audio_fetched_ms` | Someone fetched the unique URL assigned to that endpoint. Available for RoomCall-hosted recordings/live audio. |
+| `audio_fetched_ms` | Someone fetched the unique URL assigned to that endpoint. Available for RoomCall-hosted recordings, live audio and chime-enabled TTS. |
 | `playback_reported_ms` | The player reported `playing` with the exact content ID of this call. |
 | `human.acknowledged` | A signed-in household member explicitly acknowledged the message. |
 
 None of the first three observations proves that a human heard the audio. Even a
 reported playback state is device evidence, not acoustic measurement. Unsupported
-observations remain absent; `audible` remains `null`. Typed TTS and external audio
-URLs do not pass through RoomCall's fetch endpoint.
+observations remain absent; `audible` remains `null`. Chime-enabled TTS is prepared
+once and hosted by RoomCall. Direct TTS with the chime off, and external audio
+URLs, do not pass through its fetch endpoint.
+
+RoomCall's **Settings → Siri Shortcuts** provides a room-specific Perform Action
+setup guide and portable shortcut exports. See [Siri setup and signing](siri-shortcuts.md).
+The `tts_prepare` timing in diagnostics measures speech synthesis plus chime
+composition before speaker dispatch; device fetch/playback timings remain separate.
 
 ## Actions and API
 

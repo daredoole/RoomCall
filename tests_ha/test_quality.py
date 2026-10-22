@@ -83,7 +83,9 @@ async def test_https_internal_url_raises_a_repair(hass: HomeAssistant, house):
     assert issue.translation_placeholders["url"] == "https://ha.home.arpa"
 
 
-async def test_room_notify_entity_speaks_in_that_room(hass: HomeAssistant, setup_roomcall, house):
+async def test_room_notify_entity_speaks_in_that_room(
+    hass: HomeAssistant, setup_roomcall, house, tts_audio
+):
     played = async_mock_service(hass, "media_player", "play_media")
     hass.states.async_set("tts.piper", "unknown")
     assert hass.states.get("notify.roomcall_basement") is not None
@@ -95,4 +97,5 @@ async def test_room_notify_entity_speaks_in_that_room(hass: HomeAssistant, setup
         blocking=True,
     )
     assert [c.data["entity_id"] for c in played] == ["media_player.basement_sonos"]
-    assert "Laundry%20is%20done" in played[0].data["media_content_id"]
+    assert "Laundry%20is%20done" in tts_audio.await_args.args[1]
+    assert "/api/roomcall/clip/" in played[0].data["media_content_id"]
