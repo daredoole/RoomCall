@@ -53,6 +53,16 @@ Track progress and vote on the [GitHub issues](https://github.com/daredoole/Room
 
 Details and hardware boundaries: [Messages and room stations](communication.md).
 
+## v0.9 — Guided setup ✅
+
+- [x] Setup tools available before a config entry exists, with a versioned operation catalog
+- [x] Reviewable, resumable setup plans with native apply, audio verification and scoped undo
+- [x] Announcement management tools with revisions and idempotent creation
+- [x] Setup diagnosis and alternate routes that never apply themselves
+- [x] One guided setup shared by the card and agents
+
+Details: [Agent setup](agent-setup.md).
+
 ## Further hardware work
 
 - [ ] **Hands-free talk-back** from rooms with only a Sonos: a small mic station (Atom Echo,
