@@ -51,7 +51,7 @@ replies, quiet nights, reminders that don't go away until the chore is done, and
 - **Hold to talk, live** — speakers start playing while you are still talking, from the Home Assistant app or any browser.
 - **Rooms are your areas** — one room, the whole house, or **a person** wherever they are right now.
 - **Talk, Type or Ask** — speak, type a message for text-to-speech, or ask a question and collect a real answer from an Assist satellite. Preview exactly which speakers will play first.
-- **Reply** — calls can notify your phones with a Reply button aimed back at the caller.
+- **Reply** — hands-free from the called room through a small Assist satellite, or from your phone's notification, aimed back at the caller.
 - **Urgent, Do Not Disturb and quiet hours** — quieter nights, skipped bedrooms, and an override when it matters.
 - **Call history** with replay and speech-to-text transcripts.
 - **Your chime** — walkie-talkie, ding, doorbell… or your own file, before talk, typed messages, Siri and announcements alike.
@@ -278,9 +278,11 @@ the whole message first and it plays about 1–2 seconds after you let go (AirPl
 <summary><b>Can people talk back through the speaker?</b></summary>
 
 Not through Sonos, HomePod or Nest speakers — their microphones are reserved for their own voice
-assistants. Today people reply from their phone: the call notification has a **Reply** button that
-opens the card aimed back at the caller, or answer an **Ask** through an Assist satellite. Hands-free mic stations next to each speaker are next on
-the [roadmap](https://daredoole.github.io/RoomCall/roadmap/).
+assistants. Put a small Assist satellite (Atom Echo, ESP32-S3, Home Assistant Voice) in the room
+and turn on **Hands-free talk-back**: after a call, it listens for a reply and the caller's room
+hears it. Replies are transcribed and spoken back in your configured voice
+([how](https://daredoole.github.io/RoomCall/communication/#hands-free-talk-back)). People can also
+reply from their phone: the call notification has a **Reply** button aimed back at the caller.
 </details>
 
 <details>

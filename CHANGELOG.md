@@ -11,6 +11,10 @@ All notable changes are listed here. The format follows
   it from the phone notification, the card's new **To do** list, a **Mark done** button entity or
   the `tasks` operation. Dismissing a notification never counts as done; **Remind me later**
   snoozes for 30 minutes. Open tasks survive restarts.
+- Hands-free talk-back ([#11](https://github.com/daredoole/RoomCall/issues/11)): with an Assist
+  satellite in a room (Atom Echo, ESP32-S3, Home Assistant Voice), a room-to-room call listens
+  for a spoken reply and plays its transcription in the caller's room. Opt in under
+  Configure → Communication; silent replies send nothing and replies never ask for replies.
 - Each task gets a **Task** sensor (`idle`/`open`/`done`, who and when) and fires
   `roomcall_task_completed`. Task notifications go to the announcement's people when they have
   the app, stay pinned on Android, and replace the generic call notification.

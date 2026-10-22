@@ -155,10 +155,10 @@ phones are skipped.
 For replies to know where a call came from, set `room:` on each card (for example the kitchen
 tablet's card gets `room: kitchen`).
 
-!!! note "Why the speaker can't hear your reply"
-    Sonos, HomePod and Nest speaker microphones are reserved for their own voice assistants, so
-    replies come from a phone or tablet. Mic stations next to each speaker are on the
-    [roadmap](roadmap.md).
+!!! note "Replying without a phone"
+    Sonos, HomePod and Nest speaker microphones are reserved for their own voice assistants.
+    Add a small Assist satellite to the room and turn on
+    [hands-free talk-back](communication.md#hands-free-talk-back) to answer out loud.
 
 ## AV receivers and TV boxes
 

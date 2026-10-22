@@ -14,14 +14,21 @@ from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+    callback,
+)
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from . import chimes, frontend, intents, localization, repairs, ws
+from . import chimes, frontend, intents, localization, repairs, talkback, ws
 from .announcements import Announcer
 from .calls import CallError
 from .communication import SCHEMAS, execute, task_permitted
@@ -70,9 +77,10 @@ from .const import (
     SECTION_QUIET,
     SECTION_REPLY,
     SERVICE_BROADCAST,
+    SIGNAL_CALL_FINISHED,
     URL_STATIC,
 )
-from .core import ClipStore, History
+from .core import CallRecord, ClipStore, History
 from .errors import Problem
 from .http import (
     ChimeView,
@@ -154,6 +162,7 @@ class RoomCallData:
     voicemail_retention: int = 86400
     translation_entity: str | None = None
     audio_processing: str = "off"
+    talk_back: bool = False
     metrics: Metrics = field(default_factory=Metrics)
     evidence: Evidence = field(init=False)
     scheduler: Scheduler | None = None
@@ -221,6 +230,7 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         voicemail_retention=int(communication.get("voicemail_retention", 86400)),
         translation_entity=communication.get("translation_entity"),
         audio_processing=communication.get("audio_processing", "off"),
+        talk_back=bool(communication.get("talk_back", False)),
     )
 
 
@@ -344,6 +354,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(
         hass.bus.async_listen("mobile_app_notification_action", notification_action)
     )
+
+    @callback
+    def talk_back(record: CallRecord) -> None:
+        if data.talk_back:
+            hass.async_create_background_task(
+                talkback.listen(hass, data, record), "roomcall talk-back"
+            )
+
+    entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CALL_FINISHED, talk_back))
     hass.data[DOMAIN] = data
     data.announcer = Announcer(hass, entry)
     await data.announcer.async_load()

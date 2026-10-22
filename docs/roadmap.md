@@ -81,9 +81,9 @@ Details: [Announcements](announcements.md#tasks-confirm-it-was-actually-done).
 
 ## Further hardware work
 
-- [ ] **Hands-free talk-back** from rooms with only a Sonos: a small mic station (Atom Echo,
-      ESP32-S3, Home Assistant Voice) opens for a few seconds after each call
-      ([#11](https://github.com/daredoole/RoomCall/issues/11))
+- [x] **Hands-free talk-back** from rooms with only a Sonos: an Assist satellite in the room
+      (Atom Echo, ESP32-S3, Home Assistant Voice) listens after each call and the reply is spoken
+      in the caller's room ([#11](https://github.com/daredoole/RoomCall/issues/11))
 - [ ] **Native doorbell audio bridge**: script control adapters exist; bridging camera/SIP audio into room stations remains separate hardware work ([#21](https://github.com/daredoole/RoomCall/issues/21))
 - [ ] Listed in the default HACS store — submitted, in review ([#25](https://github.com/daredoole/RoomCall/issues/25))
 - [ ] Per-room chimes
