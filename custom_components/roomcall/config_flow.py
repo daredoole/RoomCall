@@ -40,6 +40,7 @@ from .const import (
     CONF_QUIET_SKIP_AREAS,
     CONF_QUIET_START,
     CONF_QUIET_VOLUME,
+    CONF_REMIND_EVERY,
     CONF_REPLY_PATH,
     CONF_RESTORE,
     CONF_RETRY,
@@ -48,6 +49,7 @@ from .const import (
     CONF_STAGGER_MS,
     CONF_STT_ENGINE,
     CONF_TARGET_SPEAKERS,
+    CONF_TASK,
     CONF_TIME,
     CONF_TO_STATE,
     CONF_TTS_ENGINE,
@@ -58,6 +60,7 @@ from .const import (
     DEFAULT_CHIME_STYLE,
     DEFAULT_COOLDOWN,
     DEFAULT_HOMEKIT_PORT,
+    DEFAULT_REMIND_EVERY,
     DEFAULT_RESTORE,
     DEFAULT_RETRY,
     DEFAULT_STAGGER_MS,
@@ -431,6 +434,17 @@ def _target_fields(defaults: dict[str, Any]) -> dict[Any, Any]:
             CONF_PRIORITY, default=defaults.get(CONF_PRIORITY, PRIORITY_NORMAL)
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(options=list(PRIORITIES), translation_key="priority")
+        ),
+        # Optional task: what someone confirms they did, so a dismissed alert isn't "done".
+        vol.Optional(
+            CONF_TASK, description={"suggested_value": defaults.get(CONF_TASK)}
+        ): selector.TextSelector(),
+        vol.Required(
+            CONF_REMIND_EVERY, default=defaults.get(CONF_REMIND_EVERY, DEFAULT_REMIND_EVERY)
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0, max=1440, unit_of_measurement="min", mode=selector.NumberSelectorMode.BOX
+            )
         ),
     }
 

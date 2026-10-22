@@ -87,6 +87,7 @@ and `media_url`.
 | `status` | `id`. Returns job state, results, evidence and actual responses. |
 | `cancel` | `id`. Cancels a queued job; active playback cannot be cancelled this way. |
 | `acknowledge` | `id`, optional `response`. Requires a signed-in user and a waiting message. |
+| `tasks` | `action`: `list` (default), `complete` or `snooze`; announcement `id`; optional `minutes` (snooze, default 30). Returns every announcement task. Complete only when a person says it was done. |
 | `sound_test` | `speaker`. Plays a test sound and returns its job ID. |
 | `confirm_test` | Test `id`, `heard` boolean. Records a human observation. |
 | `adapter` | Configured `adapter` ID and `action`: `call`, `answer`, or `hangup`. |

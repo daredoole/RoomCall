@@ -127,6 +127,37 @@ def check_shortcuts(browser, errors) -> None:
         assert pending.value.suggested_filename == "RoomCall basement.shortcut"
         expect(panel).to_contain_text("Signed shortcut downloaded")
         page.keyboard.press("Escape")
+
+
+def check_tasks(browser, errors) -> None:
+    """An open task is confirmed with its own words; there is no dismiss button."""
+    for width in (240, 390, 900):
+        context = browser.new_context(viewport={"width": width, "height": 844})
+        page = context.new_page()
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        open_card(page, "mobile" if width < 600 else "desktop", "dark", "&tasks=open")
+        card = page.locator("roomcall-card")
+        region = card.get_by_role("region", name="To do", exact=True)
+        expect(region).to_be_visible()
+        expect(region).to_contain_text("Laundry")
+        done = region.get_by_role("button", name="Took out the dry clothes", exact=True)
+        later = region.get_by_role("button", name="Remind me later: Laundry", exact=True)
+        for button in (done, later):
+            bounds = button.bounding_box()
+            assert bounds and bounds["width"] >= 44 and bounds["height"] >= 44, bounds
+        assert card.evaluate(
+            "e=>{const c=e.shadowRoot.querySelector('ha-card');return c.scrollWidth<=c.clientWidth}"
+        )
+        assert region.get_by_role("button").count() == 2
+        done.click()
+        expect(region).to_be_hidden()
+        assert (
+            page.evaluate(
+                "ROOMCALL_HARNESS.requests.filter(r=>r.operation==='tasks'"
+                "&&r.request.action==='complete'&&r.request.id==='laundry').length"
+            )
+            == 1
+        )
         context.close()
 
 
@@ -144,6 +175,7 @@ def main() -> None:
         check_large_text(browser)
         check_guided_setup(browser, errors)
         check_shortcuts(browser, errors)
+        check_tasks(browser, errors)
         for width, height in [(390, 844), (1280, 900)]:
             context = browser.new_context(viewport={"width": width, "height": height})
             context.grant_permissions(["microphone"], origin=ORIGIN)

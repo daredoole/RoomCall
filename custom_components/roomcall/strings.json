@@ -214,7 +214,7 @@
         "empty": "Nothing to show yet.",
         "recording_hint": "Pick a room, hold the button and speak.",
         "request_hint": "A successful request does not confirm audible playback.",
-        "agent_prompt": "Call roomcall__catalog first for schemas and the setup bootstrap recipe. Discover capabilities first. Preview exact recipients before sending. Supply explicit targets. Reuse an idempotency key when retrying. Check status. Request acceptance is not proof of audibility or acknowledgment. Never upgrade a blocked message to urgent automatically. Administrator setup: discover, plan, list/get to resume, apply with the plan revision, test/confirm each speaker, verify, or undo with explicit confirmation. Plans expire after 24 hours; never infer human audibility. Administrator announcement management: discover schemas, list, create idempotently, update, enable/disable or delete. Existing announcements require their current revision; deletion requires confirm=true.",
+        "agent_prompt": "Call roomcall__catalog first for schemas and the setup bootstrap recipe. Discover capabilities first. Preview exact recipients before sending. Supply explicit targets. Reuse an idempotency key when retrying. Check status. Request acceptance is not proof of audibility or acknowledgment. Never upgrade a blocked message to urgent automatically. Administrator setup: discover, plan, list/get to resume, apply with the plan revision, test/confirm each speaker, verify, or undo with explicit confirmation. Plans expire after 24 hours; never infer human audibility. Administrator announcement management: discover schemas, list, create idempotently, update, enable/disable or delete. Existing announcements require their current revision; deletion requires confirm=true. Announcement tasks: complete one only when a person says they did it.",
         "tool_discover": "Discover available rooms, endpoints, stations and capabilities.",
         "tool_preview": "Preview exact recipients and policy without playing audio.",
         "tool_send": "Submit a message job. Use explicit targets and an idempotency key.",
@@ -363,7 +363,12 @@
         "shortcut_choose_destination": "Where should I announce?",
         "shortcut_live_help": "The native template retrieves your current permitted RoomCall rooms each time it runs. Choose destinations by name; IDs and the message Dictionary are filled automatically. Everywhere is an explicit choice.",
         "shortcut_input_help": "Pass text into this shortcut using Run Shortcut or the share sheet. No message prompt is added; empty input is rejected by RoomCall.",
-        "shortcut_native_import": "Sign and import the native template. During setup select your server and the indicated action for each Home Assistant step: roomcall.communicate for both live-picker steps, or roomcall.broadcast for a fixed room. No server ID or credentials are embedded."
+        "shortcut_native_import": "Sign and import the native template. During setup select your server and the indicated action for each Home Assistant step: roomcall.communicate for both live-picker steps, or roomcall.broadcast for a fixed room. No server ID or credentials are embedded.",
+        "task_not_open": "Nothing to confirm: this task isn't waiting to be done.",
+        "remind_later": "Remind me later",
+        "tasks": "To do",
+        "task_announced": "Announced {time}",
+        "tool_tasks": "List announcement tasks waiting to be done, confirm one was done (complete) or remind again later (snooze). Complete a task only when a person says they did it; never infer it."
       }
     },
     "audio_processing": {
@@ -382,6 +387,7 @@
         "cancel": "Cancel a queued message before playback starts.",
         "acknowledge": "Explicitly acknowledge a message waiting for a reply.",
         "diagnose": "Read capabilities, policy blocks and local delivery metrics.",
+        "tasks": "List, complete or snooze announcement tasks.",
         "sound_test": "Play a test sound on one configured speaker.",
         "confirm_test": "Record whether a human heard a previous sound test.",
         "adapter": "Invoke a configured SIP or doorbell adapter script.",
@@ -397,6 +403,14 @@
     "sensor": {
       "last_call": {
         "name": "Last call"
+      },
+      "task": {
+        "name": "Task",
+        "state": {
+          "idle": "Nothing to do",
+          "open": "Waiting",
+          "done": "Done"
+        }
       }
     },
     "switch": {
@@ -410,6 +424,9 @@
     "button": {
       "play_announcement": {
         "name": "Play now"
+      },
+      "complete_task": {
+        "name": "Mark done"
       }
     }
   },
@@ -493,13 +510,17 @@
             "people": "People",
             "priority": "Priority",
             "time": "Time",
-            "days": "Days"
+            "days": "Days",
+            "task": "Task to confirm",
+            "remind_every": "Remind every"
           },
           "data_description": {
             "message": "Spoken with text-to-speech. Templates work, for example: It is {{ states('sensor.outdoor_temperature') }} degrees outside.",
             "rooms": "Leave rooms, speakers and people empty to play everywhere.",
             "target_speakers": "Specific speakers, in addition to the rooms.",
-            "people": "Plays wherever each person is right now (needs room presence)."
+            "people": "Plays wherever each person is right now (needs room presence).",
+            "task": "Optional. What someone confirms they did, for example: Took out the dry clothes. The announcement repeats until someone confirms it; dismissing the notification doesn't count.",
+            "remind_every": "While the task is waiting, play the announcement again this often. 0 plays it once."
           }
         },
         "reconfigure": {
@@ -513,13 +534,17 @@
             "people": "People",
             "priority": "Priority",
             "time": "Time",
-            "days": "Days"
+            "days": "Days",
+            "task": "Task to confirm",
+            "remind_every": "Remind every"
           },
           "data_description": {
             "message": "Spoken with text-to-speech. Templates work, for example: It is {{ states('sensor.outdoor_temperature') }} degrees outside.",
             "rooms": "Leave rooms, speakers and people empty to play everywhere.",
             "target_speakers": "Specific speakers, in addition to the rooms.",
-            "people": "Plays wherever each person is right now (needs room presence)."
+            "people": "Plays wherever each person is right now (needs room presence).",
+            "task": "Optional. What someone confirms they did, for example: Took out the dry clothes. The announcement repeats until someone confirms it; dismissing the notification doesn't count.",
+            "remind_every": "While the task is waiting, play the announcement again this often. 0 plays it once."
           }
         }
       },
@@ -550,7 +575,9 @@
             "entity": "When this changes",
             "to_state": "To this state",
             "for": "For at least",
-            "cooldown": "Cooldown"
+            "cooldown": "Cooldown",
+            "task": "Task to confirm",
+            "remind_every": "Remind every"
           },
           "data_description": {
             "message": "Spoken with text-to-speech. Templates work, and {{ name }} and {{ state }} are the entity's name and new state.",
@@ -560,7 +587,9 @@
             "entity": "Any entity: a light switch, door sensor, motion sensor, washer...",
             "to_state": "Only when it changes to this state, for example on, off, open. Leave empty for any change.",
             "for": "Optional: only if it stays in that state this long (for example a door left open).",
-            "cooldown": "Don't repeat this announcement more often than this."
+            "cooldown": "Don't repeat this announcement more often than this.",
+            "task": "Optional. What someone confirms they did, for example: Took out the dry clothes. The announcement repeats until someone confirms it; dismissing the notification doesn't count.",
+            "remind_every": "While the task is waiting, play the announcement again this often. 0 plays it once."
           }
         },
         "reconfigure": {
@@ -576,7 +605,9 @@
             "entity": "When this changes",
             "to_state": "To this state",
             "for": "For at least",
-            "cooldown": "Cooldown"
+            "cooldown": "Cooldown",
+            "task": "Task to confirm",
+            "remind_every": "Remind every"
           },
           "data_description": {
             "message": "Spoken with text-to-speech. Templates work, and {{ name }} and {{ state }} are the entity's name and new state.",
@@ -586,7 +617,9 @@
             "entity": "Any entity: a light switch, door sensor, motion sensor, washer...",
             "to_state": "Only when it changes to this state, for example on, off, open. Leave empty for any change.",
             "for": "Optional: only if it stays in that state this long (for example a door left open).",
-            "cooldown": "Don't repeat this announcement more often than this."
+            "cooldown": "Don't repeat this announcement more often than this.",
+            "task": "Optional. What someone confirms they did, for example: Took out the dry clothes. The announcement repeats until someone confirms it; dismissing the notification doesn't count.",
+            "remind_every": "While the task is waiting, play the announcement again this often. 0 plays it once."
           }
         }
       },

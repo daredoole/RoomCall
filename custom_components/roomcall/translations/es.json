@@ -214,7 +214,7 @@
         "empty": "No hay nada que mostrar.",
         "recording_hint": "Elige una habitación, mantén pulsado y habla.",
         "request_hint": "Una solicitud aceptada no confirma que se haya oído.",
-        "agent_prompt": "Llama primero a roomcall__catalog para obtener los esquemas y los pasos iniciales de configuración. Descubre capacidades primero. Comprueba destinatarios antes de enviar. Especifica destinos. Reutiliza la clave al reintentar. Consulta el estado. Una solicitud aceptada no prueba que se haya oído. No cambies automáticamente a urgente. Configuración administrativa: descubrir, planificar, continuar, aplicar, probar, confirmar, verificar o deshacer. Los planes caducan en 24 horas; nunca supongas audibilidad. Administrar anuncios: esquemas, listar, crear sin duplicados, editar, activar/desactivar o eliminar. Se requiere la revisión actual y confirmación para eliminar.",
+        "agent_prompt": "Llama primero a roomcall__catalog para obtener los esquemas y los pasos iniciales de configuración. Descubre capacidades primero. Comprueba destinatarios antes de enviar. Especifica destinos. Reutiliza la clave al reintentar. Consulta el estado. Una solicitud aceptada no prueba que se haya oído. No cambies automáticamente a urgente. Configuración administrativa: descubrir, planificar, continuar, aplicar, probar, confirmar, verificar o deshacer. Los planes caducan en 24 horas; nunca supongas audibilidad. Administrar anuncios: esquemas, listar, crear sin duplicados, editar, activar/desactivar o eliminar. Se requiere la revisión actual y confirmación para eliminar. Tareas de anuncios: completa una solo cuando una persona diga que la hizo.",
         "tool_discover": "Descubrir habitaciones, dispositivos, estaciones y capacidades.",
         "tool_preview": "Ver destinatarios y reglas sin reproducir audio.",
         "tool_send": "Enviar un mensaje con destinos explícitos y clave de solicitud.",
@@ -363,7 +363,12 @@
         "shortcut_choose_destination": "¿Dónde debo anunciar?",
         "shortcut_live_help": "La plantilla nativa obtiene las habitaciones permitidas de RoomCall cada vez. Elige por nombre; los identificadores y el diccionario del mensaje se completan automáticamente. Todas partes es una opción explícita.",
         "shortcut_input_help": "Pasa texto con Ejecutar atajo o el menú Compartir. No se solicita un mensaje; RoomCall rechaza las entradas vacías.",
-        "shortcut_native_import": "Firma e importa la plantilla. Selecciona tu servidor y la acción indicada en cada paso: roomcall.communicate en ambos pasos del selector, o roomcall.broadcast para una habitación fija. No se incluyen identificadores de servidor ni credenciales."
+        "shortcut_native_import": "Firma e importa la plantilla. Selecciona tu servidor y la acción indicada en cada paso: roomcall.communicate en ambos pasos del selector, o roomcall.broadcast para una habitación fija. No se incluyen identificadores de servidor ni credenciales.",
+        "task_not_open": "Nada que confirmar: esta tarea no está pendiente.",
+        "remind_later": "Recordármelo más tarde",
+        "tasks": "Pendiente",
+        "task_announced": "Anunciado {time}",
+        "tool_tasks": "Lista las tareas de anuncios pendientes, confirma que una se hizo (complete) o recuérdala más tarde (snooze). Completa una tarea solo cuando una persona diga que la hizo; nunca lo supongas."
       }
     },
     "audio_processing": {
@@ -382,6 +387,7 @@
         "cancel": "Cancelar un mensaje antes de que empiece a reproducirse.",
         "acknowledge": "Confirmar explícitamente un mensaje pendiente.",
         "diagnose": "Leer capacidades, bloqueos y métricas locales.",
+        "tasks": "Listar, completar o posponer tareas de anuncios.",
         "sound_test": "Reproducir una prueba en un altavoz configurado.",
         "confirm_test": "Registrar si una persona oyó la prueba anterior.",
         "adapter": "Ejecutar un adaptador SIP o de timbre configurado.",
@@ -397,6 +403,14 @@
     "sensor": {
       "last_call": {
         "name": "Última llamada"
+      },
+      "task": {
+        "name": "Tarea",
+        "state": {
+          "idle": "Nada que hacer",
+          "open": "Pendiente",
+          "done": "Hecha"
+        }
       }
     },
     "switch": {
@@ -410,6 +424,9 @@
     "button": {
       "play_announcement": {
         "name": "Reproducir ahora"
+      },
+      "complete_task": {
+        "name": "Marcar como hecha"
       }
     }
   },
@@ -493,13 +510,17 @@
             "people": "Personas",
             "priority": "Prioridad",
             "time": "Hora",
-            "days": "Días"
+            "days": "Días",
+            "task": "Tarea a confirmar",
+            "remind_every": "Recordar cada"
           },
           "data_description": {
             "message": "Se lee con texto a voz. Admite plantillas, por ejemplo: Hace {{ states('sensor.outdoor_temperature') }} grados fuera.",
             "rooms": "Deja vacías habitaciones, altavoces y personas para que suene en todas partes.",
             "target_speakers": "Altavoces concretos, además de las habitaciones.",
-            "people": "Suena donde esté cada persona ahora (requiere presencia por habitación)."
+            "people": "Suena donde esté cada persona ahora (requiere presencia por habitación).",
+            "task": "Opcional. Lo que alguien confirma que hizo, por ejemplo: Saqué la ropa seca. El anuncio se repite hasta que alguien lo confirme; descartar la notificación no cuenta.",
+            "remind_every": "Mientras la tarea esté pendiente, vuelve a reproducir el anuncio con esta frecuencia. 0 lo reproduce una vez."
           }
         },
         "reconfigure": {
@@ -513,13 +534,17 @@
             "people": "Personas",
             "priority": "Prioridad",
             "time": "Hora",
-            "days": "Días"
+            "days": "Días",
+            "task": "Tarea a confirmar",
+            "remind_every": "Recordar cada"
           },
           "data_description": {
             "message": "Se lee con texto a voz. Admite plantillas, por ejemplo: Hace {{ states('sensor.outdoor_temperature') }} grados fuera.",
             "rooms": "Deja vacías habitaciones, altavoces y personas para que suene en todas partes.",
             "target_speakers": "Altavoces concretos, además de las habitaciones.",
-            "people": "Suena donde esté cada persona ahora (requiere presencia por habitación)."
+            "people": "Suena donde esté cada persona ahora (requiere presencia por habitación).",
+            "task": "Opcional. Lo que alguien confirma que hizo, por ejemplo: Saqué la ropa seca. El anuncio se repite hasta que alguien lo confirme; descartar la notificación no cuenta.",
+            "remind_every": "Mientras la tarea esté pendiente, vuelve a reproducir el anuncio con esta frecuencia. 0 lo reproduce una vez."
           }
         }
       },
@@ -550,7 +575,9 @@
             "entity": "Cuando esto cambie",
             "to_state": "A este estado",
             "for": "Durante al menos",
-            "cooldown": "Espera mínima"
+            "cooldown": "Espera mínima",
+            "task": "Tarea a confirmar",
+            "remind_every": "Recordar cada"
           },
           "data_description": {
             "message": "Se lee con texto a voz. Admite plantillas; {{ name }} y {{ state }} son el nombre y el nuevo estado de la entidad.",
@@ -560,7 +587,9 @@
             "entity": "Cualquier entidad: un interruptor, un sensor de puerta, de movimiento, la lavadora...",
             "to_state": "Solo cuando cambie a este estado, por ejemplo on, off, open. Déjalo vacío para cualquier cambio.",
             "for": "Opcional: solo si permanece así este tiempo (por ejemplo una puerta abierta).",
-            "cooldown": "No repetir este aviso con más frecuencia que esto."
+            "cooldown": "No repetir este aviso con más frecuencia que esto.",
+            "task": "Opcional. Lo que alguien confirma que hizo, por ejemplo: Saqué la ropa seca. El anuncio se repite hasta que alguien lo confirme; descartar la notificación no cuenta.",
+            "remind_every": "Mientras la tarea esté pendiente, vuelve a reproducir el anuncio con esta frecuencia. 0 lo reproduce una vez."
           }
         },
         "reconfigure": {
@@ -576,7 +605,9 @@
             "entity": "Cuando esto cambie",
             "to_state": "A este estado",
             "for": "Durante al menos",
-            "cooldown": "Espera mínima"
+            "cooldown": "Espera mínima",
+            "task": "Tarea a confirmar",
+            "remind_every": "Recordar cada"
           },
           "data_description": {
             "message": "Se lee con texto a voz. Admite plantillas; {{ name }} y {{ state }} son el nombre y el nuevo estado de la entidad.",
@@ -586,7 +617,9 @@
             "entity": "Cualquier entidad: un interruptor, un sensor de puerta, de movimiento, la lavadora...",
             "to_state": "Solo cuando cambie a este estado, por ejemplo on, off, open. Déjalo vacío para cualquier cambio.",
             "for": "Opcional: solo si permanece así este tiempo (por ejemplo una puerta abierta).",
-            "cooldown": "No repetir este aviso con más frecuencia que esto."
+            "cooldown": "No repetir este aviso con más frecuencia que esto.",
+            "task": "Opcional. Lo que alguien confirma que hizo, por ejemplo: Saqué la ropa seca. El anuncio se repite hasta que alguien lo confirme; descartar la notificación no cuenta.",
+            "remind_every": "Mientras la tarea esté pendiente, vuelve a reproducir el anuncio con esta frecuencia. 0 lo reproduce una vez."
           }
         }
       },

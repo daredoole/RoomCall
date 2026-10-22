@@ -63,6 +63,13 @@ Details and hardware boundaries: [Messages and room stations](communication.md).
 
 Details: [Agent setup](agent-setup.md).
 
+## v0.11 — Tasks ✅
+
+- [x] Announcements that stay open until someone confirms the chore was done, with reminders,
+      phone actions, a card **To do** list, a sensor, a button and a completion event
+
+Details: [Announcements](announcements.md#tasks-confirm-it-was-actually-done).
+
 ## Further hardware work
 
 - [ ] **Hands-free talk-back** from rooms with only a Sonos: a small mic station (Atom Echo,

@@ -98,6 +98,9 @@
       text: "Laundry is done", has_audio: false },
   ];
   const states = { "switch.roomcall_do_not_disturb": { state: params.get("dnd") === "on" ? "on" : "off" } };
+  const tasks = [{ id: "laundry", name: "Laundry", task: "Took out the dry clothes",
+    state: params.get("tasks") === "open" ? "open" : "idle", opened: ago(12), done: null, done_by: null,
+    remind_every: 15, entity_id: "sensor.laundry_task" }];
   const requests = [];
   const jobs = new Map();
   const tests = new Map();
@@ -121,6 +124,14 @@
         requests.push(body);
         const request = body.request || {};
         if(body.operation==="doctor")return {ok:true,findings:[],alternatives:[]};
+        if(body.operation==="tasks") {
+          const task=tasks.find(t=>t.id===request.id);
+          if(request.action==="complete") {
+            if(task?.state!=="open")return {ok:false,error:{code:"task_not_open",message:"Nothing to confirm"}};
+            Object.assign(task,{state:"done",done:new Date().toISOString(),done_by:"Alex",opened:null});
+          }
+          return {ok:true,tasks};
+        }
         if(body.operation==="setup") {
           const plan=setupPlans.get(request.id);
           if(request.action==="discover")return {ok:true,discovery:{

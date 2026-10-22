@@ -4,6 +4,17 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.11.0 — 2026-10-22
+
+- Announcement tasks: give a scheduled or triggered announcement a task to confirm (for example
+  "Took out the dry clothes"). It stays open and repeats every few minutes until someone confirms
+  it from the phone notification, the card's new **To do** list, a **Mark done** button entity or
+  the `tasks` operation. Dismissing a notification never counts as done; **Remind me later**
+  snoozes for 30 minutes. Open tasks survive restarts.
+- Each task gets a **Task** sensor (`idle`/`open`/`done`, who and when) and fires
+  `roomcall_task_completed`. Task notifications go to the announcement's people when they have
+  the app, stay pinned on Android, and replace the generic call notification.
+
 ## 0.10.2 — 2026-10-22
 
 - Generate native Home Assistant Perform Action templates with a live room picker,

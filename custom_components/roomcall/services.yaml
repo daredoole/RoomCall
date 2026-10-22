@@ -62,6 +62,7 @@ communicate:
             - status
             - cancel
             - acknowledge
+            - tasks
             - sound_test
             - confirm_test
             - adapter

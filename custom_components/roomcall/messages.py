@@ -139,7 +139,9 @@ async def send(
     call_id: str | None = None,
     deadline: float | None = None,
     on_dispatch: Callable[[], None] | None = None,
+    notify: bool = True,
 ) -> CallRecord:
     request = await request_for(hass, data, values, context)
     request.call_id, request.deadline, request.on_dispatch = call_id, deadline, on_dispatch
+    request.notify = notify
     return await place_call(hass, data, request)

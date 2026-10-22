@@ -6,6 +6,10 @@
 
 Messages are templates, rendered when they play, so they can include live values. Each
 announcement can target rooms, specific speakers, people (wherever they are), or everywhere.
+
+An announcement with a **task** ("Took out the dry clothes") stays open after it plays and
+repeats until someone confirms it was done. Dismissing a phone notification is not
+confirmation; only the task action, the card, the button entity or the API complete it.
 """
 
 from __future__ import annotations
@@ -17,7 +21,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
+from homeassistant.core import Context, Event, EventStateChangedData, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
@@ -25,9 +29,11 @@ from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_change,
 )
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.template import Template
 from homeassistant.util import dt as dt_util
 
+from .calls import CallError
 from .const import (
     ATTR_MESSAGE,
     ATTR_PRIORITY,
@@ -41,21 +47,34 @@ from .const import (
     CONF_MESSAGE,
     CONF_PEOPLE,
     CONF_PRIORITY,
+    CONF_REMIND_EVERY,
     CONF_ROOMS,
     CONF_TARGET_SPEAKERS,
+    CONF_TASK,
     CONF_TIME,
     CONF_TO_STATE,
     DAYS,
     DEFAULT_COOLDOWN,
+    DEFAULT_REMIND_EVERY,
+    DEFAULT_SNOOZE,
     DOMAIN,
+    EVENT_TASK_COMPLETED,
     PRIORITY_NORMAL,
+    PRIORITY_URGENT,
     SERVICE_BROADCAST,
     SIGNAL_ANNOUNCEMENT,
     SUBENTRY_SCHEDULED,
     SUBENTRY_TRIGGERED,
 )
+from .errors import Problem
+from .messages import send
+from .replies import clear_task, notify_task
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value else None
 
 
 def _seconds(value: Any) -> float:
@@ -78,6 +97,31 @@ class Announcement:
     last_error: str | None = None
     _cooldown_until: float = 0.0
     _pending: Callable[[], None] | None = field(default=None, repr=False)
+    task_opened: datetime | None = None
+    task_done: datetime | None = None
+    task_done_by: str | None = None
+    _variables: dict[str, Any] = field(default_factory=dict, repr=False)
+    _reminder: Callable[[], None] | None = field(default=None, repr=False)
+
+    @property
+    def task(self) -> str | None:
+        return str(self.data.get(CONF_TASK) or "").strip() or None
+
+    @property
+    def task_state(self) -> str:
+        return "open" if self.task_opened else "done" if self.task_done else "idle"
+
+    def task_summary(self) -> dict[str, Any]:
+        return {
+            "id": self.subentry_id,
+            "name": self.title,
+            "task": self.task,
+            "state": self.task_state,
+            "opened": _iso(self.task_opened),
+            "done": _iso(self.task_done),
+            "done_by": self.task_done_by,
+            "remind_every": self.data.get(CONF_REMIND_EVERY, DEFAULT_REMIND_EVERY),
+        }
 
     def summary(self) -> dict[str, Any]:
         return {
@@ -90,6 +134,17 @@ class Announcement:
             "priority": self.data.get(CONF_PRIORITY, PRIORITY_NORMAL),
             "last_played": self.last_played.isoformat() if self.last_played else None,
             "last_error": self.last_error,
+            **(
+                {
+                    "task": self.task,
+                    "task_state": self.task_state,
+                    "task_opened": _iso(self.task_opened),
+                    "task_done": _iso(self.task_done),
+                    "task_done_by": self.task_done_by,
+                }
+                if self.task
+                else {}
+            ),
             **(
                 {"time": self.data.get(CONF_TIME), "days": self.data.get(CONF_DAYS) or list(DAYS)}
                 if self.kind == SUBENTRY_SCHEDULED
@@ -113,6 +168,31 @@ class Announcer:
             if sub.subentry_type in (SUBENTRY_SCHEDULED, SUBENTRY_TRIGGERED)
         }
         self._unsubs: list[Callable[[], None]] = []
+        self._store: Store[dict[str, Any]] = Store(hass, 1, f"roomcall.{entry.entry_id}.tasks")
+
+    async def async_load(self) -> None:
+        """Open tasks survive restarts and reloads, so reminders carry on."""
+        for sid, saved in (await self._store.async_load() or {}).items():
+            if (item := self.items.get(sid)) is None or not item.task:
+                continue
+            item.task_opened = dt_util.parse_datetime(saved.get("opened") or "")
+            item.task_done = dt_util.parse_datetime(saved.get("done") or "")
+            item.task_done_by = saved.get("done_by")
+            item._variables = saved.get("variables") or {}
+
+    async def _save(self) -> None:
+        await self._store.async_save(
+            {
+                sid: {
+                    "opened": _iso(item.task_opened),
+                    "done": _iso(item.task_done),
+                    "done_by": item.task_done_by,
+                    "variables": item._variables,
+                }
+                for sid, item in self.items.items()
+                if item.task
+            }
+        )
 
     @callback
     def async_start(self) -> None:
@@ -121,6 +201,8 @@ class Announcer:
                 self._schedule(item)
             else:
                 self._watch(item)
+            if item.task_opened:
+                self._remind(item)
 
     @callback
     def async_stop(self) -> None:
@@ -131,6 +213,77 @@ class Announcer:
             if item._pending is not None:
                 item._pending()
                 item._pending = None
+            self._cancel_reminder(item)
+
+    def _cancel_reminder(self, item: Announcement) -> None:
+        if item._reminder is not None:
+            item._reminder()
+            item._reminder = None
+
+    def _remind(self, item: Announcement, minutes: float | None = None) -> None:
+        """Play the announcement again later while its task is open."""
+        self._cancel_reminder(item)
+        if minutes is None:
+            minutes = float(item.data.get(CONF_REMIND_EVERY, DEFAULT_REMIND_EVERY) or 0)
+        if not minutes:
+            return
+
+        @callback
+        def fire(_now: datetime) -> None:
+            item._reminder = None
+            if item.enabled:
+                self.hass.async_create_task(self.async_play(item.subentry_id))
+            else:  # paused: keep the task open and check again later
+                self._remind(item)
+
+        item._reminder = async_call_later(self.hass, minutes * 60, fire)
+
+    def _task(self, subentry_id: str) -> Announcement:
+        item = self.items.get(subentry_id)
+        if item is None or not item.task:
+            raise Problem("not_found")
+        if item.task_opened is None:
+            raise Problem("task_not_open")
+        return item
+
+    async def _clear(self, item: Announcement) -> None:
+        await clear_task(
+            self.hass,
+            self.hass.data[DOMAIN].notify,
+            subentry_id=item.subentry_id,
+            people=item.data.get(CONF_PEOPLE) or [],
+        )
+        async_dispatcher_send(self.hass, f"{SIGNAL_ANNOUNCEMENT}_{item.subentry_id}")
+
+    async def async_complete(self, subentry_id: str, context: Context) -> Announcement:
+        """Someone confirms the task was done: stop reminders and tell automations."""
+        item = self._task(subentry_id)
+        user = await self.hass.auth.async_get_user(context.user_id) if context.user_id else None
+        opened = item.task_opened
+        item.task_opened = None
+        item.task_done, item.task_done_by = dt_util.utcnow(), user.name if user else None
+        self._cancel_reminder(item)
+        await self._save()
+        self.hass.bus.async_fire(
+            EVENT_TASK_COMPLETED,
+            {
+                "announcement_id": subentry_id,
+                "name": item.title,
+                "task": item.task,
+                "user_id": context.user_id,
+                "opened": _iso(opened),
+            },
+            context=context,
+        )
+        await self._clear(item)
+        return item
+
+    async def async_snooze(self, subentry_id: str, minutes: float = DEFAULT_SNOOZE) -> Announcement:
+        """Remind again later; the task stays open."""
+        item = self._task(subentry_id)
+        self._remind(item, minutes)
+        await self._clear(item)
+        return item
 
     def _schedule(self, item: Announcement) -> None:
         at = dt_util.parse_time(str(item.data.get(CONF_TIME) or ""))
@@ -206,6 +359,14 @@ class Announcer:
     ) -> dict[str, Any]:
         """Play one announcement now (used by schedules, triggers and the Play button)."""
         item = self.items[subentry_id]
+        if item.task:
+            # Reminders replay with the values of the change that opened the task.
+            if variables is None:
+                variables = item._variables
+            if item.task_opened is None:
+                item.task_opened, item.task_done, item.task_done_by = dt_util.utcnow(), None, None
+            item._variables = dict(variables)
+            await self._save()
         message = Template(str(item.data.get(CONF_MESSAGE) or ""), self.hass).async_render(
             variables or {}, parse_result=False
         )
@@ -220,14 +381,34 @@ class Announcer:
         if people := item.data.get(CONF_PEOPLE):
             call[ATTR_TARGET_PEOPLE] = people
         try:
-            result = await self.hass.services.async_call(
-                DOMAIN, SERVICE_BROADCAST, call, blocking=True, return_response=True
-            )
+            if item.task:
+                # The task notification below replaces the generic call notification.
+                record = await send(
+                    self.hass, self.hass.data[DOMAIN], call, Context(), notify=False
+                )
+                result = {"ok": record.ok, "id": record.call_id}
+            else:
+                result = await self.hass.services.async_call(
+                    DOMAIN, SERVICE_BROADCAST, call, blocking=True, return_response=True
+                )
             item.last_error = None
-        except HomeAssistantError as err:
+        except (HomeAssistantError, CallError, Problem) as err:
             item.last_error = str(err)
             _LOGGER.warning("RoomCall announcement %s not played: %s", item.title, err)
             result = {"ok": False, "error": str(err)}
+        if item.task:
+            # Phones are told even when no speaker could play: the task still needs doing.
+            await notify_task(
+                self.hass,
+                self.hass.data[DOMAIN].notify,
+                subentry_id=subentry_id,
+                title=item.title,
+                message=message,
+                task=item.task,
+                people=item.data.get(CONF_PEOPLE) or [],
+                urgent=item.data.get(CONF_PRIORITY) == PRIORITY_URGENT,
+            )
+            self._remind(item)
         item.last_played = dt_util.utcnow()
         async_dispatcher_send(self.hass, f"{SIGNAL_ANNOUNCEMENT}_{subentry_id}")
         return result or {}

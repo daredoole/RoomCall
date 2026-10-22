@@ -1,5 +1,5 @@
 /* RoomCall push-to-talk card for Home Assistant dashboards. */
-const CARD_VERSION = "0.10.2";
+const CARD_VERSION = "0.11.0";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
 const LAYOUTS = ["default", "compact", "kiosk"];
@@ -79,7 +79,12 @@ class RoomCallCard extends HTMLElement {
     const first = !this._hass;
     this._hass = hass;
     if (first) this._load();
-    else this._renderToggles();
+    else {
+      this._renderToggles();
+      // Task sensors change when a task opens or someone confirms it elsewhere.
+      const signature = (this._tasks || []).map((t) => hass.states[t.entity_id]?.last_changed).join();
+      if (this._taskSignature !== undefined && signature !== this._taskSignature) this._loadTasks();
+    }
   }
 
   getCardSize() {
@@ -118,6 +123,7 @@ class RoomCallCard extends HTMLElement {
       this._strings = strings;
       this.shadowRoot.querySelector(".recipients-title").textContent = strings.recipients;
       this._renderRooms();
+      this._loadTasks();
       if (!this._configured) this._setStatus(strings.not_ready, "muted");
       const { RoomCallControls } = await import(`./roomcall-controls.js?v=${CARD_VERSION}`);
       if (this.isConnected && !this._communication) this._communication = new RoomCallControls(this, strings);
@@ -157,6 +163,67 @@ class RoomCallCard extends HTMLElement {
       this._history = [];
     }
     this._renderHistory();
+  }
+
+  async _task(request = {}) {
+    const res = await this._hass.callApi("POST", "roomcall/command", { operation: "tasks", request });
+    if (!res.ok) throw new Error(res.error?.message || res.error?.code);
+    this._tasks = res.tasks;
+    this._taskSignature = this._tasks.map((t) => this._hass.states[t.entity_id]?.last_changed).join();
+    this._renderTasks();
+  }
+
+  async _loadTasks() {
+    try {
+      await this._task();
+    } catch (err) {
+      console.warn("RoomCall tasks", err);
+    }
+  }
+
+  _renderTasks() {
+    const box = this.shadowRoot.querySelector(".tasks");
+    const open = (this._tasks || []).filter((t) => t.state === "open");
+    box.hidden = !open.length;
+    box.setAttribute("aria-label", this._t("tasks"));
+    const title = document.createElement("div");
+    title.className = "recipients-title";
+    title.textContent = this._t("tasks");
+    const rows = open.map((task) => {
+      const row = document.createElement("div");
+      row.className = "task";
+      row.innerHTML = `<ha-icon icon="mdi:clipboard-alert-outline"></ha-icon>
+        <div class="what"><div class="name"></div><div class="muted when"></div></div>`;
+      row.querySelector(".name").textContent = task.name;
+      row.querySelector(".when").textContent = this._t("task_announced", { time: timeAgo(task.opened) });
+      const run = (button, request) => button.addEventListener("click", async () => {
+        row.querySelectorAll("button").forEach((b) => { b.disabled = true; });
+        try {
+          await this._task(request);
+        } catch (err) {
+          row.querySelectorAll("button").forEach((b) => { b.disabled = false; });
+          this._setStatus(err.message || String(err), "err");
+        }
+      });
+      // The only way to finish a task here is to say it was done; there is no dismiss.
+      const done = this._chip("mdi:check", task.task, false, () => {}, "done");
+      done.removeAttribute("aria-pressed");
+      done.setAttribute("aria-label", task.task);
+      run(done, { action: "complete", id: task.id });
+      const later = document.createElement("button");
+      later.type = "button";
+      later.className = "later";
+      later.title = this._t("remind_later");
+      later.setAttribute("aria-label", `${this._t("remind_later")}: ${task.name}`);
+      later.innerHTML = `<ha-icon icon="mdi:alarm-snooze"></ha-icon>`;
+      run(later, { action: "snooze", id: task.id });
+      const actions = document.createElement("div");
+      actions.className = "task-actions";
+      actions.append(done, later);
+      row.append(actions);
+      return row;
+    });
+    box.replaceChildren(title, ...rows);
   }
 
   _roomName(id) {
@@ -225,6 +292,19 @@ class RoomCallCard extends HTMLElement {
         .call .text { color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .call button { border: 0; background: none; color: var(--primary-color); cursor: pointer; padding: 4px; min-width:44px; min-height:44px; }
         .call ha-icon { --mdc-icon-size: 20px; }
+        .tasks { display:grid; gap:8px; }
+        .tasks[hidden] { display:none; }
+        .task { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:10px 12px; border-radius:12px;
+          background: color-mix(in srgb, var(--warning-color, #ffa600) 14%, transparent); }
+        .task > ha-icon { color: var(--warning-color, #ffa600); }
+        .task .what { flex:1 1 140px; min-width:0; }
+        .task .name { font-weight:600; overflow-wrap:anywhere; }
+        .task-actions { display:flex; gap:6px; align-items:center; margin-inline-start:auto; max-width:100%; }
+        .chip.done { background: var(--success-color, #43a047); border-color: var(--success-color, #43a047);
+          color: var(--text-primary-color, #fff); font-weight:600; }
+        .task button.later { border:0; background:none; color:var(--secondary-text-color); cursor:pointer;
+          min-width:44px; min-height:44px; border-radius:50%; }
+        .task button:disabled { opacity:0.55; cursor:progress; }
 
         :host([layout="compact"]) ha-card { padding:12px; gap:10px; }
         :host([layout="compact"]) .title, :host([layout="compact"]) .recipients-title, :host([layout="compact"]) .history { display: none; }
@@ -261,6 +341,7 @@ class RoomCallCard extends HTMLElement {
           <ha-icon icon="mdi:reply"></ha-icon><span class="reply-text"></span>
           <button class="chip small" type="button">Cancel</button>
         </div>
+        <div class="tasks" role="region" aria-live="polite" hidden></div>
         <div class="workspace">
         <div class="recipients">
           <span class="recipients-title"></span>

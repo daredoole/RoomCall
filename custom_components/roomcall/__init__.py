@@ -323,9 +323,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     async def notification_action(event) -> None:
         action = event.data.get("action", "")
-        if not isinstance(action, str) or not action.startswith("ROOMCALL_ACK_"):
+        if not isinstance(action, str):
             return
-        if event.context.user_id:
+        # Only these explicit actions count; dismissing a notification sends none.
+        if action.startswith("ROOMCALL_TASK_DONE_"):
+            with contextlib.suppress(Problem):
+                await data.announcer.async_complete(
+                    action.removeprefix("ROOMCALL_TASK_DONE_"), event.context
+                )
+        elif action.startswith("ROOMCALL_TASK_SNOOZE_"):
+            with contextlib.suppress(Problem):
+                await data.announcer.async_snooze(action.removeprefix("ROOMCALL_TASK_SNOOZE_"))
+        elif action.startswith("ROOMCALL_ACK_") and event.context.user_id:
             with contextlib.suppress(Problem):
                 await data.jobs.acknowledge(action.removeprefix("ROOMCALL_ACK_"), event.context, "")
 
@@ -334,6 +343,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     hass.data[DOMAIN] = data
     data.announcer = Announcer(hass, entry)
+    await data.announcer.async_load()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     data.announcer.async_start()
     entry.async_on_unload(data.announcer.async_stop)

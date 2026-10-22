@@ -109,6 +109,15 @@ SCHEMAS = {
             vol.Optional("response", default=""): vol.All(cv.string, vol.Length(max=500)),
         }
     ),
+    "tasks": vol.Schema(
+        {
+            vol.Optional("action", default="list"): vol.In(("list", "complete", "snooze")),
+            vol.Optional("id"): cv.string,
+            vol.Optional("minutes", default=30): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=1440)
+            ),
+        }
+    ),
     "sound_test": vol.Schema({vol.Required("speaker"): cv.entity_id}),
     "confirm_test": vol.Schema({vol.Required("id"): cv.string, vol.Required("heard"): cv.boolean}),
     "adapter": vol.Schema(
@@ -178,6 +187,29 @@ async def validate_targets(
     }
 
 
+async def _tasks(hass: HomeAssistant, data, values: dict[str, Any], context: Context) -> dict:
+    """Open and recently done announcement tasks; completing one needs an explicit request."""
+    from homeassistant.helpers import entity_registry as er
+
+    registry = er.async_get(hass)
+    announcer = data.announcer
+    if values["action"] == "complete":
+        await announcer.async_complete(values.get("id", ""), context)
+    elif values["action"] == "snooze":
+        await announcer.async_snooze(values.get("id", ""), values["minutes"])
+    return {
+        "ok": True,
+        "tasks": [
+            {
+                **item.task_summary(),
+                "entity_id": registry.async_get_entity_id("sensor", DOMAIN, f"{sid}_task"),
+            }
+            for sid, item in announcer.items.items()
+            if item.task
+        ],
+    }
+
+
 async def execute(
     hass: HomeAssistant,
     operation: str,
@@ -217,6 +249,8 @@ async def _execute(hass, operation, values, context, *, assistant=None):
         data = hass.data.get(DOMAIN)
         if data is None:
             raise Problem("not_ready", retryable=True)
+        if operation == "tasks":
+            return await _tasks(hass, data, values, context)
         if operation in ("discover", "diagnose"):
             from .shortcuts import room_choices
 

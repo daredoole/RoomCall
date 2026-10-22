@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "roomcall"
-VERSION = "0.10.2"
+VERSION = "0.11.0"
 
 CONF_SPEAKERS = "speakers"
 CONF_VOLUME = "volume"
@@ -89,8 +89,13 @@ CONF_ENTITY = "entity"
 CONF_TO_STATE = "to_state"
 CONF_FOR = "for"
 CONF_COOLDOWN = "cooldown"
+CONF_TASK = "task"
+CONF_REMIND_EVERY = "remind_every"
 DAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 DEFAULT_COOLDOWN = 60
+DEFAULT_REMIND_EVERY = 15  # minutes; 0 = never repeat
+DEFAULT_SNOOZE = 30  # minutes
+EVENT_TASK_COMPLETED = f"{DOMAIN}_task_completed"
 
 CLIP_TTL_SECONDS = 120
 HISTORY_SIZE = 20
