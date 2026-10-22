@@ -82,6 +82,7 @@ from .http import (
     CommandView,
     HistoryClipView,
     HistoryView,
+    IOSClientView,
     LiveView,
     LocaleView,
     RoomsView,
@@ -253,6 +254,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         HistoryClipView,
         CommandView,
         LocaleView,
+        IOSClientView,
     ):
         hass.http.register_view(view())
     ws.async_register(hass)

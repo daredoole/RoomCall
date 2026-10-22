@@ -87,6 +87,23 @@ class RoomsView(HomeAssistantView):
         )
 
 
+class IOSClientView(HomeAssistantView):
+    """Public IndieAuth metadata only; authorization remains with HA's login UI."""
+
+    url = "/roomcall/ios"
+    name = "api:roomcall:ios_client"
+    requires_auth = False
+
+    async def get(self, request: web.Request) -> web.Response:
+        return web.Response(
+            text="<!doctype html><html><head><title>RoomCall</title>"
+            '<link rel="redirect_uri" href="roomcall://auth-callback">'
+            "</head><body></body></html>",
+            content_type="text/html",
+            headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+        )
+
+
 class TalkView(HomeAssistantView):
     """Receive a browser recording and broadcast it."""
 

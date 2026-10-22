@@ -21,7 +21,30 @@ export class RoomCallControls {
       .communication .setup-content { display:grid; gap:8px; padding-top:8px }
       .communication .test-row { display:flex; align-items:center; flex-wrap:wrap; gap:6px }
       .communication .result { overflow-wrap:anywhere; white-space:pre-wrap }
-      .communication button { min-height:36px; min-width:44px }
+      .communication button { min-height:44px; min-width:44px }
+      .communication nav[data-toolbar] { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 44px; gap:4px;
+        background:var(--secondary-background-color,var(--card-background-color)); padding:4px; border-radius:14px; }
+      .communication nav[data-toolbar] button { justify-content:center; padding:6px; border-color:transparent; border-radius:10px; }
+      .communication nav[data-toolbar] button[aria-pressed=true] { background:var(--primary-color); color:var(--text-primary-color,#fff); }
+      .communication dialog { color:var(--primary-text-color); background:var(--card-background-color);
+        border:1px solid var(--divider-color); border-radius:20px; padding:0;
+        width:min(840px,calc(100vw - 24px)); max-width:none; max-height:calc(100dvh - 32px);
+        box-sizing:border-box; box-shadow:var(--ha-card-box-shadow,0 16px 60px #0005); }
+      .communication dialog::backdrop { background:rgb(0 0 0 / .48); }
+      .settings-heading { display:flex; align-items:center; justify-content:space-between; gap:12px;
+        padding:16px 20px; border-bottom:1px solid var(--divider-color); }
+      .settings-heading h2 { margin:0; font-size:1.125rem; }
+      .settings-body { padding:16px 20px max(20px,env(safe-area-inset-bottom)); overflow:auto;
+        max-height:calc(100dvh - 128px); min-width:0; }
+      .settings-body nav { margin-bottom:16px; }
+      .settings-body [role=tabpanel] { min-width:0; }
+      .communication.settings-surface { display:contents; }
+      .setup-review { overflow-wrap:anywhere; }
+      .setup-review ul { padding-inline-start:20px; }
+      .setup-wizard input[type=checkbox] { width:20px; height:20px; flex-shrink:0; }
+      .setup-wizard label { min-height:44px; display:flex; align-items:center; gap:8px; }
+      .setup-wizard label:has(select),.setup-wizard label:has(input[type=number]) { display:grid; }
+      @media (max-width:400px) { .settings-heading,.settings-body { padding-inline:14px; } }
       .setup-wizard { display:grid; gap:10px; margin:12px 0; min-width:0 }
       .setup-wizard fieldset { min-inline-size:0; display:grid; gap:8px;
         border:1px solid var(--divider-color); border-radius:8px; padding:10px }
@@ -32,12 +55,12 @@ export class RoomCallControls {
       .setup-wizard .wizard-status { overflow-wrap:anywhere; white-space:pre-wrap }
       .communication button:focus-visible,.communication summary:focus-visible {
         outline:2px solid var(--primary-color); outline-offset:3px }
-      :host([layout="compact"]) .communication { display:none }
       @media(prefers-reduced-motion:reduce) { button.talk { transition:none } }
     `;
     this.root.append(style);
     this.nav = document.createElement("nav");
     this.nav.setAttribute("aria-label", "RoomCall");
+    this.nav.dataset.toolbar = "";
     for (const mode of ["talk", "type", "ask"]) {
       const button = this.button(mode, () => this.mode(mode));
       button.setAttribute("aria-pressed", String(mode === "talk"));
@@ -66,26 +89,64 @@ export class RoomCallControls {
     this.result.className = "result muted";
     this.result.setAttribute("role", "status");
     this.jobActions = document.createElement("nav");
-    this.details = document.createElement("details");
-    const summary = document.createElement("summary");
-    summary.textContent = this.t("setup");
+    this.dialog = document.createElement("dialog");
+    this.dialog.setAttribute("aria-label", this.t("settings"));
+    const heading = document.createElement("header");
+    heading.className = "settings-heading";
+    const title = document.createElement("h2");
+    title.textContent = this.t("settings");
+    heading.append(title, this.button("close", () => this.dialog.close()));
+    const body = document.createElement("div");
+    body.className = "settings-body";
+    const tabs = document.createElement("nav");
+    tabs.setAttribute("aria-label", this.t("settings"));
+    this.panels = {};
+    for (const key of ["setup", "stations", "voicemail"]) {
+      const panel = document.createElement("section");
+      panel.setAttribute("role", "tabpanel");
+      panel.setAttribute("aria-label", this.t(key));
+      this.panels[key] = panel;
+      const button = this.button(key, () => this.settingsTab(key));
+      button.dataset.panel = key;
+      tabs.append(button);
+    }
+    this.settingsTabs = tabs;
+    body.append(tabs, ...Object.values(this.panels));
+    this.dialog.append(heading, body);
     this.setup = document.createElement("div");
     this.setup.className = "setup-content";
-    this.details.append(summary, this.setup);
+    this.quickTests = document.createElement("div");
+    this.quickTests.className = "quick-tests";
+    this.panels.setup.append(this.quickTests);
+    this.panels.stations.append(this.setup);
     this.wizard = new SetupWizard(this);
-    this.setup.before(this.wizard.root);
-    this.details.open = card._configured === false;
-    this.details.addEventListener("toggle", () => {
-      if (this.details.open) this.refresh().catch((e) => this.error(e));
-    });
+    this.quickTests.before(this.wizard.root);
+    const settings = this.button("settings", () => this.openSettings());
+    settings.setAttribute("aria-haspopup", "dialog");
+    settings.setAttribute("aria-label", this.t("settings"));
+    settings.textContent = "";
+    const icon = document.createElement("ha-icon"); icon.setAttribute("icon", "mdi:tune-variant");
+    settings.append(icon);
+    this.nav.append(settings);
     this.root.append(this.nav, this.form, this.result, this.jobActions);
     card.shadowRoot.querySelector(".wrap").before(this.root);
     this.settingsRoot = document.createElement("section");
-    this.settingsRoot.className = "communication";
-    this.settingsRoot.append(this.details);
+    this.settingsRoot.className = "communication settings-surface";
+    this.settingsRoot.append(this.dialog);
     card.shadowRoot.querySelector(".history").before(this.settingsRoot);
     this.mode("talk");
     this.refresh().catch((error) => this.error(error));
+    this.settingsTab("setup");
+    if (card._configured === false) this.openSettings();
+  }
+
+  settingsTab(key) {
+    for (const [name, panel] of Object.entries(this.panels)) panel.hidden = name !== key;
+    for (const button of this.settingsTabs.children) button.setAttribute("aria-pressed", String(button.dataset.panel === key));
+  }
+  openSettings() {
+    if (!this.dialog.open) this.dialog.showModal();
+    this.refresh().catch(error => this.error(error));
   }
 
   t(key, values = {}) {
@@ -123,7 +184,7 @@ export class RoomCallControls {
     this.ackLabel.hidden = mode === "ask";
     this.card.shadowRoot.querySelector(".wrap").hidden = mode !== "talk";
     this.card.shadowRoot.querySelector(".status").hidden = mode !== "talk";
-    for (const button of this.nav.children) button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
+    for (const button of this.nav.querySelectorAll("[data-mode]")) button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
   }
   async preview() {
     if (this.currentMode === "ask") {
@@ -170,6 +231,8 @@ export class RoomCallControls {
     if (this.closed) return;
     this.satellites.replaceChildren(...this.capabilities.satellites.filter((s) => s.can_ask && s.available).map((s) => new Option(s.name, s.entity_id)));
     this.setup.replaceChildren();
+    this.quickTests.replaceChildren();
+    this.quickTests.hidden = this.wizard.active?.state === "applied";
     this.setup.append(this.button("refresh", () => this.refresh()));
     for (const endpoint of this.capabilities.endpoints.filter((e) => e.selected)) {
       const row = document.createElement("div");
@@ -186,7 +249,7 @@ export class RoomCallControls {
         });
       }));
       if (endpoint.sound_test) row.append(document.createTextNode(this.t(endpoint.sound_test.heard ? "heard" : "silent")));
-      this.setup.append(row);
+      this.quickTests.append(row);
     }
     const room = this.select("station");
     room.append(...this.capabilities.areas.map((a) => new Option(a.name, a.id)));
@@ -202,11 +265,12 @@ export class RoomCallControls {
       if (!this.station) throw new Error(this.t("station_unavailable"));
       await this.station.call(peers.value);
     }));
+    this.settingsTabs.querySelector('[data-panel="voicemail"]').hidden = !this.capabilities.features.voicemail;
     if (this.capabilities.features.voicemail) {
       const mail = await this.command("voicemail");
       const label = document.createElement("div");
       label.textContent = this.t("voicemail");
-      this.setup.append(label);
+      this.panels.voicemail.replaceChildren(label);
       for (const item of mail.messages) {
         const row = document.createElement("div");
         row.className = "test-row";
@@ -219,7 +283,7 @@ export class RoomCallControls {
           await this.command("voicemail", { action: "delete", id: item.id });
           await this.refresh();
         }));
-        this.setup.append(row);
+        this.panels.voicemail.append(row);
       }
     }
   }
@@ -229,6 +293,7 @@ export class RoomCallControls {
     this.timers.clear();
     this.station?.close();
     this.wizard.closed = true;
+    this.dialog.close();
     this.settingsRoot.remove();
     this.root.remove();
   }
@@ -246,6 +311,16 @@ class SetupWizard {
     this.status = document.createElement("div");
     this.status.className = "wizard-status muted";
     this.status.setAttribute("role", "status");
+    this.edit = this.button("edit_setup", () => {
+      this.active = null;
+      this.form.hidden = false;
+      this.review.replaceChildren();
+      this.tests.replaceChildren();
+      this.renderActions();
+      this.edit.hidden = true;
+      controls.quickTests.hidden = false;
+    });
+    this.edit.hidden = true;
     this.form = document.createElement("form");
     this.form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -302,6 +377,7 @@ class SetupWizard {
       this.button("scan_devices", () => this.scan()),
       this.button("diagnose_setup", () => this.diagnose()),
       this.status,
+      this.edit,
       this.form,
       this.resume,
       this.review,
@@ -392,6 +468,9 @@ class SetupWizard {
     this.review.replaceChildren();
     this.tests.replaceChildren();
     if (!plan) return;
+    this.form.hidden = true;
+    this.edit.hidden = false;
+    this.controls.quickTests.hidden = plan.state === "applied";
     for (const input of this.speakers.querySelectorAll("input"))
       input.checked = plan.settings.speakers.includes(input.value);
     this.engine.value = plan.settings.tts_engine || "";

@@ -4,6 +4,17 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.10.0 — 2026-10-21
+
+- Adapt the dashboard to its container width, retain Talk/Type/Ask in compact layouts,
+  enlarge touch targets, and move setup/stations into a keyboard-accessible modal panel.
+- Separate setup review from editing and remove duplicate active-plan sound tests.
+- Add an iOS SwiftUI prototype with HA OAuth/PKCE and Keychain storage, native Push to
+  Talk channel control, live 16 kHz audio delivery, Siri announcements and a Control
+  Center launcher. Incoming background audio requires a future provisioned push service.
+- Advertise the native OAuth callback from HA without exposing credentials; generate
+  native translations from the five integration catalogs and build/test in macOS CI.
+
 ## 0.9.0 — 2026-10-21
 
 - Bootstrap RoomCall's tools by opening HA's configuration flow before an entry exists;
