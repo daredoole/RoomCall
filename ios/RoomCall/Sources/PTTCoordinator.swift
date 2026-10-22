@@ -42,7 +42,13 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
             }
         Task {
             do { manager = try await PTChannelManager.channelManager(delegate: self, restorationDelegate: self) }
-            catch { status = error.localizedDescription }
+            catch {
+                #if DEBUG
+                // The simulator has no Push to Talk entitlement; screenshots show the normal status.
+                if Demo.enabled { return }
+                #endif
+                status = error.localizedDescription
+            }
         }
     }
     func join(room: Room, client: HAClient) async {

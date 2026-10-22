@@ -71,9 +71,13 @@ replies, quiet nights, reminders that don't go away until the chore is done, and
 ### ⚙️ One settings panel on the card
 
 <p align="center">
-  <img src="docs/assets/ha-settings.png" alt="The card's Settings panel with Setup and sound tests, Siri Shortcuts and Room stations" width="260">
+  <img src="docs/assets/ha-settings.png" alt="Settings: guided setup and sound tests" width="190">
   &nbsp;
-  <img src="docs/assets/ha-siri-shortcuts.png" alt="Siri Shortcuts settings with a live room picker" width="260">
+  <img src="docs/assets/ha-settings-shortcuts.png" alt="Settings: Siri Shortcuts" width="190">
+  &nbsp;
+  <img src="docs/assets/ha-settings-stations.png" alt="Settings: room stations" width="190">
+  &nbsp;
+  <img src="docs/assets/ha-settings-voicemail.png" alt="Settings: voicemail" width="190">
 </p>
 
 Tap the sliders icon on the card for **Settings**:
@@ -87,10 +91,19 @@ Everything is keyboard accessible and fits from a 240 px column to a wall tablet
 
 ### 📱 Your phone and Apple devices
 
+<p align="center">
+  <img src="docs/assets/ios-sign-in-light.png" alt="RoomCall for iPhone: sign in with Home Assistant" width="200">
+  &nbsp;
+  <img src="docs/assets/ios-rooms-light.png" alt="RoomCall for iPhone: choose where to speak" width="200">
+  &nbsp;
+  <img src="docs/assets/ios-talking-dark.png" alt="RoomCall for iPhone: talking to the kitchen" width="200">
+</p>
+<p align="center"><sub>Native iOS prototype, captured from the iOS Simulator in CI.</sub></p>
+
 - **"Hey Siri, run RoomCall Basement"** — dictate an announcement to any room, with your chime and Home Assistant voice; no HomePod required.
 - **Apple Home intercom** — every room is a camera tile in the Home app; tap the mic on your iPhone or Apple Watch to talk in that room.
 - **Notifications that do something** — Reply, Acknowledge, and task buttons right on the notification.
-- **Native iOS prototype** — SwiftUI, Home Assistant sign-in, live Push to Talk, Siri announcements and a Control Center launcher ([build and limitations](docs/native-ios.md)).
+- **Native iOS prototype** — SwiftUI, Home Assistant sign-in (no tokens to paste), Apple's Push to Talk for live broadcasts, Siri announcements and a Control Center launcher, in light and dark mode ([build and limitations](https://daredoole.github.io/RoomCall/native-ios/)).
 
 ### 🏠 Smart home and AI
 
