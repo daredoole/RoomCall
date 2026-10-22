@@ -75,7 +75,18 @@ async def test_doorbell_rings_rooms_phones_and_cards(
         "name": "Front Door",
     }
 
+    order = []
+    hass.bus.async_listen(
+        "call_service",
+        lambda event: (
+            order.append(event.data["domain"])
+            if event.data["domain"] in ("notify", "media_player")
+            else None
+        ),
+    )
     await _press(hass)
+    # The time-sensitive phone alert goes out before the rooms start playing.
+    assert order[0] == "notify" and "media_player" in order
     assert _spoken(tts_audio) == ["Someone is at the Front Door."]
     assert {c.data["entity_id"] for c in played} == {
         "media_player.kitchen_sonos",

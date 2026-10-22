@@ -182,6 +182,19 @@ def check_doorbell(browser, errors) -> None:
         answer.click()
         assert page.evaluate("window.opened") == "camera.front_door"
         expect(banner).to_be_hidden()
+        # Coming back from unavailable is not a press, as on the backend.
+        for state in ("unavailable", "on"):
+            page.evaluate(
+                """state => {
+              const h = ROOMCALL_HARNESS, card = document.querySelector("roomcall-card");
+              h.hass.states["binary_sensor.front_door_visitor"] = {
+                state, last_changed: new Date(Date.now() + 1000).toISOString(), attributes: {} };
+              card.hass = {...h.hass};
+            }""",
+                state,
+            )
+            page.wait_for_timeout(50)
+        expect(banner).to_be_hidden()
         context.close()
 
 

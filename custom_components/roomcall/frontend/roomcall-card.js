@@ -111,6 +111,7 @@ class RoomCallCard extends HTMLElement {
       this._doorbell = res.doorbell || null;
       // Only presses after the card loaded ring the banner.
       this._doorbellSeen = this._doorbell && this._hass.states[this._doorbell.entity]?.last_changed;
+      this._doorbellState = this._doorbell && this._hass.states[this._doorbell.entity]?.state;
       const people = this._config.people;
       this._people = people === false ? [] : Array.isArray(people)
         ? res.people.filter((p) => people.includes(p.entity_id)) : res.people;
@@ -174,7 +175,10 @@ class RoomCallCard extends HTMLElement {
     const state = bell && this._hass.states[bell.entity];
     if (!state || state.last_changed === this._doorbellSeen) return;
     this._doorbellSeen = state.last_changed;
-    if (["unavailable", "unknown", "off"].includes(state.state)) return;
+    // Like the backend: coming back from unavailable is not a press.
+    const previous = this._doorbellState;
+    this._doorbellState = state.state;
+    if (["unavailable", "unknown", "off"].includes(state.state) || previous === "unavailable") return;
     const box = this.shadowRoot.querySelector(".doorbell");
     const camera = bell.camera && this._hass.states[bell.camera];
     box.replaceChildren();

@@ -81,16 +81,6 @@ async def ring(hass: HomeAssistant, data: RoomCallData) -> None:
     name = label(hass, data)
     message = text(hass, "doorbell_message", name=name)
     data.metrics.counters["doorbell_rings"] += 1
-    try:
-        await send(
-            hass,
-            data,
-            {"areas": data.doorbell_rooms or [ALL_ROOMS], "message": message},
-            Context(),
-            notify=False,
-        )
-    except (CallError, Problem) as err:  # phones are still told
-        _LOGGER.warning("RoomCall could not announce the doorbell: %s", err)
     payload: dict[str, Any] = {
         "tag": "roomcall_doorbell",
         "group": "roomcall",
@@ -115,3 +105,14 @@ async def ring(hass: HomeAssistant, data: RoomCallData) -> None:
                 {"title": name, "message": message, "data": payload},
                 blocking=False,
             )
+    # Phones and watches first: the room announcement can wait behind TTS or a live call.
+    try:
+        await send(
+            hass,
+            data,
+            {"areas": data.doorbell_rooms or [ALL_ROOMS], "message": message},
+            Context(),
+            notify=False,
+        )
+    except (CallError, Problem) as err:  # phones were already told
+        _LOGGER.warning("RoomCall could not announce the doorbell: %s", err)
