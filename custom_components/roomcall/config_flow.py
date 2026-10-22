@@ -17,6 +17,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import selector
+from homeassistant.setup import async_setup_component
 
 from . import chimes
 from .capabilities import deduplicate
@@ -360,6 +361,9 @@ class RoomCallConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        # Opening HA's normal config flow bootstraps the API and setup UI, even
+        # before a RoomCall entry exists. Installation stays with HA/HACS.
+        await async_setup_component(self.hass, DOMAIN, {})
         errors: dict[str, str] = {}
         if user_input is not None:
             if not user_input.get(CONF_SPEAKERS):

@@ -8,7 +8,66 @@ from __future__ import annotations
 
 from ha_screenshots import ORIGIN, OUT, open_card
 from playwright.sync_api import expect, sync_playwright
-from qa_layout import check_layout
+from qa_layout import check_large_text, check_layout
+
+
+def check_guided_setup(browser, errors) -> None:
+    for width, height in [(240, 600), (390, 844), (1280, 900)]:
+        context = browser.new_context(viewport={"width": width, "height": height})
+        page = context.new_page()
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        open_card(page, "mobile" if width < 600 else "desktop", "dark")
+        card = page.locator("roomcall-card")
+        card.get_by_role("button", name="Settings", exact=True).click()
+        wizard = card.locator(".setup-wizard")
+        expect(wizard.locator(".wizard-status")).to_contain_text("Found")
+        speakers = wizard.locator('fieldset input[type="checkbox"]')
+        for index in range(1, speakers.count()):
+            speakers.nth(index).uncheck()
+        wizard.get_by_role("spinbutton").fill("0.3")
+        wizard.get_by_role("button", name="Review setup plan", exact=True).click()
+        expect(wizard.locator(".setup-review")).to_contain_text("0.3")
+        assert (
+            page.evaluate("ROOMCALL_HARNESS.requests.filter(r=>r.request?.action==='apply').length")
+            == 0
+        )
+        wizard.get_by_role("button", name="Apply this plan", exact=True).click()
+        expect(wizard.get_by_role("button", name="Verify setup", exact=True)).to_be_visible()
+        wizard.get_by_role("button", name="Verify setup", exact=True).click()
+        expect(wizard.locator(".wizard-status")).to_contain_text("Test each speaker")
+        # Reloading resumes the persisted plan; it does not apply again or play audio.
+        page.reload()
+        card = page.locator("roomcall-card")
+        card.get_by_role("button", name="Settings", exact=True).click()
+        wizard = card.locator(".setup-wizard")
+        expect(wizard.locator(".setup-review")).to_contain_text("Applied")
+        expect(wizard.locator('input[type="number"]')).to_have_value("0.3")
+        wizard.get_by_role("button", name="Play test sound", exact=True).click()
+        wizard.get_by_role("button", name="I heard it", exact=True).click()
+        expect(wizard.locator(".wizard-status")).to_contain_text("Setup verified")
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        assert wizard.evaluate("e=>e.scrollWidth<=e.clientWidth")
+        if width == 390:
+            wizard.screenshot(path=OUT / "ha-guided-setup.png")
+        wizard.get_by_role("button", name="Undo this setup", exact=True).click()
+        expect(wizard.locator(".wizard-status")).to_contain_text("Explicitly confirm")
+        wizard.get_by_role("checkbox", name="Confirm restoring", exact=False).check()
+        wizard.get_by_role("button", name="Undo this setup", exact=True).click()
+        expect(wizard.locator(".setup-review")).to_contain_text("Previous settings restored")
+        page.evaluate("""() => {
+          const hass=document.querySelector('roomcall-card')._hass;
+          const original=hass.callApi.bind(hass);
+          hass.callApi=async(method,path,body)=>body?.operation==='sound_test'
+            ? {ok:false,error:{message:'Speaker temporarily unavailable'}}
+            : original(method,path,body);
+        }""")
+        card.locator(".quick-tests").get_by_role(
+            "button", name="Play test sound", exact=True
+        ).first.click()
+        expect(card.locator(".settings-body > .settings-result")).to_contain_text(
+            "Speaker temporarily unavailable"
+        )
+        context.close()
 
 
 def main() -> None:
@@ -22,6 +81,8 @@ def main() -> None:
         )
         errors = []
         check_layout(browser)
+        check_large_text(browser)
+        check_guided_setup(browser, errors)
         for width, height in [(390, 844), (1280, 900)]:
             context = browser.new_context(viewport={"width": width, "height": height})
             context.grant_permissions(["microphone"], origin=ORIGIN)
@@ -48,11 +109,11 @@ def main() -> None:
             expect(card.locator(".result")).to_contain_text("Pizza")
             if width == 390:
                 page.screenshot(path=OUT / "ha-card-ask.png")
-            card.locator("summary").click()
+            card.get_by_role("button", name="Settings", exact=True).click()
             card.get_by_role("button", name="Play test sound", exact=True).first.click()
             card.get_by_role("button", name="I heard it", exact=True).click()
             expect(card.get_by_role("button", name="I heard it", exact=True)).to_have_count(0)
-            expect(card.locator(".setup-content")).to_contain_text("I heard it")
+            expect(card.locator(".quick-tests")).to_contain_text("I heard it")
             if width == 390:
                 page.screenshot(path=OUT / "ha-card-setup.png")
             context.close()
@@ -74,8 +135,12 @@ def main() -> None:
         expect(cards.locator(".result")).to_have_count(2)
         for index in (0, 1):
             card = cards.nth(index)
-            card.locator("summary").click()
+            card.get_by_role("button", name="Settings", exact=True).click()
+            card.get_by_role("tab", name="Room stations", exact=True).click()
             card.get_by_role("button", name="Enable this station", exact=True).click()
+            card.get_by_role("button", name="Close", exact=True).click()
+        cards.first.get_by_role("button", name="Settings", exact=True).click()
+        cards.first.get_by_role("tab", name="Room stations", exact=True).click()
         cards.first.get_by_role("button", name="Refresh", exact=True).click()
         page.wait_for_function("ROOMCALL_HARNESS.stations.size===2")
         cards.first.locator('select[aria-label="Call station"]').select_option(label="Basement")

@@ -9,6 +9,18 @@ APIs; no extra credentials.
 
 ## Do things
 
+- Start with `roomcall__catalog`: API version, operation schemas, response envelope and bootstrap recipe.
+- Setup before an entry exists: after HACS installation/restart, start HA's RoomCall user config flow.
+  Opening the flow registers tools/card resources; no entry or optional service is created yet.
+- `roomcall__setup` actions discover/plan/apply/test/confirm/verify/list/get/undo share the card's
+  guided setup backend. Authenticated HA administrator required. Discovery includes settings_schema.
+  Plans persist 24 hours, are owner-scoped and revision checked; interrupted apply/undo can resume.
+  Undo requires confirm:true and current revision; new entries with added announcements are protected.
+- Choose a speech provider if ambiguous, or explicitly plan media_only:true. Never fabricate heard:true.
+- `roomcall__announcements`: schema/list/create/update/enable/disable/delete. Native HA subentries;
+  revisions for changes, confirm:true for delete, bounded persistent create idempotency.
+- `roomcall__doctor`: diagnose setup failures, or action:plan_route for an identified physical
+  alternate endpoint. Returns a draft; never silently changes policy/network/cloud/retention.
 - Speak or play audio now: action `roomcall.broadcast` with `areas`, `speakers`, `people`,
   `message` or `media_url`, `priority` (`normal`|`urgent`), `volume`. Returns
   `{ok, id, results[], skipped}`.
@@ -48,5 +60,6 @@ APIs; no extra credentials.
 - [Home Assistant guide](https://daredoole.github.io/RoomCall/home-assistant/)
 - [Announcements](https://daredoole.github.io/RoomCall/announcements/)
 - [Managing RoomCall with AI](https://daredoole.github.io/RoomCall/ai/)
+- [Guided setup and administration contract](https://daredoole.github.io/RoomCall/agent-setup/)
 - [Messages, jobs, room stations and adapters](https://daredoole.github.io/RoomCall/communication/)
 - [Apple Home intercom](https://daredoole.github.io/RoomCall/apple-home/)

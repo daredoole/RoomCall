@@ -82,6 +82,7 @@ from .http import (
     CommandView,
     HistoryClipView,
     HistoryView,
+    IOSClientView,
     LiveView,
     LocaleView,
     RoomsView,
@@ -91,7 +92,9 @@ from .http import (
 from .jobs import Jobs
 from .live import LiveStore
 from .messages import send
+from .onboarding import Setup
 from .policy import QuietHours
+from .protocol import SETUP_KEY
 from .scheduler import Scheduler
 from .schema import vol
 from .stations import Stations
@@ -238,6 +241,9 @@ def _message_chime(hass: HomeAssistant, data: RoomCallData) -> str | None:
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register HTTP views, the dashboard card and the broadcast action once."""
     await localization.async_load(hass)
+    setup = Setup(hass)
+    await setup.load()
+    hass.data[SETUP_KEY] = setup
     for view in (
         TalkView,
         RoomsView,
@@ -248,6 +254,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         HistoryClipView,
         CommandView,
         LocaleView,
+        IOSClientView,
     ):
         hass.http.register_view(view())
     ws.async_register(hass)

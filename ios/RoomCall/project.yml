@@ -1,0 +1,85 @@
+name: RoomCall
+options:
+  bundleIdPrefix: com.daredoole
+  deploymentTarget:
+    iOS: '18.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    SWIFT_STRICT_CONCURRENCY: minimal
+    MARKETING_VERSION: 0.10.0
+    CURRENT_PROJECT_VERSION: 1
+    TARGETED_DEVICE_FAMILY: '1,2'
+targets:
+  RoomCall:
+    type: application
+    platform: iOS
+    sources: [Sources, Shared, Resources]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.daredoole.RoomCall
+        INFOPLIST_KEY_CFBundleDisplayName: RoomCall
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: Info.plist
+      properties:
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        NSMicrophoneUsageDescription: RoomCall sends your voice to the room you select.
+        NSLocalNetworkUsageDescription: RoomCall connects to your Home Assistant and speakers.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        CFBundleURLTypes:
+          - CFBundleURLSchemes: [roomcall]
+        UIBackgroundModes: [audio, push-to-talk]
+    entitlements:
+      path: RoomCall.entitlements
+      properties:
+        com.apple.developer.push-to-talk: true
+        aps-environment: development
+        com.apple.security.application-groups: [group.com.daredoole.RoomCall]
+    dependencies:
+      - target: RoomCallControls
+    scheme:
+      testTargets: [RoomCallTests, RoomCallUITests]
+      gatherCoverageData: true
+  RoomCallControls:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Controls
+      - Shared
+      - path: Resources
+        excludes: ['**/AppShortcuts.strings']
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.daredoole.RoomCall.Controls
+        APPLICATION_EXTENSION_API_ONLY: true
+    info:
+      path: Controls-Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Controls.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.daredoole.RoomCall]
+  RoomCallTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: RoomCall
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+  RoomCallUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: RoomCall
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true

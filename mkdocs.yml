@@ -31,11 +31,14 @@ nav:
   - Home Assistant: home-assistant.md
   - Siri and Shortcuts: siri-shortcuts.md
   - Apple Home intercom: apple-home.md
+  - Native iOS prototype: native-ios.md
   - Announcements: announcements.md
   - Blueprints: blueprints.md
   - Managing with AI: ai.md
+  - Guided agent setup: agent-setup.md
   - Messages and room stations: communication.md
   - Implementation plan: implementation-plan.md
+  - Agent setup implementation: agent-setup-plan.md
   - Standalone server:
       - Getting started: getting-started.md
       - Configuration: configuration.md

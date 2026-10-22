@@ -1,5 +1,5 @@
 /* RoomCall push-to-talk card for Home Assistant dashboards. */
-const CARD_VERSION = "0.8.1";
+const CARD_VERSION = "0.10.0";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
 const LAYOUTS = ["default", "compact", "kiosk"];
@@ -99,6 +99,8 @@ class RoomCallCard extends HTMLElement {
       const only = this._config.rooms;
       this._rooms = only ? res.rooms.filter((r) => only.includes(r.area_id) || only.includes(r.name)) : res.rooms;
       this._count = res.speakers;
+      this._configured = res.configured !== false;
+      this.shadowRoot.querySelector(".talk").disabled = !this._configured;
       this._dndEntity = res.dnd_entity;
       const people = this._config.people;
       this._people = people === false ? [] : Array.isArray(people)
@@ -114,6 +116,9 @@ class RoomCallCard extends HTMLElement {
     try {
       const strings = await this._hass.callApi("GET", `roomcall/locale?language=${encodeURIComponent(this._hass.language || "en")}`);
       this._strings = strings;
+      this.shadowRoot.querySelector(".recipients-title").textContent = strings.recipients;
+      this._renderRooms();
+      if (!this._configured) this._setStatus(strings.not_ready, "muted");
       const { RoomCallControls } = await import(`./roomcall-controls.js?v=${CARD_VERSION}`);
       if (this.isConnected && !this._communication) this._communication = new RoomCallControls(this, strings);
     } catch (error) { console.warn("RoomCall communication controls", error); }
@@ -163,26 +168,31 @@ class RoomCallCard extends HTMLElement {
     const layout = this._config.layout;
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; min-width: 0; min-height: 0; height: 100%; }
+        :host { display: block; min-width: 0; min-height: 0; height: 100%; container: roomcall / inline-size; }
         ha-card { padding: 16px; display: flex; flex-direction: column; gap: 12px; height: 100%; box-sizing: border-box;
           min-width: 0; min-height: 0; overflow: auto; }
         ha-card > * { flex-shrink: 0; min-width: 0; }
+        .workspace { display:grid; gap:20px; min-width:0; }
+        .recipients,.composer { min-width:0; display:grid; gap:12px; align-content:start; }
+        .recipients-title { color:var(--secondary-text-color); font-size:0.8125rem; font-weight:600; }
+        .destination { text-align:center; font-size:0.9375rem; font-weight:600; overflow-wrap:anywhere; }
         .head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
-        .title { font-size: 18px; font-weight: 500; overflow-wrap: anywhere; }
-        .muted { color: var(--secondary-text-color); font-size: 13px; }
+        .title { font-size: 1.125rem; font-weight: 500; overflow-wrap: anywhere; }
+        .muted { color: var(--secondary-text-color); font-size: 0.8125rem; }
         .toggles { display: flex; gap: 6px; }
         .reply { display: none; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px;
-          background: color-mix(in srgb, var(--primary-color) 15%, transparent); font-size: 14px; }
+          background: color-mix(in srgb, var(--primary-color) 15%, transparent); font-size: 0.875rem; }
         .reply.on { display: flex; }
         .reply button { margin-left: auto; }
         .chips { display: flex; flex-wrap: wrap; gap: 8px; }
         .chip {
           border: 1px solid var(--divider-color); background: var(--card-background-color);
           color: var(--primary-text-color); border-radius: 999px; padding: 8px 14px;
-          font-family: inherit; font-size: 14px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center;
+          font-family: inherit; font-size: 0.875rem; cursor: pointer; display: inline-flex; gap: 6px; align-items: center;
           max-width: 100%; overflow-wrap: anywhere;
+          min-height:44px; min-width:44px; box-sizing:border-box;
         }
-        .chip.small { padding: 5px 10px; font-size: 12px; }
+        .chip.small { padding: 5px 10px; font-size: 0.8125rem; }
         .chip[aria-pressed="true"] { background: var(--primary-color); border-color: var(--primary-color); color: var(--text-primary-color, #fff); }
         .chip.urgent[aria-pressed="true"] { background: var(--error-color, #db4437); border-color: var(--error-color, #db4437); }
         .chip.dnd[aria-pressed="true"] { background: var(--warning-color, #ffa600); border-color: var(--warning-color, #ffa600); color: #000; }
@@ -194,7 +204,7 @@ class RoomCallCard extends HTMLElement {
         button.talk {
           width: min(100%, 170px); aspect-ratio: 1; border-radius: 50%; border: 0; cursor: pointer;
           background: var(--primary-color); color: var(--text-primary-color, #fff);
-          font-family: inherit; font-size: 17px; font-weight: 600; touch-action: none; user-select: none;
+          font-family: inherit; font-size: 1.0625rem; font-weight: 600; touch-action: none; user-select: none;
           -webkit-user-select: none; display: grid; place-items: center; align-content: center; gap: 6px; transition: transform 0.08s;
           box-shadow: 0 10px 30px color-mix(in srgb, var(--primary-color) 35%, transparent);
         }
@@ -205,19 +215,20 @@ class RoomCallCard extends HTMLElement {
           box-shadow: 0 0 0 calc(var(--level, 0) * 30px) color-mix(in srgb, var(--error-color, #db4437) 25%, transparent);
         }
         button.talk:disabled { opacity: 0.55; cursor: progress; }
-        .status { text-align: center; min-height: 1.3em; font-size: 14px; overflow-wrap: anywhere; }
+        .status { text-align: center; min-height: 1.3em; font-size: 0.875rem; overflow-wrap: anywhere; }
         .ok { color: var(--success-color, #43a047); } .err { color: var(--error-color, #db4437); }
         .history { display: grid; gap: 6px; }
         .history:empty { display: none; }
         .call { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center;
           padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
-        .call .what { font-size: 13px; line-height: 1.3; overflow: hidden; }
+        .call .what { font-size: 0.8125rem; line-height: 1.3; overflow: hidden; }
         .call .text { color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .call button { border: 0; background: none; color: var(--primary-color); cursor: pointer; padding: 4px; }
+        .call button { border: 0; background: none; color: var(--primary-color); cursor: pointer; padding: 4px; min-width:44px; min-height:44px; }
         .call ha-icon { --mdc-icon-size: 20px; }
 
-        :host([layout="compact"]) ha-card { flex-direction: row; align-items: center; flex-wrap: wrap; }
-        :host([layout="compact"]) .head, :host([layout="compact"]) .people, :host([layout="compact"]) .history { display: none; }
+        :host([layout="compact"]) ha-card { padding:12px; gap:10px; }
+        :host([layout="compact"]) .title, :host([layout="compact"]) .recipients-title, :host([layout="compact"]) .history { display: none; }
+        :host([layout="compact"]) .workspace { gap:12px; }
         :host([layout="compact"]) .chips.rooms { flex: 1; }
         :host([layout="compact"]) .wrap { flex: 0 0 auto; min-height: 0; }
         :host([layout="compact"]) button.talk { width: 64px; font-size: 0; gap: 0; }
@@ -225,13 +236,21 @@ class RoomCallCard extends HTMLElement {
         :host([layout="compact"]) .status { flex-basis: 100%; }
 
         :host([layout="kiosk"]) ha-card { padding: 24px; gap: 18px; }
-        :host([layout="kiosk"]) .title { font-size: 26px; }
-        :host([layout="kiosk"]) .chip { padding: 14px 22px; font-size: 18px; }
+        :host([layout="kiosk"]) .title { font-size: 1.625rem; }
+        :host([layout="kiosk"]) .chip { padding: 14px 22px; font-size: 1.125rem; }
         :host([layout="kiosk"]) .chip ha-icon { --mdc-icon-size: 24px; }
-        :host([layout="kiosk"]) button.talk { width: min(100%, 340px); font-size: 26px; }
+        :host([layout="kiosk"]) button.talk { width: min(100%, 340px); font-size: 1.625rem; }
         :host([layout="kiosk"]) button.talk ha-icon { --mdc-icon-size: 72px; }
-        :host([layout="kiosk"]) .status { font-size: 18px; }
+        :host([layout="kiosk"]) .status { font-size: 1.125rem; }
         :host([layout="kiosk"]) .history { display: none; }
+        @container roomcall (min-width: 640px) {
+          .workspace { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; }
+          .composer { border-inline-start:1px solid var(--divider-color); padding-inline-start:20px; }
+          .chips.rooms { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+          .chips.rooms .chip { justify-content:flex-start; }
+        }
+        @media (prefers-reduced-motion:reduce) { button.talk { transition:none; } }
+        button:focus-visible { outline:2px solid var(--primary-color); outline-offset:3px; }
       </style>
       <ha-card>
         <div class="head">
@@ -242,14 +261,21 @@ class RoomCallCard extends HTMLElement {
           <ha-icon icon="mdi:reply"></ha-icon><span class="reply-text"></span>
           <button class="chip small" type="button">Cancel</button>
         </div>
-        <div class="chips rooms" role="group" aria-label="Broadcast to"></div>
-        <div class="chips people" role="group" aria-label="Call a person"></div>
+        <div class="workspace">
+        <div class="recipients">
+          <span class="recipients-title"></span>
+          <div class="chips rooms" role="group" aria-label="Broadcast to"></div>
+          <div class="chips people" role="group" aria-label="Call a person"></div>
+        </div>
+        <div class="composer">
+        <div class="destination" aria-live="polite"></div>
         <div class="wrap">
           <button class="talk" type="button" aria-label="Hold to talk">
             <ha-icon icon="mdi:microphone"></ha-icon><span class="label">Hold to talk</span>
           </button>
         </div>
         <div class="status muted">Pick a room, hold the button and speak.</div>
+        </div></div>
         <div class="history" aria-label="Recent calls"></div>
       </ha-card>`;
     this.setAttribute("layout", layout);
@@ -258,6 +284,7 @@ class RoomCallCard extends HTMLElement {
     talk.addEventListener("pointerdown", (e) => this._start(e));
     for (const ev of ["pointerup", "pointerleave", "pointercancel"]) talk.addEventListener(ev, (e) => this._stop(e));
     talk.addEventListener("contextmenu", (e) => e.preventDefault());
+    talk.addEventListener("blur", (e) => this._stop(e));
     talk.addEventListener("keydown", (e) => {
       if ([" ", "Enter"].includes(e.key) && !e.repeat) this._start(e);
     });
@@ -314,6 +341,10 @@ class RoomCallCard extends HTMLElement {
         }, "small"),
       ),
     );
+    root.querySelector(".destination").textContent = this._strings
+      ? this._t("destination", { name: this._person
+        ? this._people.find(p => p.entity_id === this._person)?.name || this._person
+        : this._roomName(this._target) }) : "";
   }
 
   _renderToggles() {
@@ -353,6 +384,7 @@ class RoomCallCard extends HTMLElement {
       if (call.has_audio) {
         const play = document.createElement("button");
         play.title = "Play";
+        play.setAttribute("aria-label", this._t("replay"));
         play.innerHTML = `<ha-icon icon="mdi:play-circle-outline"></ha-icon>`;
         play.addEventListener("click", () => this._replay(call.id));
         actions.append(play);
@@ -366,6 +398,7 @@ class RoomCallCard extends HTMLElement {
       if (call.from && (this._rooms || []).some((r) => r.area_id === call.from)) {
         const reply = document.createElement("button");
         reply.title = `Reply to ${from}`;
+        reply.setAttribute("aria-label", this._t("reply_to", { name: from }));
         reply.innerHTML = `<ha-icon icon="mdi:reply"></ha-icon>`;
         reply.addEventListener("click", () => {
           this._replyTo = call.from;

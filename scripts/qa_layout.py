@@ -33,35 +33,51 @@ def check_layout(browser) -> None:
             page.evaluate("layoutContainer.style.gridTemplateRows='auto 120px'")
             page.wait_for_timeout(40)
             assert_contained(page, fixed=False)
-            if layout != "compact":
-                for mode in ("type", "ask", "talk"):
-                    card.locator(f'[data-mode="{mode}"]').click()
-                    assert_contained(page, fixed=False)
-                card.locator("summary").click()
-                expect(card.locator(".setup-content")).to_contain_text("Play test sound")
+            for mode in ("type", "ask", "talk"):
+                card.locator(f'[data-mode="{mode}"]').click()
                 assert_contained(page, fixed=False)
-                card.locator("summary").click()
+            card.get_by_role("button", name="Settings", exact=True).click()
+            expect(card.get_by_role("dialog", name="Settings", exact=True)).to_be_visible()
+            expect(card.locator(".quick-tests")).to_contain_text("Play test sound")
+            page.keyboard.press("Escape")
+            expect(card.get_by_role("button", name="Settings", exact=True)).to_be_focused()
             # Existing dashboards can still pin rows explicitly. Every control must
             # stay inside that cell, with the bottom reachable by scrolling.
             page.evaluate("layoutContainer.style.gridTemplateRows='280px 120px'")
             page.wait_for_timeout(40)
             assert_contained(page, fixed=True)
-            if layout != "compact":
-                card.locator("summary").click()
-                expect(card.locator(".setup-content")).to_contain_text("Play test sound")
-                # Opening setup refreshes/replaces its controls asynchronously.
-                # Resolve the current bottom control on every retry.
-                page.wait_for_function("""() => {
-                  const root=document.querySelector('roomcall-card').shadowRoot;
-                  const buttons=root.querySelectorAll('.setup-content button');
-                  const button=buttons[buttons.length-1];
-                  button.scrollIntoView({block:'nearest'});
-                  const b=button.getBoundingClientRect();
-                  const c=root.querySelector('ha-card').getBoundingClientRect();
-                  return b.top>=Math.max(0,c.top) && b.bottom<=Math.min(innerHeight,c.bottom);
-                }""")
-                assert_contained(page, fixed=True)
-                card.locator("summary").click()
+            card.get_by_role("button", name="Settings", exact=True).click()
+            expect(card.get_by_role("dialog", name="Settings", exact=True)).to_be_visible()
+            bounds = card.locator("dialog").bounding_box()
+            assert bounds and bounds["x"] >= 0 and bounds["y"] >= 0, bounds
+            assert bounds["y"] + bounds["height"] <= 560, bounds
+            assert_contained(page, fixed=True)
+            page.keyboard.press("Escape")
+        page.close()
+
+
+def check_large_text(browser) -> None:
+    for width in (240, 390, 900):
+        page = browser.new_page(viewport={"width": width, "height": 820})
+        open_card(page, "mobile", "dark")
+        page.add_style_tag(content="html { font-size:200% !important; }")
+        card = page.locator("roomcall-card")
+        assert card.evaluate("e=>e.scrollWidth<=e.clientWidth")
+        for button in card.locator("[data-toolbar] button").all():
+            bounds = button.bounding_box()
+            assert bounds and bounds["width"] >= 44 and bounds["height"] >= 44, bounds
+        card.get_by_role("button", name="Settings", exact=True).click()
+        dialog = card.get_by_role("dialog", name="Settings", exact=True)
+        expect(dialog).to_be_visible()
+        assert dialog.evaluate("e=>e.scrollWidth<=e.clientWidth")
+        setup = dialog.get_by_role("tab", name="Setup and sound tests", exact=True)
+        setup.focus()
+        page.keyboard.press("ArrowRight")
+        expect(dialog.get_by_role("tab", name="Room stations", exact=True)).to_be_focused()
+        page.keyboard.press("Home")
+        expect(setup).to_be_focused()
+        page.keyboard.press("Escape")
+        expect(card.get_by_role("button", name="Settings", exact=True)).to_be_focused()
         page.close()
 
 

@@ -10,7 +10,7 @@ using the existing buttons. Type a message, preview its recipients, and send it.
 Ask selects a compatible Assist satellite and displays its transcribed answer.
 The Talk button also supports holding Space or Enter on a keyboard.
 
-Expand **Setup and sound tests** to test each selected speaker. After the sound
+Open **Settings → Setup and sound tests** to test each selected speaker. After the sound
 plays, choose **I heard it** or **I heard nothing**. Only this explicit confirmation
 marks a test as heard. Results survive integration reloads and HA restarts.
 
@@ -35,8 +35,10 @@ URLs do not pass through RoomCall's fetch endpoint.
 ## Actions and API
 
 Use **RoomCall: Communicate** in the action editor. All operations return a JSON
-object with `ok`. Validation and provider failures return an `error` object with
-`code`, translated `message`, `retryable`, and `details`.
+object with `ok` and `api_version`. Validation and provider failures return an `error`
+object with `code`, translated `message`, `retryable`, `details`, and `next_actions`.
+The [guided setup contract](agent-setup.md) covers persisted setup, repair proposals,
+announcement administration, and the shared human setup controls.
 
 ```yaml
 action: roomcall.communicate
@@ -67,6 +69,10 @@ and `media_url`.
 
 | Operation | Request |
 |---|---|
+| `catalog` | Empty. Machine-readable operation schemas, response envelope, flags and bootstrap recipe. |
+| `setup` | Administrator: discover, plan, apply, verify, test, confirm, list, get and undo. |
+| `announcements` | Administrator: schema, list, create, update, enable, disable and delete. |
+| `doctor` | Administrator: inspect setup failures or propose a verified physical alternate route. |
 | `discover` | Empty. Returns rooms, endpoints, people, satellites, stations, adapters and capabilities. |
 | `diagnose` | Empty. Adds policy state and local metrics. |
 | `preview` | Targets, optional `priority` and `volume`. Does not synthesize or play audio. |
@@ -134,7 +140,7 @@ processing. An unanswered question expires; RoomCall does not invent an answer.
 
 ## Browser room stations
 
-In **Setup and sound tests**, select the current room and enable the station.
+In **Settings → Room stations**, select the current room and enable the station.
 Enable a station on another open dashboard, refresh the station list, and call it.
 The recipient must press **Answer** before signaling audio. Microphone capture
 starts only after the local Call/Answer action. Hang-up or removing the card

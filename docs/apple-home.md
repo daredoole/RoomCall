@@ -1,5 +1,10 @@
 # Apple Home intercom
 
+This page describes the optional camera talk-back bridge. The
+[native iOS prototype](native-ios.md) provides a separate SwiftUI/Push to Talk
+client that broadcasts directly through HA, without a camera tile. Neither route
+registers RoomCall as a member of HomePod's built-in Intercom system.
+
 Talk to any room from the **Home** app, your **Apple Watch** or **Control Center** — even on a
 HomePod-free, all-Sonos house. RoomCall adds each room to Apple Home as a camera with a talk
 button; what you say plays in that room with the chime first, exactly like a call from the card.

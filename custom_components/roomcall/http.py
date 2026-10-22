@@ -66,7 +66,9 @@ class RoomsView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:
         hass = request.app[KEY_HASS]
-        data = _data(request)
+        data = hass.data.get(DOMAIN)
+        if data is None:
+            return self.json({"rooms": [], "people": [], "speakers": 0, "configured": False})
         return self.json(
             {
                 "rooms": rooms(hass, data.speakers),
@@ -82,6 +84,23 @@ class RoomsView(HomeAssistantView):
                 "chimes": [*chimes.STYLES],
                 "quiet": data.quiet.active(dt_util.now()),
             }
+        )
+
+
+class IOSClientView(HomeAssistantView):
+    """Public IndieAuth metadata only; authorization remains with HA's login UI."""
+
+    url = "/roomcall/ios"
+    name = "api:roomcall:ios_client"
+    requires_auth = False
+
+    async def get(self, request: web.Request) -> web.Response:
+        return web.Response(
+            text="<!doctype html><html><head><title>RoomCall</title>"
+            '<link rel="redirect_uri" href="roomcall://auth-callback">'
+            "</head><body></body></html>",
+            content_type="text/html",
+            headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
         )
 
 
@@ -216,7 +235,8 @@ class HistoryView(HomeAssistantView):
     name = "api:roomcall:history"
 
     async def get(self, request: web.Request) -> web.Response:
-        return self.json({"calls": [r.summary() for r in _data(request).history.records()]})
+        data = request.app[KEY_HASS].data.get(DOMAIN)
+        return self.json({"calls": [r.summary() for r in data.history.records()] if data else []})
 
 
 class HistoryClipView(HomeAssistantView):

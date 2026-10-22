@@ -1,0 +1,49 @@
+name: iOS
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  simulator:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Check native translation catalogs
+        run: python3 scripts/ios_localizations.py --check
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate --spec ios/RoomCall/project.yml
+          xcodebuild -version
+      - name: Select available iPhone simulator
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          devices = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '-j']))
+          iphone = next(device for runtime, group in devices['devices'].items() if 'iOS' in runtime
+                        for device in group if device['name'].startswith('iPhone'))
+          with open(os.environ['GITHUB_ENV'], 'a') as handle:
+              handle.write('ROOMCALL_SIMULATOR=' + iphone['udid'] + '\n')
+          PY
+      - name: Build and test native app and controls
+        run: |
+          set -o pipefail
+          xcodebuild test -project ios/RoomCall/RoomCall.xcodeproj -scheme RoomCall \
+            -destination "platform=iOS Simulator,id=$ROOMCALL_SIMULATOR" \
+            -derivedDataPath /tmp/roomcall-ios-build -resultBundlePath /tmp/RoomCall.xcresult \
+            -parallel-testing-enabled NO -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 60 -maximum-test-execution-time-allowance 120 \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES | tee /tmp/roomcall-ios-build.log
+      - name: Package simulator app
+        run: ditto -c -k --sequesterRsrc --keepParent /tmp/roomcall-ios-build/Build/Products/Debug-iphonesimulator/RoomCall.app /tmp/RoomCall-simulator.zip
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: roomcall-ios-simulator
+          path: |
+            /tmp/RoomCall.xcresult
+            /tmp/roomcall-ios-build.log
+            /tmp/RoomCall-simulator.zip

@@ -11,6 +11,7 @@ from homeassistant.helpers import llm
 from .communication import SCHEMAS, execute
 from .const import DOMAIN
 from .localization import text
+from .protocol import READ_ONLY, SETUP_KEY
 
 try:
     from homeassistant.components.llm import LLMTools
@@ -31,8 +32,8 @@ class CommunicationTool(llm.Tool):
         self.parameters = SCHEMAS[operation]
         if annotations := getattr(llm, "ToolAnnotations", None):
             self.annotations = annotations(
-                read_only=operation in {"discover", "preview", "diagnose", "status"},
-                idempotent=operation in {"discover", "preview", "diagnose", "status"},
+                read_only=operation in READ_ONLY,
+                idempotent=operation in READ_ONLY,
             )
 
     async def async_call(
@@ -57,7 +58,9 @@ class CommunicationTool(llm.Tool):
 def async_get_tools(
     hass: HomeAssistant, llm_context: llm.LLMContext, api_id: str
 ) -> LLMTools | None:
-    if api_id not in {"assist", "homeassistant", DOMAIN} or DOMAIN not in hass.data:
+    if api_id not in {"assist", "homeassistant", DOMAIN} or not (
+        {DOMAIN, SETUP_KEY} & hass.data.keys()
+    ):
         return None
     return LLMTools(
         tools=[CommunicationTool(hass, name, llm_context.language) for name in SCHEMAS],

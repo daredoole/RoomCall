@@ -50,6 +50,10 @@ communicate:
         select:
           translation_key: communication_operation
           options:
+            - catalog
+            - setup
+            - announcements
+            - doctor
             - discover
             - diagnose
             - preview
