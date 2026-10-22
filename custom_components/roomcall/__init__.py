@@ -358,8 +358,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     @callback
     def talk_back(record: CallRecord) -> None:
         if data.talk_back:
-            hass.async_create_background_task(
-                talkback.listen(hass, data, record), "roomcall talk-back"
+            # Entry-owned, so an unload or reload cancels a reply still being listened for.
+            entry.async_create_background_task(
+                hass, talkback.listen(hass, data, record), "roomcall talk-back"
             )
 
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CALL_FINISHED, talk_back))

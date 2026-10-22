@@ -20,7 +20,7 @@ from homeassistant.helpers import area_registry as ar
 from .calls import CallError
 from .communication import permitted, validate_targets
 from .const import ALL_ROOMS
-from .core import CallRecord, speaker_area
+from .core import CallRecord, area_id_for, speaker_area
 from .errors import Problem
 from .localization import text
 
@@ -31,8 +31,12 @@ _LOGGER = logging.getLogger(__name__)
 LISTEN_SECONDS = 30  # upper bound for the satellite to prompt, listen and transcribe
 
 
-def satellites(hass: HomeAssistant, areas: set[str]) -> list[str]:
-    """One available satellite that can ask a question per area, so a reply plays once."""
+async def satellites(hass: HomeAssistant, areas: set[str], context: Context) -> list[str]:
+    """One usable satellite per area, so each called room is asked once and replies once.
+
+    Only satellites the caller may control are candidates, so a permitted one is never
+    passed over for an earlier one they cannot use.
+    """
     chosen: dict[str, str] = {}
     for state in sorted(hass.states.async_all("assist_satellite"), key=lambda s: s.entity_id):
         area = speaker_area(hass, state.entity_id)
@@ -41,6 +45,7 @@ def satellites(hass: HomeAssistant, areas: set[str]) -> list[str]:
             and area not in chosen
             and state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN)
             and state.attributes.get("supported_features", 0) & 2
+            and await permitted(hass, state.entity_id, context)
         ):
             chosen[area] = state.entity_id
     return list(chosen.values())
@@ -49,8 +54,9 @@ def satellites(hass: HomeAssistant, areas: set[str]) -> list[str]:
 async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) -> None:
     """After a delivered room-to-room talk call, collect and deliver spoken replies."""
     names = {area.id: area.name for area in ar.async_get(hass).async_list_areas()}
-    origin = record.from_room
-    targets = {target.strip() for target in record.target.split(",")}
+    # Calls may name rooms by ID, name or alias; satellites are matched by area ID.
+    origin = area_id_for(hass, record.from_room or "")
+    targets = {area_id_for(hass, t) or t.strip() for t in record.target.split(",")}
     if (
         not data.talk_back
         or record.kind != "talk"
@@ -62,7 +68,7 @@ async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) ->
         return
     # The caller's permissions apply to the listening device and to the reply's room.
     context = Context(user_id=record.owner)
-    ears = [e for e in satellites(hass, targets - {origin}) if await permitted(hass, e, context)]
+    ears = await satellites(hass, targets - {origin}, context)
     if not ears:
         return
 
@@ -79,6 +85,7 @@ async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) ->
                     },
                     blocking=True,
                     return_response=True,
+                    context=context,
                 )
         except Exception:  # an unanswered or failed question simply means no reply
             _LOGGER.debug("RoomCall talk-back from %s ended without a reply", entity_id)

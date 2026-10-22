@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import wave
 from unittest.mock import patch
@@ -178,3 +179,51 @@ async def test_one_satellite_per_room_and_the_callers_permissions_apply(
     ):
         await talkback.listen(hass, data, _record(basement, origin=kitchen))
     assert len(asked) == 2 and not tts_audio.await_args_list
+
+
+async def test_rooms_by_name_permitted_satellite_and_caller_context(
+    hass: HomeAssistant, house, hass_admin_user
+):
+    await _setup(hass, house)
+    registry = er.async_get(hass)
+    other = registry.async_get_or_create(
+        "assist_satellite", "test", "basement_zz", suggested_object_id="basement_zz"
+    )
+    registry.async_update_entity(other.entity_id, area_id=house["basement"])
+    hass.states.async_set(other.entity_id, "idle", {"supported_features": 2})
+    data = hass.data[DOMAIN]
+    asked = _answers(hass, None)
+    # Rooms given by name match by area; the question runs as the caller.
+    await talkback.listen(
+        hass, data, _record("Basement", origin="Kitchen", owner=hass_admin_user.id)
+    )
+    assert asked[0].data["entity_id"] == "assist_satellite.basement_voice"
+    assert asked[0].context.user_id == hass_admin_user.id
+
+    # A caller allowed only the later satellite still gets talk-back through it.
+    async def only_other(_hass, entity_id, _context, *args, **kwargs):
+        return entity_id == other.entity_id
+
+    with patch("custom_components.roomcall.talkback.permitted", only_other):
+        await talkback.listen(hass, data, _record(house["basement"]))
+    assert asked[1].data["entity_id"] == other.entity_id
+
+
+async def test_unloading_cancels_a_pending_reply(hass: HomeAssistant, house, tts_audio):
+    from homeassistant.helpers.dispatcher import async_dispatcher_send
+
+    entry = await _setup(hass, house)
+    waiting = asyncio.Event()
+
+    async def never_answers(call):
+        waiting.set()
+        await asyncio.Event().wait()
+
+    hass.services.async_register(
+        "assist_satellite", "ask_question", never_answers, supports_response=SupportsResponse.ONLY
+    )
+    async_dispatcher_send(hass, "roomcall_call_finished", _record(house["basement"]))
+    await waiting.wait()
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert not tts_audio.await_args_list
