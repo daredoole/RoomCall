@@ -102,6 +102,7 @@ class Announcement:
     task_done_by: str | None = None
     _variables: dict[str, Any] = field(default_factory=dict, repr=False)
     _phones: list[str] = field(default_factory=list, repr=False)  # notified while open
+    _remind_at: datetime | None = field(default=None, repr=False)  # survives restarts
     _reminder: Callable[[], None] | None = field(default=None, repr=False)
 
     @property
@@ -192,6 +193,7 @@ class Announcer:
             item.task_done_by = saved.get("done_by")
             item._variables = saved.get("variables") or {}
             item._phones = saved.get("phones") or []
+            item._remind_at = dt_util.parse_datetime(saved.get("remind_at") or "")
         if set(saved_tasks) - {sid for sid, item in self.items.items() if item.task}:
             await self._save()
 
@@ -204,6 +206,7 @@ class Announcer:
                     "done_by": item.task_done_by,
                     "variables": item._variables,
                     "phones": item._phones,
+                    "remind_at": _iso(item._remind_at),
                 }
                 for sid, item in self.items.items()
                 if item.task
@@ -218,7 +221,12 @@ class Announcer:
             else:
                 self._watch(item)
             if item.task_opened:
-                self._remind(item)
+                # Keep a snooze or reminder due time across restarts; overdue ones fire soon.
+                if item._remind_at:
+                    left = (item._remind_at - dt_util.utcnow()).total_seconds() / 60
+                    self._remind(item, max(left, 1 / 60))
+                else:
+                    self._remind(item)
 
     @callback
     def async_stop(self) -> None:
@@ -233,6 +241,7 @@ class Announcer:
             self._cancel_reminder(item)
 
     def _cancel_reminder(self, item: Announcement) -> None:
+        item._remind_at = None
         if item._reminder is not None:
             item._reminder()
             item._reminder = None
@@ -240,8 +249,6 @@ class Announcer:
     def _remind(self, item: Announcement, minutes: float | None = None) -> None:
         """Play the announcement again later while its task is open."""
         self._cancel_reminder(item)
-        if self._stopped:
-            return
         if minutes is None:
             minutes = float(item.data.get(CONF_REMIND_EVERY, DEFAULT_REMIND_EVERY) or 0)
         if not minutes:
@@ -249,13 +256,14 @@ class Announcer:
 
         @callback
         def fire(_now: datetime) -> None:
-            item._reminder = None
+            item._reminder, item._remind_at = None, None
             if item.enabled:
                 self.hass.async_create_task(self.async_play(item.subentry_id, reminder=True))
             else:  # paused: keep the task open and check again later
                 self._remind(item)
 
         item._reminder = async_call_later(self.hass, minutes * 60, fire)
+        item._remind_at = dt_util.utcnow() + timedelta(minutes=minutes)
 
     def _task(self, subentry_id: str) -> Announcement:
         item = self.items.get(subentry_id)
@@ -304,6 +312,7 @@ class Announcer:
         """Remind again later; the task stays open."""
         item = self._task(subentry_id)
         self._remind(item, minutes)
+        await self._save()
         await self._clear(item)
         return item
 
@@ -424,6 +433,9 @@ class Announcer:
             item.last_error = str(err)
             _LOGGER.warning("RoomCall announcement %s not played: %s", item.title, err)
             result = {"ok": False, "error": str(err)}
+        if self._stopped:
+            # A reload replaced this announcer while it played; the new one owns the task.
+            return result or {}
         # Someone may have confirmed it while it played: then there is nothing to remind.
         if item.task and item.task_opened:
             # Phones are told even when no speaker could play: the task still needs doing.
@@ -438,8 +450,8 @@ class Announcer:
                 urgent=item.data.get(CONF_PRIORITY) == PRIORITY_URGENT,
             )
             item._phones = sorted({*item._phones, *sent})
-            await self._save()
             self._remind(item)
+            await self._save()
         item.last_played = dt_util.utcnow()
         async_dispatcher_send(self.hass, f"{SIGNAL_ANNOUNCEMENT}_{subentry_id}")
         return result or {}

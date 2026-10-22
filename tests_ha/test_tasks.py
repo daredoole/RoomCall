@@ -422,9 +422,14 @@ async def test_reminders_never_reopen_and_retired_announcers_stay_quiet(
         announcer.async_stop()
         return record
 
+    notified = hass.services.async_services()["notify"]
+    assert notified  # phones exist, yet the retired announcer must not use them
+    calls = async_capture_events(hass, "call_service")
     with patch("custom_components.roomcall.announcements.send", send_then_reload):
         await announcer.async_play(sid)
+    await hass.async_block_till_done()
     assert item.task_state == "open" and item._reminder is None
+    assert not [c for c in calls if c.data["domain"] == "notify"]
 
 
 async def test_task_actions_permissions_templates_and_former_recipients(
@@ -459,3 +464,44 @@ async def test_task_actions_permissions_templates_and_former_recipients(
     with pytest.raises(TemplateError):
         await announcer.async_play(sid)
     assert item.task_state == "done"
+
+
+async def test_snooze_and_reminder_due_times_survive_a_restart(
+    hass: HomeAssistant, house, hass_admin_user, hass_storage
+):
+    async_mock_service(hass, "notify", "mobile_app_alex_phone")
+    async_mock_service(hass, "notify", "mobile_app_sam_phone")
+    entry = await _setup(hass, hass_admin_user.id)
+    played = async_mock_service(hass, "media_player", "play_media")
+    sid = await _add(hass, entry, "triggered", {**LAUNDRY, "rooms": [house["basement"]]})
+    hass.states.async_set("sensor.dryer", "done", {"friendly_name": "Dryer"})
+    await hass.async_block_till_done()
+    context = Context(user_id=hass_admin_user.id)
+    assert (await execute(hass, "tasks", {"action": "snooze", "id": sid, "minutes": 60}, context))[
+        "ok"
+    ]
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    played.clear()
+    # The 10-minute interval would have fired by now; the snooze still holds.
+    await _advance(hass, 30)
+    assert not played
+    await _advance(hass, 61)
+    assert len(played) == 1
+
+    # A reminder that came due while Home Assistant was down plays soon after start.
+    key = f"roomcall.{entry.entry_id}.tasks"
+    hass_storage[key]["data"][sid]["remind_at"] = "2020-01-01T00:00:00+00:00"
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    played.clear()
+    await _advance(hass, 1)
+    assert len(played) == 1
+
+    # State saved before due times existed falls back to the regular interval.
+    hass_storage[key]["data"][sid]["remind_at"] = None
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    played.clear()
+    await _advance(hass, 11)
+    assert len(played) == 1
