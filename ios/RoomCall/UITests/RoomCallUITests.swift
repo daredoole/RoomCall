@@ -28,6 +28,7 @@ final class RoomCallUITests: XCTestCase {
 
     // Real simulator captures for the README and docs (exported from the result bundle in CI).
     func testScreenshotSignIn() {
+        executionTimeAllowance = 120
         for appearance in ["light", "dark"] {
             let app = launch(["-RoomCallDemoAppearance", appearance])
             let field = app.textFields["server-url"]
@@ -40,6 +41,7 @@ final class RoomCallUITests: XCTestCase {
     }
 
     func testScreenshotRooms() {
+        executionTimeAllowance = 120
         for appearance in ["light", "dark"] {
             let app = launch(["-RoomCallDemo", "-RoomCallDemoRoom", "kitchen", "-RoomCallDemoAppearance", appearance])
             XCTAssertTrue(app.buttons["Kitchen"].waitForExistence(timeout: 30))
@@ -49,6 +51,7 @@ final class RoomCallUITests: XCTestCase {
     }
 
     func testScreenshotTalking() {
+        executionTimeAllowance = 120
         for appearance in ["light", "dark"] {
             let app = launch(["-RoomCallDemo", "-RoomCallDemoRoom", "kitchen", "-RoomCallDemoJoined",
                               "-RoomCallDemoTalking", "-RoomCallDemoAppearance", appearance])
