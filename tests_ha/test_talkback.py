@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import io
 import wave
+from unittest.mock import patch
 from urllib.parse import unquote
 
 from custom_components.roomcall import talkback
 from custom_components.roomcall.core import CallRecord, Delivery
+from custom_components.roomcall.errors import Problem
 from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -57,13 +59,20 @@ def _answers(hass: HomeAssistant, sentence: str | None, *, error: bool = False):
     )
 
 
-def _record(target: str, *, origin: str | None = "kitchen", kind: str = "talk", ok: bool = True):
+def _record(
+    target: str,
+    *,
+    origin: str | None = "kitchen",
+    kind: str = "talk",
+    ok: bool = True,
+    owner: str | None = None,
+):
     record = CallRecord(
         target=target,
         kind=kind,
         results=[Delivery("media_player.basement_sonos", "Basement", ok, 10)],
     )
-    record.from_room = origin
+    record.from_room, record.owner = origin, owner
     return record
 
 
@@ -136,3 +145,36 @@ async def test_talk_back_only_listens_when_it_makes_sense(hass: HomeAssistant, h
     hass.data[DOMAIN].talk_back = True
     await talkback.listen(hass, hass.data[DOMAIN], _record(basement))
     assert not asked
+
+
+async def test_one_satellite_per_room_and_the_callers_permissions_apply(
+    hass: HomeAssistant, house, tts_audio
+):
+    await _setup(hass, house)
+    registry = er.async_get(hass)
+    second = registry.async_get_or_create(
+        "assist_satellite", "test", "basement_echo", suggested_object_id="basement_echo"
+    )
+    registry.async_update_entity(second.entity_id, area_id=house["basement"])
+    hass.states.async_set(second.entity_id, "idle", {"supported_features": 2})
+    data = hass.data[DOMAIN]
+    asked = _answers(hass, "On my way")
+    kitchen, basement = house["kitchen"], house["basement"]
+
+    # Two satellites in the basement: only one asks, and the answer plays once.
+    await talkback.listen(hass, data, _record(basement, origin=kitchen))
+    await hass.async_block_till_done()
+    assert len(asked) == 1 and len(tts_audio.await_args_list) == 1
+
+    # A caller without access to the devices gets no talk-back.
+    await talkback.listen(hass, data, _record(basement, origin=kitchen, owner="unknown"))
+    assert len(asked) == 1
+
+    # A reply room the caller may not use is skipped.
+    tts_audio.reset_mock()
+    with patch(
+        "custom_components.roomcall.talkback.validate_targets",
+        side_effect=Problem("forbidden"),
+    ):
+        await talkback.listen(hass, data, _record(basement, origin=kitchen))
+    assert len(asked) == 2 and not tts_audio.await_args_list

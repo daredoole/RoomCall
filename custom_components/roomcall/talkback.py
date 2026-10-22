@@ -17,8 +17,11 @@ from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import area_registry as ar
 
+from .calls import CallError
+from .communication import permitted, validate_targets
 from .const import ALL_ROOMS
 from .core import CallRecord, speaker_area
+from .errors import Problem
 from .localization import text
 
 if TYPE_CHECKING:
@@ -29,14 +32,18 @@ LISTEN_SECONDS = 30  # upper bound for the satellite to prompt, listen and trans
 
 
 def satellites(hass: HomeAssistant, areas: set[str]) -> list[str]:
-    """Available satellites that can ask a question, in the given areas."""
-    return [
-        state.entity_id
-        for state in hass.states.async_all("assist_satellite")
-        if state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN)
-        and state.attributes.get("supported_features", 0) & 2
-        and speaker_area(hass, state.entity_id) in areas
-    ]
+    """One available satellite that can ask a question per area, so a reply plays once."""
+    chosen: dict[str, str] = {}
+    for state in sorted(hass.states.async_all("assist_satellite"), key=lambda s: s.entity_id):
+        area = speaker_area(hass, state.entity_id)
+        if (
+            area in areas
+            and area not in chosen
+            and state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN)
+            and state.attributes.get("supported_features", 0) & 2
+        ):
+            chosen[area] = state.entity_id
+    return list(chosen.values())
 
 
 async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) -> None:
@@ -53,7 +60,9 @@ async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) ->
         or not hass.services.has_service("assist_satellite", "ask_question")
     ):
         return
-    ears = satellites(hass, targets - {origin})
+    # The caller's permissions apply to the listening device and to the reply's room.
+    context = Context(user_id=record.owner)
+    ears = [e for e in satellites(hass, targets - {origin}) if await permitted(hass, e, context)]
     if not ears:
         return
 
@@ -84,11 +93,14 @@ async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) ->
         if reply is None:
             continue
         room = names.get(speaker_area(hass, entity_id) or "", "")
+        values = {
+            "areas": [origin],
+            "message": text(hass, "talk_back_reply", room=room, text=reply),
+        }
+        try:
+            await validate_targets(hass, values, context, None)
+        except (CallError, Problem):
+            continue
         data.metrics.counters["talk_back_replies"] += 1
         # Sent as a message, not a talk call, so a reply never triggers another reply.
-        await send(
-            hass,
-            data,
-            {"areas": [origin], "message": text(hass, "talk_back_reply", room=room, text=reply)},
-            Context(),
-        )
+        await send(hass, data, values, context)
