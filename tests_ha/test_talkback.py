@@ -245,7 +245,36 @@ async def test_talk_back_waits_for_the_call_to_finish_playing(hass: HomeAssistan
     await listening
     assert len(asked) == 1
 
+    # While listening, the called speaker stays reserved: a queued call waits.
+    gate = asyncio.Event()
+
+    async def slow_answer(call):
+        await gate.wait()
+        return {"sentence": None}
+
+    hass.services.async_register(
+        "assist_satellite", "ask_question", slow_answer, supports_response=SupportsResponse.ONLY
+    )
+    listening = hass.async_create_task(talkback.listen(hass, data, _record(house["basement"])))
+    await asyncio.sleep(0.05)
+    queued = hass.async_create_task(data.scheduler.acquire("media_player.basement_sonos", None))
+    await asyncio.sleep(0.05)
+    assert not queued.done()
+    gate.set()
+    await listening
+    (await queued).release()
+    asked = _answers(hass, None)
+
     # A call that never finishes playing gives up instead of talking over it.
     with patch.object(data.scheduler, "acquire", side_effect=TimeoutError):
         await talkback.listen(hass, data, _record(house["basement"]))
-    assert len(asked) == 1
+    assert not asked
+
+    # If a later speaker never finishes, leases already taken are given back.
+    taken = asyncio.Lock()
+    await taken.acquire()
+    record = _record(house["basement"])
+    record.results.append(Delivery("media_player.kitchen_sonos", "Kitchen", True, 10))
+    with patch.object(data.scheduler, "acquire", side_effect=[taken, TimeoutError]):
+        await talkback.listen(hass, data, record)
+    assert not taken.locked() and not asked

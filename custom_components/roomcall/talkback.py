@@ -18,6 +18,7 @@ from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import area_registry as ar
 
 from .calls import CallError
+from .capabilities import physical_key
 from .communication import permitted, validate_targets
 from .const import ALL_ROOMS
 from .core import CallRecord, area_id_for, speaker_area
@@ -75,13 +76,18 @@ async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) ->
     ears = await satellites(hass, heard - {origin}, context)
     if not ears:
         return
-    # Ask only once the call has finished playing, so "Reply?" never talks over it. The
-    # scheduler holds each speaker until its playback (and any restore) has ended.
+    # Ask only once the call has finished playing, so "Reply?" never talks over it, and keep
+    # those speakers reserved while listening, so a queued call cannot play over the prompt
+    # or be heard as the reply. The scheduler holds each speaker until playback has ended.
     deadline = asyncio.get_running_loop().time() + PLAYBACK_WAIT
+    held: list[asyncio.Lock] = []
+    keys = {physical_key(hass, e, data.aliases): e for e in delivered}  # one lease per device
     try:
-        for entity_id in delivered:
-            (await data.scheduler.acquire(entity_id, deadline)).release()
+        for entity_id in keys.values():
+            held.append(await data.scheduler.acquire(entity_id, deadline))
     except (TimeoutError, RuntimeError):
+        for lock in held:
+            lock.release()
         return
 
     async def ask(entity_id: str) -> str | None:
@@ -105,7 +111,11 @@ async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) ->
         sentence = str((response or {}).get("sentence") or "").strip()
         return sentence or None
 
-    replies = await asyncio.gather(*(ask(entity_id) for entity_id in ears))
+    try:
+        replies = await asyncio.gather(*(ask(entity_id) for entity_id in ears))
+    finally:
+        for lock in held:
+            lock.release()
     from .messages import send
 
     for entity_id, reply in zip(ears, replies, strict=True):
