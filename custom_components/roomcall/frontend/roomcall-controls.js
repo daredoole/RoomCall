@@ -20,7 +20,7 @@ export class RoomCallControls {
       .communication summary { cursor:pointer; padding:6px 0 }
       .communication .setup-content { display:grid; gap:8px; padding-top:8px }
       .communication .test-row { display:flex; align-items:center; flex-wrap:wrap; gap:6px }
-      .communication .result { overflow-wrap:anywhere; white-space:pre-wrap }
+      .communication .result,.communication .settings-result { overflow-wrap:anywhere; white-space:pre-wrap }
       .communication button { min-height:44px; min-width:44px }
       .communication nav[data-toolbar] { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 44px; gap:4px;
         background:var(--secondary-background-color,var(--card-background-color)); padding:4px; border-radius:14px; }
@@ -137,7 +137,7 @@ export class RoomCallControls {
     });
     this.settingsStatus = document.createElement("div");
     this.settingsStatus.setAttribute("role", "status");
-    this.settingsStatus.className = "result";
+    this.settingsStatus.className = "settings-result";
     body.append(tabs, this.settingsStatus, ...Object.values(this.panels));
     this.dialog.append(heading, body);
     this.setup = document.createElement("div");

@@ -64,7 +64,7 @@ def check_guided_setup(browser, errors) -> None:
         card.locator(".quick-tests").get_by_role(
             "button", name="Play test sound", exact=True
         ).first.click()
-        expect(card.locator(".settings-body > .result")).to_contain_text(
+        expect(card.locator(".settings-body > .settings-result")).to_contain_text(
             "Speaker temporarily unavailable"
         )
         context.close()

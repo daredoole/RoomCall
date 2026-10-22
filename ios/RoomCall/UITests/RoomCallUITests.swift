@@ -5,12 +5,22 @@ final class RoomCallUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(en)", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
-        print(app.debugDescription)
         let field = app.textFields["server-url"]
-        XCTAssertTrue(field.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["sign-in"].isEnabled)
+        let signIn = app.buttons["sign-in"]
+        // SwiftUI Form virtualizes rows below the viewport at large text sizes.
+        for _ in 0..<6 {
+            if field.exists && signIn.exists { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(field.exists)
+        XCTAssertTrue(signIn.exists)
+        XCTAssertFalse(signIn.isEnabled)
         field.tap()
         field.typeText("https://ha.example")
-        XCTAssertTrue(app.buttons["sign-in"].isEnabled)
+        XCTAssertTrue(signIn.isEnabled)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Sign in at accessibility text size"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
     }
 }
