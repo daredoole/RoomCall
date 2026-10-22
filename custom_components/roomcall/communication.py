@@ -218,7 +218,12 @@ async def _execute(hass, operation, values, context, *, assistant=None):
         if data is None:
             raise Problem("not_ready", retryable=True)
         if operation in ("discover", "diagnose"):
+            from .shortcuts import room_choices
+
             result = discover(hass, data)
+            result["shortcut_choices"] = await room_choices(
+                hass, data, context, assistant=assistant
+            )
             for key in ("endpoints", "satellites", "people"):
                 result[key] = [
                     item

@@ -64,9 +64,15 @@ it as urgent to override."*
 
 The catalog's `shortcut_exports` describes the authenticated download endpoint:
 `POST /api/roomcall/shortcut`, with `room`, optional `language`, and `format`
-(`cherri`, `shortcut`, or `signed`). Discover exact room IDs first. Exports are
+(`native`, `native_signed`, `cherri`, `shortcut`, or `signed`). Discover exact room IDs first. Exports are
 restricted to configured rooms and the caller's permitted speakers. Unknown IDs
 return `no_targets`; they never fall back to Everywhere.
+
+Native exports accept `room: "ask"` for a live picker, `multiple: true`, and
+`message_mode: "ask"` or `"input"`. Discovery returns `shortcut_choices`, a
+friendly-name-to-area-ID dictionary restricted to permitted destinations.
+Native templates contain no Companion server IDs; configure server/action selectors
+on import. Native signed exports require the same opt-in signing credentials.
 
 Recommend the HA Companion **Perform Action** action for Siri. Its server must
 be selected on the phone; use a Shortcuts Dictionary containing the exact room ID

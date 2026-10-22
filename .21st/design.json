@@ -52,7 +52,8 @@
     "Preserve the existing card; add Talk/Type/Ask controls and a collapsed setup section.",
     "21st catalog search required authentication; reuse the existing HA primitives.",
     "Share persisted review/apply/test/verify/undo setup between native HA controls and administrator tools; keep narrow layouts and existing theme primitives.",
-    "Use container queries for recipient/composer columns, retain all communication modes in compact layouts, and separate settings into a native modal with keyboard tabs; reuse the HA theme and existing RoomCall vector brand for the native app."
+    "Use container queries for recipient/composer columns, retain all communication modes in compact layouts, and separate settings into a native modal with keyboard tabs; reuse the HA theme and existing RoomCall vector brand for the native app.",
+    "Extend the existing Siri panel with a live destination choice, native template exports, a multiple-room checkbox and message-source select; preserve HA theme controls. The 21st CLI is unavailable in this environment."
   ],
   "evidence": [
     {

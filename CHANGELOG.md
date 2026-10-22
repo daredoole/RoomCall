@@ -4,6 +4,16 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.10.2 — 2026-10-22
+
+- Generate native Home Assistant Perform Action templates with a live room picker,
+  optional multiple rooms, and text supplied by another shortcut.
+- Discover friendly destination choices from permitted RoomCall speakers on every run;
+  keep Everywhere explicit and reject empty live-picker targets.
+- Configure the Companion server and action on import without embedding private IDs,
+  addresses or credentials. Native exports support local or opt-in account signing.
+- Remove the incorrect blank-message conditional from portable URL exports.
+
 ## 0.10.1 — 2026-10-22
 
 - Include the configured chime in typed, Siri, notify and scheduled announcements

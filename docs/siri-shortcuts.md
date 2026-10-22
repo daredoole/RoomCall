@@ -45,43 +45,69 @@ To upgrade a URL shortcut, keep **Ask for Input**, remove **URL Encode / Open UR
 and add **Dictionary → Perform Action** as above. Do not use Apple's Home
 **Intercom** action.
 
+## One shortcut with a live room picker
+
+In **RoomCall → Settings → Siri Shortcuts**, choose **Ask each time — live RoomCall rooms**.
+Leave **Native Perform Action template** selected, optionally enable **Allow selecting
+several rooms**, and choose the message source:
+
+- **Ask for text or Siri dictation** asks for a message on each run.
+- **Use text passed by another shortcut** takes the Shortcut Input. Pass text with
+  **Run Shortcut**; an empty input produces an error instead of an announcement.
+
+Generate the template, sign it, then import it. On import, choose your HA server and
+**roomcall.communicate** for **both** Home Assistant steps. Fixed-room templates
+have one Home Assistant step: choose your server and **roomcall.broadcast**.
+These selectors belong to the Companion app and must be configured on the phone;
+the generated file contains no user's server ID, address, credentials or dictated message.
+The template already builds the Dictionary and passes its variables correctly.
+
+The live template uses **Perform Action** with
+`{"operation":"discover","request":{}}`, reads **shortcut_choices**, and presents
+its friendly names with **Choose from List**. It sends the selected area IDs and
+message through the structured `send` operation. Only permitted destinations are
+listed. Duplicate names are disambiguated by area ID. New RoomCall rooms appear
+on the next run. **Everywhere** is an explicit choice; an empty selection never
+silently becomes Everywhere. Canceling the picker cancels the shortcut.
+
+Use a current Companion app that supports responses from **Perform Action**.
+The two native steps must select the same server. This uses the app's existing
+connection and authentication; it does not require an HA token in Shortcuts.
+
 ## Downloadable shortcut generator
 
-The same RoomCall settings panel also generates a file for each room or
-**Everywhere**. These portable exports use the
-[HA URL handler](https://companion.home-assistant.io/docs/integrations/url-handler/).
-They use the first server configured in your iPhone's HA app, open the app, and
-require confirmation on every run. This adds delay; use Perform Action above
-when you want to avoid it.
-
-Apple requires shared `.shortcut` files to be signed before importing on iPhone.
-RoomCall offers these export options:
+Apple requires generated `.shortcut` files to be signed before importing on iPhone.
+The generator offers:
 
 | Format | What you do next |
 |---|---|
-| **Cherri source** | Compile/sign on Linux or Mac using [Cherri](https://github.com/electrikmilk/cherri). |
-| **Unsigned shortcut** | Sign it with Apple's `shortcuts` command on a Mac. |
-| **Signed iPhone shortcut** | Supply your own [HubSign account/API key](https://routinehub.co/) and explicitly allow external signing. Download and open on iPhone. |
+| **Native Perform Action template** | Sign locally on a Mac, then configure its HA selectors during import. Supports the live picker and Shortcut Input. |
+| **Signed native Perform Action** | Supply your own HubSign API key and signing consent. Configure its HA selectors during import. |
+| **Cherri source** | Fixed-room URL fallback; compile/sign with Cherri. |
+| **Unsigned shortcut** | Fixed-room URL fallback; sign locally on a Mac. |
+| **Signed iPhone shortcut** | Fixed-room URL fallback; supply your own HubSign key and consent. |
 
-For Cherri, run this with the generated filename:
-
-```bash
-cherri "RoomCall Basement.cherri" --hubsign --share=anyone
-```
-
-This uses Cherri's external signing provider. Review that tool's current service
-terms and privacy information before using it. For local signing on a Mac:
+For local signing on a Mac:
 
 ```bash
 shortcuts sign --mode anyone --input "RoomCall Basement unsigned.shortcut" --output "RoomCall Basement.shortcut"
 ```
 
-RoomCall's optional signing request sends the room name/ID and generated shortcut
-to RoutineHub. It contains no HA address, HA token, or dictated message. Your
-HubSign API key is sent to that provider, used only for this request, and never
-stored by RoomCall. The password field is cleared after the request or when the
-settings panel closes. Source exports require no account or external request.
-Unsigned source files cannot be imported directly on an iPhone.
+For portable Cherri source:
+
+```bash
+cherri "RoomCall Basement.cherri" --hubsign --share=anyone
+```
+
+URL fallback exports use the first server configured in the HA app, open the app,
+and require confirmation every run. Native templates use **Perform Action** to
+avoid that repeated URL confirmation. iOS may still require permissions or unlocking.
+
+Optional signing sends the generated shortcut and its destination name/ID to
+RoutineHub, along with your own HubSign API key for that request. RoomCall never
+stores the key; the password field clears after the request or on closing Settings.
+No HA address, token or spoken message is sent. Source exports need no external
+request. Unsigned files cannot be imported directly on iPhone.
 
 ## Chimes and latency
 
