@@ -390,3 +390,36 @@ async def test_confirming_while_it_plays_does_not_reopen_the_task(
     played.clear()
     await _advance(hass, 60)
     assert not played and item.task_state == "done"
+
+
+async def test_reminders_never_reopen_and_retired_announcers_stay_quiet(
+    hass: HomeAssistant, house, hass_admin_user
+):
+    async_mock_service(hass, "notify", "mobile_app_alex_phone")
+    async_mock_service(hass, "notify", "mobile_app_sam_phone")
+    entry = await _setup(hass, hass_admin_user.id)
+    played = async_mock_service(hass, "media_player", "play_media")
+    sid = await _add(hass, entry, "triggered", {**LAUNDRY, "rooms": [house["kitchen"]]})
+    announcer = hass.data[DOMAIN].announcer
+    hass.states.async_set("sensor.dryer", "done", {"friendly_name": "Dryer"})
+    await hass.async_block_till_done()
+    item = announcer.items[sid]
+    assert item.task_state == "open"
+
+    # A reminder queued just before someone confirms the task stays silent.
+    await announcer.async_complete(sid, Context(user_id=hass_admin_user.id))
+    played.clear()
+    assert (await announcer.async_play(sid, reminder=True))["ok"] is False
+    assert not played and item.task_state == "done" and item._reminder is None
+
+    # A reload while a task plays: the retired announcer must not schedule reminders.
+    real_send = announcements.send
+
+    async def send_then_reload(*args, **kwargs):
+        record = await real_send(*args, **kwargs)
+        announcer.async_stop()
+        return record
+
+    with patch("custom_components.roomcall.announcements.send", send_then_reload):
+        await announcer.async_play(sid)
+    assert item.task_state == "open" and item._reminder is None

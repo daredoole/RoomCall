@@ -168,6 +168,7 @@ class Announcer:
             if sub.subentry_type in (SUBENTRY_SCHEDULED, SUBENTRY_TRIGGERED)
         }
         self._unsubs: list[Callable[[], None]] = []
+        self._stopped = False  # a reload replaces this announcer; plays in flight must not remind
         self._store: Store[dict[str, Any]] = Store(hass, 1, f"roomcall.{entry.entry_id}.tasks")
 
     async def async_load(self) -> None:
@@ -217,6 +218,7 @@ class Announcer:
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
+        self._stopped = True
         for item in self.items.values():
             if item._pending is not None:
                 item._pending()
@@ -231,6 +233,8 @@ class Announcer:
     def _remind(self, item: Announcement, minutes: float | None = None) -> None:
         """Play the announcement again later while its task is open."""
         self._cancel_reminder(item)
+        if self._stopped:
+            return
         if minutes is None:
             minutes = float(item.data.get(CONF_REMIND_EVERY, DEFAULT_REMIND_EVERY) or 0)
         if not minutes:
@@ -240,7 +244,7 @@ class Announcer:
         def fire(_now: datetime) -> None:
             item._reminder = None
             if item.enabled:
-                self.hass.async_create_task(self.async_play(item.subentry_id))
+                self.hass.async_create_task(self.async_play(item.subentry_id, reminder=True))
             else:  # paused: keep the task open and check again later
                 self._remind(item)
 
@@ -364,10 +368,15 @@ class Announcer:
         self._unsubs.append(async_track_state_change_event(self.hass, [entity], changed))
 
     async def async_play(
-        self, subentry_id: str, variables: dict[str, Any] | None = None
+        self, subentry_id: str, variables: dict[str, Any] | None = None, *, reminder: bool = False
     ) -> dict[str, Any]:
-        """Play one announcement now (used by schedules, triggers and the Play button)."""
+        """Play one announcement now (used by schedules, triggers and the Play button).
+
+        A reminder only repeats an open task; it never reopens one confirmed meanwhile.
+        """
         item = self.items[subentry_id]
+        if reminder and item.task_opened is None:
+            return {"ok": False, "error": "task_not_open"}
         if item.task:
             # Reminders replay with the values of the change that opened the task.
             if variables is None:
