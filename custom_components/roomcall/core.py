@@ -264,7 +264,13 @@ async def _run_ffmpeg(ffmpeg_binary: str, args: list[str], data: bytes | None) -
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    out, err = await proc.communicate(data)
+    try:
+        out, err = await proc.communicate(data)
+    except asyncio.CancelledError:
+        if proc.returncode is None:
+            proc.kill()
+        await proc.communicate()
+        raise
     if proc.returncode != 0 or not out:
         raise TranscodeError(err.decode(errors="replace").strip() or "ffmpeg produced no audio")
     return out
@@ -345,29 +351,21 @@ async def _play_once(
     entity_id: str,
     media_id: str,
     volume: float | None,
-    chime_message: dict[str, Any] | None,
 ) -> None:
     state = hass.states.get(entity_id)
     features = state.attributes.get("supported_features", 0) if state else 0
     announce = bool(features & MediaPlayerEntityFeature.MEDIA_ANNOUNCE)
-    if chime_message is not None:
-        domain, service = "chime_tts", "say"
-        data: dict[str, Any] = {ATTR_ENTITY_ID: entity_id, "announce": announce, **chime_message}
-        if volume is not None:
-            data["volume_level"] = volume
-    else:
-        domain, service = MEDIA_PLAYER_DOMAIN, SERVICE_PLAY_MEDIA
-        data = {
-            ATTR_ENTITY_ID: entity_id,
-            ATTR_MEDIA_CONTENT_ID: media_id,
-            ATTR_MEDIA_CONTENT_TYPE: MediaType.MUSIC,
-        }
-        if announce:
-            data[ATTR_MEDIA_ANNOUNCE] = True
-        if volume is not None:
-            data[ATTR_MEDIA_EXTRA] = {"volume": round(volume * 100)}
+    data: dict[str, Any] = {
+        ATTR_ENTITY_ID: entity_id,
+        ATTR_MEDIA_CONTENT_ID: media_id,
+        ATTR_MEDIA_CONTENT_TYPE: MediaType.MUSIC,
+    }
+    if announce:
+        data[ATTR_MEDIA_ANNOUNCE] = True
+    if volume is not None:
+        data[ATTR_MEDIA_EXTRA] = {"volume": round(volume * 100)}
     async with asyncio.timeout(30):
-        await hass.services.async_call(domain, service, data, blocking=True)
+        await hass.services.async_call(MEDIA_PLAYER_DOMAIN, SERVICE_PLAY_MEDIA, data, blocking=True)
 
 
 def supports_announce(hass: HomeAssistant, entity_id: str) -> bool:
@@ -381,7 +379,6 @@ async def _play_one(
     entity_id: str,
     media_id: str,
     volume: float | None,
-    chime_message: dict[str, Any] | None,
     *,
     delay: float = 0.0,
     retry: bool = False,
@@ -438,7 +435,7 @@ async def _play_one(
     try:
         if on_dispatch:
             on_dispatch()
-        result = await _attempt(hass, entity_id, media_id, volume, chime_message, retry)
+        result = await _attempt(hass, entity_id, media_id, volume, retry)
         return result
     finally:
         if lock is not None:
@@ -454,7 +451,6 @@ async def _attempt(
     entity_id: str,
     media_id: str,
     volume: float | None,
-    chime_message: dict[str, Any] | None,
     retry: bool,
 ) -> Delivery:
     started = time.perf_counter()
@@ -465,7 +461,7 @@ async def _attempt(
             await asyncio.sleep(RETRY_DELAY_SECONDS)
         attempts += 1
         try:
-            await _play_once(hass, entity_id, media_id, volume, chime_message)
+            await _play_once(hass, entity_id, media_id, volume)
         except Exception as err:
             error = str(err) or type(err).__name__
             _LOGGER.warning("RoomCall could not play on %s (try %d): %s", entity_id, attempts, err)
@@ -491,7 +487,6 @@ async def fan_out(
     *,
     target: str,
     kind: str,
-    chime_message: dict[str, Any] | None = None,
     stagger: float = 0.0,
     retry: bool = False,
     volumes: dict[str, float | None] | None = None,
@@ -515,7 +510,6 @@ async def fan_out(
                 e,
                 (media_ids or {}).get(e, media_id),
                 (volumes or {}).get(e, volume),
-                chime_message,
                 delay=i * stagger,
                 retry=retry,
                 restore=restore,

@@ -10,7 +10,7 @@ export class RoomCallControls {
     style.textContent = `
       .communication { display:grid; gap:10px; min-width:0 }
       .communication nav { display:flex; gap:6px; flex-wrap:wrap }
-      .communication textarea,.communication select { font:inherit; color:var(--primary-text-color);
+      .communication textarea,.communication select,.shortcut-builder input[type=password] { font:inherit; color:var(--primary-text-color);
         background:var(--card-background-color); border:1px solid var(--divider-color);
         border-radius:8px; padding:10px; width:100%; box-sizing:border-box; min-width:0 }
       .communication textarea { min-height:80px; resize:vertical }
@@ -42,6 +42,12 @@ export class RoomCallControls {
       .settings-body [role=tabpanel] { min-width:0; }
       .communication.settings-surface { display:contents; }
       .setup-review { overflow-wrap:anywhere; }
+      .shortcut-builder,.shortcut-instructions { display:grid; gap:12px; min-width:0; }
+      .shortcut-builder label { display:grid; gap:6px; min-width:0; }
+      .shortcut-builder .remote-consent { display:flex; align-items:flex-start; gap:8px; }
+      .shortcut-builder p { margin:0; overflow-wrap:anywhere; }
+      .shortcut-builder code { white-space:pre-wrap; overflow-wrap:anywhere; }
+
       .setup-review ul { padding-inline-start:20px; }
       .setup-wizard input[type=checkbox] { width:20px; height:20px; flex-shrink:0; }
       .setup-wizard label { min-height:44px; display:flex; align-items:center; gap:8px; }
@@ -111,7 +117,7 @@ export class RoomCallControls {
     tabs.setAttribute("role", "tablist");
     const prefix = `roomcall-${crypto.randomUUID()}`;
     this.panels = {};
-    for (const key of ["setup", "stations", "voicemail"]) {
+    for (const key of ["setup", "shortcuts", "stations", "voicemail"]) {
       const panel = document.createElement("section");
       panel.setAttribute("role", "tabpanel");
       panel.setAttribute("aria-label", this.t(key));
@@ -146,6 +152,8 @@ export class RoomCallControls {
     this.quickTests.className = "quick-tests";
     this.panels.setup.append(this.quickTests);
     this.panels.stations.append(this.setup);
+    this.shortcutBuilder = new ShortcutBuilder(this);
+    this.panels.shortcuts.append(this.shortcutBuilder.root);
     this.wizard = new SetupWizard(this);
     this.quickTests.before(this.wizard.root);
     const settings = this.button("settings", () => this.openSettings());
@@ -268,6 +276,7 @@ export class RoomCallControls {
     this.capabilities = await this.command("discover");
     if (this.closed) return;
     this.satellites.replaceChildren(...this.capabilities.satellites.filter((s) => s.can_ask && s.available).map((s) => new Option(s.name, s.entity_id)));
+    this.shortcutBuilder.rooms(this.capabilities.rooms || this.capabilities.areas.map(a => ({area_id:a.id,name:a.name})));
     this.setup.replaceChildren();
     this.quickTests.replaceChildren();
     this.quickTests.hidden = this.wizard.active?.state === "applied";
@@ -747,5 +756,116 @@ class StationClient {
     this.unsubscribe?.();
     this.panel.remove();
     await closing;
+  }
+}
+
+
+class ShortcutBuilder {
+  constructor(controls) {
+    this.controls = controls;
+    this.root = document.createElement("section");
+    this.root.className = "shortcut-builder";
+    const label = (key, child) => {
+      const result = document.createElement("label");
+      result.append(document.createTextNode(controls.t(key)), child);
+      return result;
+    };
+    const description = document.createElement("p");
+    description.textContent = controls.t("shortcut_description");
+    this.room = controls.select("shortcut_room");
+    this.format = controls.select("shortcut_format");
+    for (const key of ["native", "cherri", "shortcut", "signed"]) this.format.append(new Option(controls.t(`shortcut_format_${key}`), key));
+    this.key = document.createElement("input");
+    this.key.type = "password";
+    this.key.autocomplete = "off";
+    this.key.maxLength = 512;
+    this.key.setAttribute("aria-label", controls.t("shortcut_signing_key"));
+    this.consent = document.createElement("input");
+    this.consent.type = "checkbox";
+    const consentLabel = label("shortcut_remote_consent", this.consent);
+    consentLabel.className = "remote-consent";
+    this.remote = document.createElement("section");
+    this.remote.append(label("shortcut_signing_key", this.key), consentLabel);
+    this.remote.hidden = true;
+    const hint = document.createElement("p");
+    hint.className = "muted";
+    hint.textContent = controls.t("shortcut_signing_help");
+    this.status = document.createElement("p");
+    this.status.setAttribute("role", "status");
+    this.status.className = "muted";
+    this.instructions = document.createElement("div");
+    this.instructions.className = "shortcut-instructions";
+    this.signingHint = hint;
+    this.download = controls.button("shortcut_download", () => this.generate());
+    this.room.addEventListener("change", () => this.update());
+    this.format.addEventListener("change", () => {
+      this.remote.hidden = this.format.value !== "signed";
+      this.key.value = "";
+      this.consent.checked = false;
+      this.status.textContent = "";
+      this.update();
+    });
+    this.root.append(description, label("shortcut_room", this.room), label("shortcut_format", this.format),
+      this.instructions, this.remote, this.download, this.status, hint);
+    controls.dialog.addEventListener("close", () => { this.key.value = ""; this.consent.checked = false; });
+  }
+  rooms(rooms) {
+    const selected = this.room.value || this.controls.card._target;
+    this.room.replaceChildren(new Option(this.controls.t("shortcut_choose_room"), ""),
+      ...rooms.map(room => new Option(room.name, room.area_id)));
+    // Everywhere is an explicit destination, never a missing-room fallback.
+    this.room.append(new Option(this.controls.t("shortcut_everywhere"), "all"));
+    this.room.value = selected || "";
+    this.update();
+  }
+  update() {
+    this.download.disabled = !this.room.value || this.busy;
+    for (const input of [this.room, this.format, this.key, this.consent]) input.disabled = Boolean(this.busy);
+    const native = this.format.value === "native";
+    this.download.hidden = native;
+    this.instructions.hidden = !native;
+    this.signingHint.hidden = native;
+    this.remote.hidden = this.format.value !== "signed";
+    const name = this.room.selectedOptions[0]?.textContent || "";
+    const values = {room:this.room.value, name, prompt:this.controls.t("shortcut_prompt", {room:name})};
+    this.instructions.replaceChildren(...(this.room.value ?
+      ["shortcut_native_ask", "shortcut_native_dictionary", "shortcut_native_action", "shortcut_native_note"] :
+      ["shortcut_choose_room"]).map(key => {
+        const paragraph = document.createElement("p");
+        paragraph.textContent = this.controls.t(key, values);
+        return paragraph;
+      }));
+  }
+  async generate() {
+    if (this.busy || !this.room.value || this.format.value === "native") return;
+    if (this.format.value === "signed" && (!this.consent.checked || !this.key.value.trim())) {
+      this.status.textContent = this.controls.t("shortcut_signing_required");
+      return;
+    }
+    this.busy = true;
+    this.update();
+    this.status.textContent = this.controls.t("shortcut_generating");
+    try {
+      const language = (this.controls.card._hass.language || "en").split("-")[0];
+      const response = await this.controls.card._hass.fetchWithAuth("/api/roomcall/shortcut", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({room:this.room.value, format:this.format.value,
+          language:["en","es","de","fr","nl"].includes(language)?language:"en",
+          allow_remote:this.consent.checked, signing_key:this.key.value}),
+      });
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error?.message || this.controls.t("shortcut_signing_failed"));
+      }
+      const header = response.headers.get("Content-Disposition") || "";
+      const encoded = header.split("UTF-8''")[1];
+      const filename = encoded ? decodeURIComponent(encoded) : "RoomCall.shortcut";
+      const url = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a");
+      anchor.href = url; anchor.download = filename; this.root.append(anchor); anchor.click(); anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      this.status.textContent = this.controls.t(this.format.value === "signed" ? "shortcut_signed_ready" : "shortcut_source_ready");
+    } catch (error) { this.status.textContent = error.message; }
+    finally { this.key.value = ""; this.busy = false; this.update(); }
   }
 }

@@ -64,9 +64,7 @@ async def test_broadcast_message_to_one_room(hass: HomeAssistant, setup_roomcall
     played = sorted(c.data["entity_id"] for c in calls)
     assert played == ["media_player.kitchen_hub", "media_player.kitchen_sonos"]
     assert all(c.data["announce"] is True for c in calls)
-    assert (
-        calls[0].data["media_content_id"].startswith("media-source://tts/tts.piper?message=Dinner")
-    )
+    assert calls[0].data["media_content_id"].startswith("http://ha.local:8123/api/roomcall/clip/")
     assert calls[0].data["extra"] == {"volume": 40}
     assert response["ok"] is True
     state = hass.states.get("sensor.roomcall_last_call")
@@ -187,7 +185,7 @@ async def test_unload(hass: HomeAssistant, setup_roomcall) -> None:
     assert DOMAIN not in hass.data
 
 
-async def test_message_uses_chime_tts_when_available(
+async def test_message_has_builtin_chime_even_with_chime_tts_loaded(
     hass: HomeAssistant, setup_roomcall, house
 ) -> None:
     hass.config.components.add("chime_tts")
@@ -197,11 +195,12 @@ async def test_message_uses_chime_tts_when_available(
     await hass.services.async_call(
         DOMAIN, "broadcast", {"areas": [house["basement"]], "message": "Hi"}, blocking=True
     )
-    assert not play_calls
-    assert chime_calls[0].data["chime_path"] == "http://ha.local:8123/api/roomcall/chime/chirp.mp3"
-    assert chime_calls[0].data["message"] == "Hi"
-    assert chime_calls[0].data["announce"] is True
-    assert chime_calls[0].data["volume_level"] == 0.4
+    assert not chime_calls
+    assert (
+        play_calls[0].data["media_content_id"].startswith("http://ha.local:8123/api/roomcall/clip/")
+    )
+    assert play_calls[0].data["announce"] is True
+    assert play_calls[0].data["extra"] == {"volume": 40}
 
 
 async def test_chime_can_be_disabled(hass: HomeAssistant, house) -> None:

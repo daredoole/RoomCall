@@ -73,7 +73,7 @@ def check_large_text(browser) -> None:
         setup = dialog.get_by_role("tab", name="Setup and sound tests", exact=True)
         setup.focus()
         page.keyboard.press("ArrowRight")
-        expect(dialog.get_by_role("tab", name="Room stations", exact=True)).to_be_focused()
+        expect(dialog.get_by_role("tab", name="Siri Shortcuts", exact=True)).to_be_focused()
         page.keyboard.press("Home")
         expect(setup).to_be_focused()
         page.keyboard.press("Escape")

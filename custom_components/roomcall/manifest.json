@@ -6,7 +6,6 @@
     "frontend",
     "lovelace",
     "network",
-    "tts",
     "zeroconf"
   ],
   "codeowners": [
@@ -17,7 +16,8 @@
     "http",
     "ffmpeg",
     "media_player",
-    "websocket_api"
+    "websocket_api",
+    "tts"
   ],
   "documentation": "https://daredoole.github.io/RoomCall/home-assistant/",
   "integration_type": "service",
@@ -27,5 +27,5 @@
     "HAP-python>=5.0.0"
   ],
   "single_config_entry": true,
-  "version": "0.10.0"
+  "version": "0.10.1"
 }

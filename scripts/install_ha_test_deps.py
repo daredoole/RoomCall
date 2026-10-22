@@ -1,4 +1,4 @@
-"""Install the conversation dependencies pinned by the HA version under test."""
+"""Install integration dependencies pinned by the HA version under test."""
 
 from __future__ import annotations
 
@@ -9,6 +9,8 @@ from pathlib import Path
 
 import homeassistant
 
-manifest = Path(homeassistant.__file__).parent / "components/conversation/manifest.json"
-requirements = json.loads(manifest.read_text())["requirements"]
+requirements = []
+for domain in ("conversation", "tts"):
+    manifest = Path(homeassistant.__file__).parent / f"components/{domain}/manifest.json"
+    requirements.extend(json.loads(manifest.read_text())["requirements"])
 subprocess.run(["uv", "pip", "install", "--python", sys.executable, *requirements], check=True)

@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
+from homeassistant.components.ffmpeg import get_ffmpeg_manager
+from homeassistant.components.tts import async_get_media_source_audio
 from homeassistant.core import Context, HomeAssistant
+from homeassistant.helpers.network import NoURLAvailableError
 
 from .calls import CallError, CallRequest, place_call
-from .core import CallRecord
+from .core import CallRecord, to_playable
 from .errors import Problem
 
 if TYPE_CHECKING:
@@ -23,8 +28,6 @@ async def request_for(
     values: dict[str, Any],
     context: Context,
 ) -> CallRequest:
-    from . import _message_chime
-
     message = values.get("message")
     language = values.get("language")
     preferred = {data.preferences.get(p, {}).get("language") for p in values.get("people", [])}
@@ -59,7 +62,8 @@ async def request_for(
             message = translated.strip()
         except Exception as err:
             raise Problem("translation_failed", retryable=True) from err
-    chime_message = None
+    audio = None
+    seconds = None
     if message:
         engine = data.tts_engine or next(iter(hass.states.async_entity_ids("tts")), None)
         if engine is None:
@@ -68,10 +72,44 @@ async def request_for(
         if language:
             media_id += f"&language={quote(language)}"
         kind = "message"
-        if (path := _message_chime(hass, data)) and "chime_tts" in hass.config.components:
-            chime_message = {"message": message, "tts_platform": engine, "chime_path": path}
-            if language:
-                chime_message["language"] = language
+        if data.chime_style or data.chime_url:
+            from .communication import validate_targets
+            from .http import base_url
+
+            # Reject blocked/unauthorized routing before asking a speech provider to work.
+            await validate_targets(
+                hass,
+                {
+                    **values,
+                    "everywhere": not any(values.get(k) for k in ("areas", "speakers", "people")),
+                },
+                context,
+                None,
+            )
+            try:
+                base = base_url(hass)
+            except NoURLAvailableError as err:
+                raise Problem("speaker_url_missing") from err
+            started = time.monotonic()
+            try:
+                async with asyncio.timeout(30):
+                    extension, speech = await async_get_media_source_audio(hass, media_id)
+                    audio, content_type = await to_playable(
+                        get_ffmpeg_manager(hass).binary,
+                        speech,
+                        f"audio/{extension}",
+                        0,
+                        data.chime_style,
+                        data.chime_url,
+                    )
+                if not audio:
+                    raise ValueError("empty TTS audio")
+            except Exception as err:
+                raise Problem("tts_preparation_failed", retryable=True) from err
+            data.metrics.observe("tts_prepare", (time.monotonic() - started) * 1000)
+            clip_id = data.clips.add(audio, content_type)
+            media_id = f"{base}/api/roomcall/clip/{clip_id}.mp3"
+            seconds = len(audio) * 8 / 128000
     elif values.get("media_url"):
         media_id, kind = values["media_url"], "media"
     else:
@@ -84,7 +122,8 @@ async def request_for(
         priority=values.get("priority", "normal"),
         volume=values.get("volume"),
         message=message,
-        chime_message=chime_message,
+        audio=audio,
+        seconds=seconds,
         caller_user_id=context.user_id,
         language=language,
         require_ack=values.get("require_ack", False),

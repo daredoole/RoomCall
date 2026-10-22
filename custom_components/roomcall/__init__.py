@@ -17,7 +17,6 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
@@ -27,7 +26,6 @@ from .announcements import Announcer
 from .calls import CallError
 from .communication import SCHEMAS, execute
 from .const import (
-    API_CHIME,
     ATTR_MEDIA_URL,
     ATTR_MESSAGE,
     ATTR_PRIORITY,
@@ -86,8 +84,8 @@ from .http import (
     LiveView,
     LocaleView,
     RoomsView,
+    ShortcutView,
     TalkView,
-    base_url,
 )
 from .jobs import Jobs
 from .live import LiveStore
@@ -226,18 +224,6 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
     )
 
 
-def _message_chime(hass: HomeAssistant, data: RoomCallData) -> str | None:
-    """Chime TTS ``chime_path`` that matches the push-to-talk chime."""
-    if data.chime_url:
-        return data.chime_url
-    if data.chime_style is None:
-        return None
-    try:
-        return f"{base_url(hass)}{API_CHIME.format(style=data.chime_style)}.mp3"
-    except NoURLAvailableError:
-        return None
-
-
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register HTTP views, the dashboard card and the broadcast action once."""
     await localization.async_load(hass)
@@ -247,6 +233,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     for view in (
         TalkView,
         RoomsView,
+        ShortcutView,
         ClipView,
         LiveView,
         ChimeView,

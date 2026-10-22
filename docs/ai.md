@@ -60,6 +60,21 @@ explicit acknowledgment where available. Errors are
 `ServiceValidationError`s with a plain-language reason, for example *"Do Not Disturb is on. Send
 it as urgent to override."*
 
+### Siri shortcut setup and exports
+
+The catalog's `shortcut_exports` describes the authenticated download endpoint:
+`POST /api/roomcall/shortcut`, with `room`, optional `language`, and `format`
+(`cherri`, `shortcut`, or `signed`). Discover exact room IDs first. Exports are
+restricted to configured rooms and the caller's permitted speakers. Unknown IDs
+return `no_targets`; they never fall back to Everywhere.
+
+Recommend the HA Companion **Perform Action** action for Siri. Its server must
+be selected on the phone; use a Shortcuts Dictionary containing the exact room ID
+and the Ask for Input message variable. Portable file exports use the URL handler
+and require confirmation each time. Unsigned exports need signing before iPhone
+import. Signed exports require the user's own HubSign key and explicit
+`allow_remote: true`; do not persist the key. See [Siri setup](siri-shortcuts.md).
+
 ## 3. Create, change and delete announcements
 
 Announcements are **config subentries** of the RoomCall entry, types `scheduled` and

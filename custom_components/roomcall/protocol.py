@@ -55,6 +55,7 @@ def next_actions(code: str) -> list[dict[str, Any]]:
         "quiet_hours_blocked": ("diagnose", {}),
         "playback_failed": ("doctor", {}),
         "provider_failed": ("doctor", {}),
+        "tts_preparation_failed": ("diagnose", {}),
     }.get(code, ("catalog", {}))
     return [{"operation": operation, "request": request}]
 
@@ -82,5 +83,21 @@ def catalog(hass: HomeAssistant) -> dict[str, Any]:
             for name, schema in SCHEMAS.items()
         },
         "setup_sequence": ["discover", "plan", "apply", "test", "confirm", "verify"],
+        "shortcut_exports": {
+            "recommended": {
+                "app": "Home Assistant",
+                "action": "Perform Action",
+                "service": "roomcall.broadcast",
+                "server_selection": "on_device",
+                "data": {"areas": "room_id", "message": "Ask for Input magic variable"},
+            },
+            "method": "POST",
+            "path": "/api/roomcall/shortcut",
+            "formats": ["cherri", "shortcut", "signed"],
+            "signed_requires": ["allow_remote", "signing_key"],
+            "signing_key_persisted": False,
+            "export_transport": "homeassistant_url",
+            "export_requires_confirmation_each_run": True,
+        },
         "audible": None,
     }

@@ -4,6 +4,17 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.10.1 — 2026-10-22
+
+- Include the configured chime in typed, Siri, notify and scheduled announcements
+  without requiring Chime TTS; synthesize once per message and report preparation
+  failures explicitly. Record local TTS preparation timing and hosted fetch evidence.
+- Add room-specific Siri setup in the card, recommending Home Assistant Perform Action
+  to avoid URL confirmation; retain downloadable portable URL shortcuts with clear
+  signing requirements and optional consent-based signing using the user's HubSign key.
+- Advertise shortcut setup/export metadata to agents; translate the controls in all
+  five languages and cover narrow layouts, signing failures and real chime audio.
+
 ## 0.10.0 — 2026-10-21
 
 - Adapt the dashboard to its container width, retain Talk/Type/Ask in compact layouts,
