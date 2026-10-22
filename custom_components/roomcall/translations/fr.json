@@ -347,7 +347,7 @@
         "shortcut_signing_failed": "Échec de la signature. Vérifiez votre compte HubSign ou téléchargez la source pour une signature locale.",
         "shortcut_everywhere": "Partout",
         "tts_preparation_failed": "Impossible de préparer la voix avec le carillon configuré. Vérifiez le fournisseur vocal et le fichier de carillon personnalisé.",
-        "shortcut_format_native": "Modèle natif Perform Action — signature locale",
+        "shortcut_format_native": "Modèle natif Perform Action — non signé, à signer sur un Mac",
         "shortcut_native_ask": "1. Dans Raccourcis Apple, ajoutez Demander une entrée (Texte) avec la question : {prompt}",
         "shortcut_native_dictionary": "Destination fixe : {name} ({room}). Le modèle natif contient déjà le dictionnaire du message.",
         "shortcut_native_action": "3. Ajoutez Home Assistant → Perform Action. Choisissez votre serveur et roomcall.broadcast. Utilisez la variable Dictionnaire comme données. Nommez le raccourci RoomCall {name}.",
@@ -368,7 +368,9 @@
         "remind_later": "Me le rappeler plus tard",
         "tasks": "À faire",
         "task_announced": "Annoncé {time}",
-        "tool_tasks": "Lister les tâches d'annonces en attente, confirmer qu'une tâche a été faite (complete) ou la rappeler plus tard (snooze). Ne terminer une tâche que lorsqu'une personne dit l'avoir faite ; ne jamais le supposer."
+        "tool_tasks": "Lister les tâches d'annonces en attente, confirmer qu'une tâche a été faite (complete) ou la rappeler plus tard (snooze). Ne terminer une tâche que lorsqu'une personne dit l'avoir faite ; ne jamais le supposer.",
+        "station_room": "Pièce de ce tableau de bord",
+        "no_stations": "Aucune autre station n'est ouverte. Ouvrez RoomCall sur un autre tableau de bord et activez sa station pour l'appeler."
       }
     },
     "audio_processing": {

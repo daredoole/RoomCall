@@ -347,7 +347,7 @@
         "shortcut_signing_failed": "Ondertekenen mislukt. Controleer je HubSign-account of download de broncode om lokaal te ondertekenen.",
         "shortcut_everywhere": "Overal",
         "tts_preparation_failed": "Spraak met de ingestelde gong kon niet worden voorbereid. Controleer de spraakdienst en het aangepaste gongbestand.",
-        "shortcut_format_native": "Native Perform Action-sjabloon — lokaal ondertekenen",
+        "shortcut_format_native": "Native Perform Action-sjabloon — niet ondertekend, onderteken op een Mac",
         "shortcut_native_ask": "1. Voeg in Apple Opdrachten Vraag om invoer (Tekst) toe met de vraag: {prompt}",
         "shortcut_native_dictionary": "Vaste bestemming: {name} ({room}). De native sjabloon bevat het berichtenwoordenboek al.",
         "shortcut_native_action": "3. Voeg Home Assistant → Perform Action toe. Kies je server en roomcall.broadcast. Gebruik de Woordenboek-variabele als actiegegevens. Noem de opdracht RoomCall {name}.",
@@ -368,7 +368,9 @@
         "remind_later": "Herinner me later",
         "tasks": "Te doen",
         "task_announced": "Omgeroepen {time}",
-        "tool_tasks": "Openstaande taken van omroepberichten tonen, bevestigen dat er een gedaan is (complete) of later opnieuw herinneren (snooze). Rond een taak alleen af als iemand zegt dat die gedaan is; neem het nooit aan."
+        "tool_tasks": "Openstaande taken van omroepberichten tonen, bevestigen dat er een gedaan is (complete) of later opnieuw herinneren (snooze). Rond een taak alleen af als iemand zegt dat die gedaan is; neem het nooit aan.",
+        "station_room": "Ruimte van dit dashboard",
+        "no_stations": "Geen andere stations geopend. Open RoomCall op een ander dashboard en schakel daar het station in om het te bellen."
       }
     },
     "audio_processing": {

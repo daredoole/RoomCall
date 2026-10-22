@@ -48,14 +48,14 @@ and add **Dictionary → Perform Action** as above. Do not use Apple's Home
 ## One shortcut with a live room picker
 
 In **RoomCall → Settings → Siri Shortcuts**, choose **Ask each time — live RoomCall rooms**.
-Leave **Native Perform Action template** selected, optionally enable **Allow selecting
+Leave a **Native Perform Action** method selected, optionally enable **Allow selecting
 several rooms**, and choose the message source:
 
 - **Ask for text or Siri dictation** asks for a message on each run.
 - **Use text passed by another shortcut** takes the Shortcut Input. Pass text with
   **Run Shortcut**; an empty input produces an error instead of an announcement.
 
-Generate the template, sign it, then import it. On import, choose your HA server and
+Generate the template, sign it ([how](#downloadable-shortcut-generator)), then import it. On import, choose your HA server and
 **roomcall.communicate** for **both** Home Assistant steps. Fixed-room templates
 have one Home Assistant step: choose your server and **roomcall.broadcast**.
 These selectors belong to the Companion app and must be configured on the phone;
@@ -76,12 +76,19 @@ connection and authentication; it does not require an HA token in Shortcuts.
 
 ## Downloadable shortcut generator
 
+!!! warning "\"Shortcut could not be imported\""
+    iPhones only import `.shortcut` files signed by Apple, and only a Mac can sign one
+    locally. Files labelled **unsigned** must be signed on a Mac first (below). Without a
+    Mac, either build the shortcut by hand with [Perform Action](#recommended-home-assistant-perform-action)
+    (about two minutes, fixed room) or use a **Signed … HubSign account** option with your
+    own HubSign key, which imports straight on the iPhone, live room picker included.
+
 Apple requires generated `.shortcut` files to be signed before importing on iPhone.
 The generator offers:
 
 | Format | What you do next |
 |---|---|
-| **Native Perform Action template** | Sign locally on a Mac, then configure its HA selectors during import. Supports the live picker and Shortcut Input. |
+| **Native Perform Action template — unsigned, sign on a Mac** | Sign on a Mac first, then import and configure its HA selectors. Supports the live picker and Shortcut Input. |
 | **Signed native Perform Action** | Supply your own HubSign API key and signing consent. Configure its HA selectors during import. |
 | **Cherri source** | Fixed-room URL fallback; compile/sign with Cherri. |
 | **Unsigned shortcut** | Fixed-room URL fallback; sign locally on a Mac. |

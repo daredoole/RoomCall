@@ -143,16 +143,25 @@ def main() -> int:
         page.screenshot(path=OUT / "ha-card-delivered.png")
         page.close()
 
-        # The Settings panel: setup and sound tests, room stations, voicemail, Siri.
-        page = browser.new_page(viewport=phone, device_scale_factor=2)
-        open_card(page, "mobile", "dark")
-        card = page.locator("roomcall-card")
-        card.get_by_role("button", name="Settings", exact=True).click()
-        dialog = card.get_by_role("dialog", name="Settings", exact=True)
-        dialog.wait_for()
-        page.wait_for_timeout(500)
-        page.screenshot(path=OUT / "ha-settings.png")
-        page.close()
+        # Every Settings tab: setup and sound tests, Siri Shortcuts, room stations, voicemail.
+        tabs = [
+            ("ha-settings.png", None),
+            ("ha-settings-shortcuts.png", "Siri Shortcuts"),
+            ("ha-settings-stations.png", "Room stations"),
+            ("ha-settings-voicemail.png", "Voicemail"),
+        ]
+        for name, tab in tabs:
+            page = browser.new_page(viewport=phone, device_scale_factor=2)
+            open_card(page, "mobile", "dark", "&voicemail=on")
+            card = page.locator("roomcall-card")
+            card.get_by_role("button", name="Settings", exact=True).click()
+            dialog = card.get_by_role("dialog", name="Settings", exact=True)
+            dialog.wait_for()
+            if tab:
+                dialog.get_by_role("tab", name=tab, exact=True).click()
+            page.wait_for_timeout(500)
+            page.screenshot(path=OUT / name)
+            page.close()
 
         record_demo(browser, phone)
 
