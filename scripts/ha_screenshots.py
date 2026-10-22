@@ -110,6 +110,7 @@ def main() -> int:
             ("ha-card-mobile-light.png", phone, "mobile", "light", ""),
             ("ha-card-reply.png", phone, "mobile", "dark", "&roomcall=basement"),
             ("ha-card-dnd.png", phone, "mobile", "dark", "&dnd=on"),
+            ("ha-card-tasks.png", phone, "mobile", "dark", "&tasks=open"),
             (
                 "ha-card-compact.png",
                 {"width": 390, "height": 420},
@@ -140,6 +141,17 @@ def main() -> int:
             ".querySelector('.status').textContent.startsWith('Playback requests accepted')"
         )
         page.screenshot(path=OUT / "ha-card-delivered.png")
+        page.close()
+
+        # The Settings panel: setup and sound tests, room stations, voicemail, Siri.
+        page = browser.new_page(viewport=phone, device_scale_factor=2)
+        open_card(page, "mobile", "dark")
+        card = page.locator("roomcall-card")
+        card.get_by_role("button", name="Settings", exact=True).click()
+        dialog = card.get_by_role("dialog", name="Settings", exact=True)
+        dialog.wait_for()
+        page.wait_for_timeout(500)
+        page.screenshot(path=OUT / "ha-settings.png")
         page.close()
 
         record_demo(browser, phone)
