@@ -57,7 +57,7 @@ async def test_doorbell_rings_rooms_phones_and_cards(
     hass: HomeAssistant, house, hass_client, tts_audio, monkeypatch
 ):
     phone = async_mock_service(hass, "notify", "mobile_app_alex_phone")
-    clock = [1000.0]
+    clock = [3.0]  # just after boot: the first press still rings
     monkeypatch.setattr("custom_components.roomcall.doorbell.monotonic", lambda: clock[0])
     await _setup(
         hass,
@@ -138,3 +138,27 @@ async def test_no_doorbell_configured(hass: HomeAssistant, house, hass_client):
     await _setup(hass, house)
     rooms = await (await (await hass_client()).get("/api/roomcall/rooms")).json()
     assert rooms["doorbell"] is None
+
+
+async def test_the_doorbells_own_area_names_the_alert(hass: HomeAssistant, house, tts_audio):
+    from homeassistant.helpers import area_registry as ar
+
+    porch = ar.async_get(hass).async_create("Porch")
+    registry = er.async_get(hass)
+    sensor = registry.async_get_or_create(
+        "binary_sensor", "test", "porch_visitor", suggested_object_id="porch_visitor"
+    )
+    registry.async_update_entity(sensor.entity_id, area_id=porch.id)
+    hass.states.async_set("binary_sensor.porch_visitor", "off")
+    phone = async_mock_service(hass, "notify", "mobile_app_alex_phone")
+    # The camera sits in "Front Door"; the doorbell itself is on the porch.
+    await _setup(
+        hass,
+        house,
+        doorbell_entity="binary_sensor.porch_visitor",
+        doorbell_camera="camera.front_door",
+    )
+    async_mock_service(hass, "media_player", "play_media")
+    hass.states.async_set("binary_sensor.porch_visitor", "on")
+    await hass.async_block_till_done()
+    assert phone[0].data["title"] == "Porch"

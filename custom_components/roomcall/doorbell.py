@@ -34,7 +34,9 @@ QUIET = ("unavailable", "unknown", "off")
 def label(hass: HomeAssistant, data: RoomCallData) -> str:
     """Where the door is: the doorbell's area name, else its friendly name."""
     entity = data.doorbell_entity or ""
-    area = speaker_area(hass, data.doorbell_camera or entity) or speaker_area(hass, entity)
+    area = speaker_area(hass, entity) or (
+        speaker_area(hass, data.doorbell_camera) if data.doorbell_camera else None
+    )
     if area and (found := ar.async_get(hass).async_get_area(area)):
         return found.name
     state = hass.states.get(entity)
@@ -55,7 +57,7 @@ def info(hass: HomeAssistant, data: RoomCallData) -> dict[str, Any] | None:
 @callback
 def async_track(hass: HomeAssistant, data: RoomCallData) -> Callable[[], None]:
     """Ring on presses: a binary sensor turning on, or a new button or event state."""
-    rung = 0.0
+    rung: float | None = None  # no press yet, whatever the clock reads
 
     @callback
     def changed(event: Event[EventStateChangedData]) -> None:
@@ -65,7 +67,7 @@ def async_track(hass: HomeAssistant, data: RoomCallData) -> Callable[[], None]:
         # came back online, which is not a press.
         if new is None or new.state in QUIET or (old is not None and old.state == "unavailable"):
             return
-        if monotonic() - rung < COOLDOWN:
+        if rung is not None and monotonic() - rung < COOLDOWN:
             return
         rung = monotonic()
         hass.async_create_task(ring(hass, data))
