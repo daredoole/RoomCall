@@ -90,7 +90,13 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
         live = connection
         do {
             try await connection.open(client: client, room: room)
-            guard wanted else { await connection.close(); live = nil; return }
+            guard wanted, audioActive, joined else {
+                await connection.close()
+                live = nil
+                finishing = false
+                status = L(joined ? "ios_ready" : "ios_choose_room")
+                return
+            }
             let stream = AsyncThrowingStream<Data, Error>(bufferingPolicy: .bufferingOldest(50)) { self.continuation = $0 }
             audioTask = Task {
                 do {
