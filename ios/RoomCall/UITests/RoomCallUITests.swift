@@ -5,6 +5,7 @@ final class RoomCallUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(en)", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
+        print(app.debugDescription)
         let field = app.textFields["server-url"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["sign-in"].isEnabled)
