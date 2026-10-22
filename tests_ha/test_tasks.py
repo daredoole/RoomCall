@@ -425,6 +425,12 @@ async def test_reminders_never_reopen_and_retired_announcers_stay_quiet(
     notified = hass.services.async_services()["notify"]
     assert notified  # phones exist, yet the retired announcer must not use them
     calls = async_capture_events(hass, "call_service")
+    # A stopped announcer refuses changes; the caller retries on its replacement.
+    stopped = announcements.Announcer(hass, entry)
+    stopped.items = announcer.items
+    stopped.async_stop()
+    with pytest.raises(Problem):
+        await stopped.async_snooze(sid)
     with patch("custom_components.roomcall.announcements.send", send_then_reload):
         await announcer.async_play(sid)
     await hass.async_block_till_done()

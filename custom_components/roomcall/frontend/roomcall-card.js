@@ -81,8 +81,8 @@ class RoomCallCard extends HTMLElement {
     if (first) this._load();
     else {
       this._renderToggles();
-      // Task sensors change when a task opens or someone confirms it elsewhere.
-      const signature = (this._tasks || []).map((t) => hass.states[t.entity_id]?.last_changed).join();
+      // Task sensors change when a task opens, is added, or someone confirms it elsewhere.
+      const signature = this._taskStates(hass);
       if (this._taskSignature !== undefined && signature !== this._taskSignature) this._loadTasks();
     }
   }
@@ -169,8 +169,15 @@ class RoomCallCard extends HTMLElement {
     const res = await this._hass.callApi("POST", "roomcall/command", { operation: "tasks", request });
     if (!res.ok) throw new Error(res.error?.message || res.error?.code);
     this._tasks = res.tasks;
-    this._taskSignature = this._tasks.map((t) => this._hass.states[t.entity_id]?.last_changed).join();
+    this._taskSignature = this._taskStates(this._hass);
     this._renderTasks();
+  }
+
+  _taskStates(hass) {
+    // Every RoomCall task sensor, including ones added after the card loaded.
+    return Object.entries(hass.states)
+      .filter(([id, s]) => id.startsWith("sensor.") && s?.attributes && "task" in s.attributes && "done_by" in s.attributes)
+      .map(([id, s]) => `${id}:${s.last_changed}`).sort().join();
   }
 
   async _loadTasks() {

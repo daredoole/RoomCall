@@ -129,6 +129,27 @@ def check_shortcuts(browser, errors) -> None:
         page.keyboard.press("Escape")
 
 
+def check_task_added_later(browser, errors) -> None:
+    """A dashboard that loaded with no tasks shows one when its sensor appears and opens."""
+    context = browser.new_context(viewport={"width": 390, "height": 844})
+    page = context.new_page()
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    open_card(page, "mobile", "dark")
+    card = page.locator("roomcall-card")
+    region = card.get_by_role("region", name="To do", exact=True)
+    expect(region).to_be_hidden()
+    page.evaluate("""() => {
+      const h = ROOMCALL_HARNESS, task = h.tasks[0];
+      task.state = "open";
+      h.hass.states[task.entity_id] = {entity_id: task.entity_id, state: "open",
+        last_changed: new Date().toISOString(), attributes: {task: task.task, done_by: null}};
+      document.querySelector("roomcall-card").hass = {...h.hass};
+    }""")
+    expect(region).to_be_visible()
+    expect(region).to_contain_text("Laundry")
+    context.close()
+
+
 def check_tasks(browser, errors) -> None:
     """An open task is confirmed with its own words; there is no dismiss button."""
     for width in (240, 390, 900):
@@ -176,6 +197,7 @@ def main() -> None:
         check_guided_setup(browser, errors)
         check_shortcuts(browser, errors)
         check_tasks(browser, errors)
+        check_task_added_later(browser, errors)
         for width, height in [(390, 844), (1280, 900)]:
             context = browser.new_context(viewport={"width": width, "height": height})
             context.grant_permissions(["microphone"], origin=ORIGIN)

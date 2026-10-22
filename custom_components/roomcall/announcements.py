@@ -266,6 +266,9 @@ class Announcer:
         item._remind_at = dt_util.utcnow() + timedelta(minutes=minutes)
 
     def _task(self, subentry_id: str) -> Announcement:
+        if self._stopped:
+            # A reload replaced this announcer mid-request; the caller can retry on the new one.
+            raise Problem("not_ready", retryable=True)
         item = self.items.get(subentry_id)
         if item is None or not item.task:
             raise Problem("not_found")
