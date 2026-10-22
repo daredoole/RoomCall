@@ -3,9 +3,12 @@ import Foundation
 actor HAClient {
     private var credentials: Credentials
     private let session: URLSession
-    init(_ credentials: Credentials, session: URLSession = .shared) {
+    private let keychainAccount: String
+    init(_ credentials: Credentials, session: URLSession = .shared,
+         keychainAccount: String = SecureStore.account) {
         self.credentials = credentials
         self.session = session
+        self.keychainAccount = keychainAccount
     }
     func authorization() async throws -> (URL, String) {
         if credentials.expiresAt.timeIntervalSinceNow < 60 {
@@ -14,9 +17,11 @@ actor HAClient {
                          "client_id": credentials.clientID], session: session)
             guard let token = data["access_token"] as? String,
                   let seconds = data["expires_in"] as? Double else { throw NativeFailure.protocolError }
-            credentials.accessToken = token
-            credentials.expiresAt = Date().addingTimeInterval(seconds)
-            try SecureStore.save(credentials)
+            var renewed = credentials
+            renewed.accessToken = token
+            renewed.expiresAt = Date().addingTimeInterval(seconds)
+            try SecureStore.saveRefreshed(renewed, account: keychainAccount)
+            credentials = renewed
         }
         return (credentials.server, credentials.accessToken)
     }

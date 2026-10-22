@@ -104,6 +104,16 @@ async def test_announcement_retries_revision_delete_and_permissions(
         values={"message": "Changed"},
     )
     assert changed["ok"]
+    assert changed["announcement"]["values"]["message"] == "Changed"
+    assert changed["announcement"]["revision"] != enabled["announcement"]["revision"]
+    disabled = await call(
+        hass,
+        user,
+        action="disable",
+        id=item["id"],
+        revision=changed["announcement"]["revision"],
+    )
+    assert disabled["ok"] and not disabled["announcement"]["enabled"]
     await hass.async_block_till_done()
     retried = await create(hass, user, idempotency_key="dinner")
     assert (

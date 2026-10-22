@@ -31,7 +31,10 @@ struct Credentials: Codable {
 
 enum SecureStore {
     static let account = "home-assistant"
+    private static let lock = NSRecursiveLock()
     static func load(account: String = SecureStore.account) throws -> Credentials? {
+        lock.lock()
+        defer { lock.unlock() }
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: "com.daredoole.RoomCall",
             kSecAttrAccount as String: account, kSecReturnData as String: true]
@@ -44,6 +47,8 @@ enum SecureStore {
         return try JSONDecoder().decode(Credentials.self, from: data)
     }
     static func save(_ credentials: Credentials, account: String = SecureStore.account) throws {
+        lock.lock()
+        defer { lock.unlock() }
         let data = try JSONEncoder().encode(credentials)
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: "com.daredoole.RoomCall", kSecAttrAccount as String: account]
@@ -57,7 +62,17 @@ enum SecureStore {
         let status = SecItemAdd(item as CFDictionary, nil)
         guard status == errSecSuccess else { throw NativeFailure.keychain(status) }
     }
+    static func saveRefreshed(_ credentials: Credentials, account: String = SecureStore.account) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        // A refresh must never recreate a signed-out account or replace a new login.
+        guard let current = try load(account: account), current.server == credentials.server,
+              current.refreshToken == credentials.refreshToken else { throw NativeFailure.unauthorized }
+        try save(credentials, account: account)
+    }
     static func delete(account: String = SecureStore.account) throws {
+        lock.lock()
+        defer { lock.unlock() }
         let status = SecItemDelete([kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: "com.daredoole.RoomCall",
             kSecAttrAccount as String: account] as CFDictionary)

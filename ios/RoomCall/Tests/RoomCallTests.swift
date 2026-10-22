@@ -52,6 +52,47 @@ final class RoomCallTests: XCTestCase {
         try SecureStore.delete(account: account)
         XCTAssertNil(try SecureStore.load(account: account))
     }
+    func testLateRefreshCannotRestoreSignOutOrReplaceNewLogin() async throws {
+        let account = "test-" + UUID().uuidString
+        defer { try? SecureStore.delete(account: account) }
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubProtocol.self]
+        let session = URLSession(configuration: config)
+        let expired = Credentials(server: URL(string: "https://ha.example")!,
+            accessToken: "expired", refreshToken: "original-login", expiresAt: .distantPast)
+        let response = Data("{\"access_token\":\"renewed\",\"expires_in\":3600}".utf8)
+        try SecureStore.save(expired, account: account)
+        StubProtocol.handler = { _ in (200, response) }
+        let normal = HAClient(expired, session: session, keychainAccount: account)
+        let (_, token) = try await normal.authorization()
+        XCTAssertEqual(token, "renewed")
+        XCTAssertEqual(try SecureStore.load(account: account)?.accessToken, "renewed")
+
+        // Complete the refresh only after sign-out removes its credentials.
+        StubProtocol.handler = { _ in
+            try SecureStore.delete(account: account)
+            return (200, response)
+        }
+        let signedOut = HAClient(expired, session: session, keychainAccount: account)
+        for _ in 0..<2 {
+            do { _ = try await signedOut.authorization(); XCTFail("Signed-out refresh succeeded") }
+            catch { XCTAssertEqual(error.localizedDescription, NativeFailure.unauthorized.localizedDescription) }
+        }
+        XCTAssertNil(try SecureStore.load(account: account))
+
+        // Another login may complete while an older request is still in flight.
+        let replacement = Credentials(server: expired.server, accessToken: "new-login-access",
+            refreshToken: "new-login-refresh", expiresAt: .distantFuture)
+        StubProtocol.handler = { _ in
+            try SecureStore.save(replacement, account: account)
+            return (200, response)
+        }
+        let previous = HAClient(expired, session: session, keychainAccount: account)
+        do { _ = try await previous.authorization(); XCTFail("Superseded refresh succeeded") }
+        catch { XCTAssertEqual(error.localizedDescription, NativeFailure.unauthorized.localizedDescription) }
+        XCTAssertEqual(try SecureStore.load(account: account)?.refreshToken, "new-login-refresh")
+        XCTAssertEqual(try SecureStore.load(account: account)?.accessToken, "new-login-access")
+    }
     func testRoomIntentQueriesAndEscapedRoutes() async throws {
         defer { RoomCache.save([]) }
         RoomCache.save([Room(area_id: "kitchen", name: "Kitchen"), Room(area_id: "office", name: "Office")])
