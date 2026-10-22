@@ -185,6 +185,7 @@ async def test_live_choices_obey_permissions_and_disambiguate(hass, setup_roomca
                 {"name": "Same", "area_id": "first"},
                 {"name": "Same", "area_id": "second"},
                 {"name": "Everywhere", "area_id": "third"},
+                {"name": "Same (first)", "area_id": "fourth"},
             ],
         ),
         patch("custom_components.roomcall.shortcuts.resolve", return_value=[data.speakers[0]]),
@@ -192,6 +193,7 @@ async def test_live_choices_obey_permissions_and_disambiguate(hass, setup_roomca
         choices = await room_choices(hass, data, Context())
         assert choices["Same (first)"] == "first" and choices["Same (second)"] == "second"
         assert choices["Everywhere (third)"] == "third" and choices["Everywhere"] == "all"
+        assert choices["Same (first) (fourth)"] == "fourth"
     with patch("custom_components.roomcall.shortcuts.permitted", AsyncMock(return_value=False)):
         assert await room_choices(hass, data, Context()) == {}
         with pytest.raises(Problem, match="no_targets"):

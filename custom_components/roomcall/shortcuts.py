@@ -112,12 +112,9 @@ async def room_choices(hass, data, context, language=None, assistant=None) -> di
     ]
     everywhere = text(hass, "shortcut_everywhere", language)
     names = [room["name"] for room in eligible]
+    disambiguate = len(set(names)) != len(names) or everywhere in names
     choices = {
-        (
-            f"{room['name']} ({room['area_id']})"
-            if names.count(room["name"]) > 1 or room["name"] == everywhere
-            else room["name"]
-        ): room["area_id"]
+        (f"{room['name']} ({room['area_id']})" if disambiguate else room["name"]): room["area_id"]
         for room in eligible
     }
     if allowed and allowed == set(data.speakers):
