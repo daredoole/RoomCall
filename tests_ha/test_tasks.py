@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
+from unittest.mock import patch
 from urllib.parse import unquote
 
 from custom_components.roomcall.communication import execute
+from custom_components.roomcall.errors import Problem
 from homeassistant import config_entries
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -171,7 +174,7 @@ async def test_laundry_stays_open_until_someone_takes_the_clothes_out(
 async def test_open_tasks_survive_a_reload_and_keep_reminding(
     hass: HomeAssistant, house, hass_admin_user, hass_storage, tts_audio
 ):
-    async_mock_service(hass, "notify", "mobile_app_alex_phone")
+    alex = async_mock_service(hass, "notify", "mobile_app_alex_phone")
     async_mock_service(hass, "notify", "mobile_app_sam_phone")
     entry = await _setup(hass, hass_admin_user.id)
     played = async_mock_service(hass, "media_player", "play_media")
@@ -183,16 +186,23 @@ async def test_open_tasks_survive_a_reload_and_keep_reminding(
     other = await _add(
         hass, entry, "scheduled", {"name": "Bins", "time": "19:00:00", "message": "Bins"}
     )
-    # Stale and task-less saved state is ignored.
+    # A deleted announcement, or one that is no longer a task, is forgotten and its
+    # pinned notification cleared, so it cannot come back later.
     stored = hass_storage[f"roomcall.{entry.entry_id}.tasks"]["data"]
     assert set(stored) == {sid}
     hass_storage[f"roomcall.{entry.entry_id}.tasks"]["data"] = {
         **stored,
         "gone": stored[sid],
         other: stored[sid],
+        "never_opened": {**stored[sid], "opened": None},
     }
+    alex.clear()
     assert await hass.config_entries.async_reload(entry.entry_id)
     await hass.async_block_till_done()
+    assert sorted(c.data["data"]["tag"] for c in alex) == sorted(
+        [f"roomcall_task_{other}", "roomcall_task_gone"]
+    )
+    assert set(hass_storage[f"roomcall.{entry.entry_id}.tasks"]["data"]) == {sid}
     sensor = er.async_get(hass).async_get_entity_id("sensor", DOMAIN, f"{sid}_task")
     assert hass.states.get(sensor).state == "open"
     assert er.async_get(hass).async_get_entity_id("sensor", DOMAIN, f"{other}_task") is None
@@ -260,6 +270,18 @@ async def test_tasks_from_the_card_api_buttons_and_agents(
     assert refused["error"]["code"] == "task_not_open"
     missing = await execute(hass, "tasks", {"action": "snooze", "id": "nope"}, context)
     assert missing["error"]["code"] == "not_found"
+    # Tasks follow Home Assistant entity permissions and assistant exposure.
+    stranger = Context(user_id="unknown")
+    assert (await execute(hass, "tasks", {}, stranger))["tasks"] == []
+    denied = await execute(hass, "tasks", {"action": "complete", "id": sid}, stranger)
+    assert denied["error"]["code"] == "forbidden"
+    with patch("custom_components.roomcall.communication.async_should_expose", return_value=False):
+        hidden = await execute(hass, "tasks", {}, context, assistant="conversation")
+        assert hidden["tasks"] == []
+        hidden = await execute(
+            hass, "tasks", {"action": "snooze", "id": sid}, context, assistant="conversation"
+        )
+        assert hidden["error"]["code"] == "forbidden"
 
     play = registry.async_get_entity_id("button", DOMAIN, f"{sid}_play")
     await hass.services.async_call("button", "press", {"entity_id": play}, blocking=True)
@@ -277,6 +299,19 @@ async def test_tasks_from_the_card_api_buttons_and_agents(
     await _advance(hass, 5)
     assert len(played) == 2
 
+    # Two people confirming at once complete it once.
+    completed = async_capture_events(hass, "roomcall_task_completed")
+    announcer = hass.data[DOMAIN].announcer
+    results = await asyncio.gather(
+        announcer.async_complete(sid, context),
+        announcer.async_complete(sid, context),
+        return_exceptions=True,
+    )
+    await hass.async_block_till_done()
+    assert sum(isinstance(r, Problem) for r in results) == 1 and len(completed) == 1
+    assert hass.states.get(sensor).state == "done"
+    await hass.services.async_call("button", "press", {"entity_id": play}, blocking=True)
+    await hass.async_block_till_done()
     await hass.services.async_call(
         "button", "press", {"entity_id": button}, blocking=True, context=context
     )

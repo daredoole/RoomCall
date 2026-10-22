@@ -172,13 +172,21 @@ class Announcer:
 
     async def async_load(self) -> None:
         """Open tasks survive restarts and reloads, so reminders carry on."""
-        for sid, saved in (await self._store.async_load() or {}).items():
+        saved_tasks = await self._store.async_load() or {}
+        for sid, saved in saved_tasks.items():
             if (item := self.items.get(sid)) is None or not item.task:
+                # Deleted, or no longer a task: forget it and unpin its notification.
+                if saved.get("opened"):
+                    await clear_task(
+                        self.hass, self.hass.data[DOMAIN].notify, subentry_id=sid, people=[]
+                    )
                 continue
             item.task_opened = dt_util.parse_datetime(saved.get("opened") or "")
             item.task_done = dt_util.parse_datetime(saved.get("done") or "")
             item.task_done_by = saved.get("done_by")
             item._variables = saved.get("variables") or {}
+        if set(saved_tasks) - {sid for sid, item in self.items.items() if item.task}:
+            await self._save()
 
     async def _save(self) -> None:
         await self._store.async_save(
@@ -258,11 +266,12 @@ class Announcer:
     async def async_complete(self, subentry_id: str, context: Context) -> Announcement:
         """Someone confirms the task was done: stop reminders and tell automations."""
         item = self._task(subentry_id)
-        user = await self.hass.auth.async_get_user(context.user_id) if context.user_id else None
+        # Claim it before awaiting anything, so simultaneous confirmations complete it once.
         opened = item.task_opened
         item.task_opened = None
-        item.task_done, item.task_done_by = dt_util.utcnow(), user.name if user else None
         self._cancel_reminder(item)
+        user = await self.hass.auth.async_get_user(context.user_id) if context.user_id else None
+        item.task_done, item.task_done_by = dt_util.utcnow(), user.name if user else None
         await self._save()
         self.hass.bus.async_fire(
             EVENT_TASK_COMPLETED,

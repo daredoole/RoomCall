@@ -187,27 +187,33 @@ async def validate_targets(
     }
 
 
-async def _tasks(hass: HomeAssistant, data, values: dict[str, Any], context: Context) -> dict:
-    """Open and recently done announcement tasks; completing one needs an explicit request."""
+async def _tasks(
+    hass: HomeAssistant, data, values: dict[str, Any], context: Context, assistant: str | None
+) -> dict:
+    """Announcement tasks the caller may see; changing one needs its Mark done button."""
     from homeassistant.helpers import entity_registry as er
 
     registry = er.async_get(hass)
     announcer = data.announcer
-    if values["action"] == "complete":
-        await announcer.async_complete(values.get("id", ""), context)
-    elif values["action"] == "snooze":
-        await announcer.async_snooze(values.get("id", ""), values["minutes"])
-    return {
-        "ok": True,
-        "tasks": [
-            {
-                **item.task_summary(),
-                "entity_id": registry.async_get_entity_id("sensor", DOMAIN, f"{sid}_task"),
-            }
-            for sid, item in announcer.items.items()
-            if item.task
-        ],
-    }
+    if values["action"] != "list":
+        task_id = values.get("id", "")
+        button = registry.async_get_entity_id("button", DOMAIN, f"{task_id}_complete")
+        if button and not await permitted(hass, button, context, assistant):
+            raise Problem("forbidden")
+        if values["action"] == "complete":
+            await announcer.async_complete(task_id, context)
+        else:
+            await announcer.async_snooze(task_id, values["minutes"])
+    tasks = []
+    for sid, item in announcer.items.items():
+        sensor = registry.async_get_entity_id("sensor", DOMAIN, f"{sid}_task")
+        if (
+            item.task
+            and sensor
+            and await permitted(hass, sensor, context, assistant, control=False)
+        ):
+            tasks.append({**item.task_summary(), "entity_id": sensor})
+    return {"ok": True, "tasks": tasks}
 
 
 async def execute(
@@ -250,7 +256,7 @@ async def _execute(hass, operation, values, context, *, assistant=None):
         if data is None:
             raise Problem("not_ready", retryable=True)
         if operation == "tasks":
-            return await _tasks(hass, data, values, context)
+            return await _tasks(hass, data, values, context, assistant)
         if operation in ("discover", "diagnose"):
             from .shortcuts import room_choices
 
