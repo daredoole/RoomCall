@@ -101,6 +101,7 @@ class Announcement:
     task_done: datetime | None = None
     task_done_by: str | None = None
     _variables: dict[str, Any] = field(default_factory=dict, repr=False)
+    _phones: list[str] = field(default_factory=list, repr=False)  # notified while open
     _reminder: Callable[[], None] | None = field(default=None, repr=False)
 
     @property
@@ -179,13 +180,18 @@ class Announcer:
                 # Deleted, or no longer a task: forget it and unpin its notification.
                 if saved.get("opened"):
                     await clear_task(
-                        self.hass, self.hass.data[DOMAIN].notify, subentry_id=sid, people=[]
+                        self.hass,
+                        self.hass.data[DOMAIN].notify,
+                        subentry_id=sid,
+                        people=[],
+                        notified=saved.get("phones") or [],
                     )
                 continue
             item.task_opened = dt_util.parse_datetime(saved.get("opened") or "")
             item.task_done = dt_util.parse_datetime(saved.get("done") or "")
             item.task_done_by = saved.get("done_by")
             item._variables = saved.get("variables") or {}
+            item._phones = saved.get("phones") or []
         if set(saved_tasks) - {sid for sid, item in self.items.items() if item.task}:
             await self._save()
 
@@ -197,6 +203,7 @@ class Announcer:
                     "done": _iso(item.task_done),
                     "done_by": item.task_done_by,
                     "variables": item._variables,
+                    "phones": item._phones,
                 }
                 for sid, item in self.items.items()
                 if item.task
@@ -264,6 +271,7 @@ class Announcer:
             self.hass.data[DOMAIN].notify,
             subentry_id=item.subentry_id,
             people=item.data.get(CONF_PEOPLE) or [],
+            notified=item._phones,
         )
         async_dispatcher_send(self.hass, f"{SIGNAL_ANNOUNCEMENT}_{item.subentry_id}")
 
@@ -276,6 +284,8 @@ class Announcer:
         self._cancel_reminder(item)
         user = await self.hass.auth.async_get_user(context.user_id) if context.user_id else None
         item.task_done, item.task_done_by = dt_util.utcnow(), user.name if user else None
+        await self._clear(item)
+        item._phones = []
         await self._save()
         self.hass.bus.async_fire(
             EVENT_TASK_COMPLETED,
@@ -288,7 +298,6 @@ class Announcer:
             },
             context=context,
         )
-        await self._clear(item)
         return item
 
     async def async_snooze(self, subentry_id: str, minutes: float = DEFAULT_SNOOZE) -> Announcement:
@@ -377,17 +386,18 @@ class Announcer:
         item = self.items[subentry_id]
         if reminder and item.task_opened is None:
             return {"ok": False, "error": "task_not_open"}
-        if item.task:
+        if item.task and variables is None:
             # Reminders replay with the values of the change that opened the task.
-            if variables is None:
-                variables = item._variables
-            if item.task_opened is None:
-                item.task_opened, item.task_done, item.task_done_by = dt_util.utcnow(), None, None
-            item._variables = dict(variables)
-            await self._save()
+            variables = item._variables
+        # Render first: a template that fails must not leave a task open without reminders.
         message = Template(str(item.data.get(CONF_MESSAGE) or ""), self.hass).async_render(
             variables or {}, parse_result=False
         )
+        if item.task:
+            if item.task_opened is None:
+                item.task_opened, item.task_done, item.task_done_by = dt_util.utcnow(), None, None
+            item._variables = dict(variables or {})
+            await self._save()
         call: dict[str, Any] = {
             ATTR_MESSAGE: message,
             ATTR_PRIORITY: item.data.get(CONF_PRIORITY, PRIORITY_NORMAL),
@@ -417,7 +427,7 @@ class Announcer:
         # Someone may have confirmed it while it played: then there is nothing to remind.
         if item.task and item.task_opened:
             # Phones are told even when no speaker could play: the task still needs doing.
-            await notify_task(
+            sent = await notify_task(
                 self.hass,
                 self.hass.data[DOMAIN].notify,
                 subentry_id=subentry_id,
@@ -427,6 +437,8 @@ class Announcer:
                 people=item.data.get(CONF_PEOPLE) or [],
                 urgent=item.data.get(CONF_PRIORITY) == PRIORITY_URGENT,
             )
+            item._phones = sorted({*item._phones, *sent})
+            await self._save()
             self._remind(item)
         item.last_played = dt_util.utcnow()
         async_dispatcher_send(self.hass, f"{SIGNAL_ANNOUNCEMENT}_{subentry_id}")

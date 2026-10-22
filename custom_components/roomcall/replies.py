@@ -140,9 +140,17 @@ async def notify_task(
 
 
 async def clear_task(
-    hass: HomeAssistant, services: list[str], *, subentry_id: str, people: list[str]
+    hass: HomeAssistant,
+    services: list[str],
+    *,
+    subentry_id: str,
+    people: list[str],
+    notified: list[str] | tuple[str, ...] = (),
 ) -> None:
-    for service in _task_services(hass, services, people):
+    """Unpin it from today's recipients and from every phone that was told about it."""
+    names = _task_services(hass, services, people)
+    names += [n for n in notified if n not in names and hass.services.has_service("notify", n)]
+    for service in names:
         await hass.services.async_call(
             "notify",
             service,

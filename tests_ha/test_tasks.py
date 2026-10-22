@@ -7,12 +7,14 @@ from datetime import timedelta
 from unittest.mock import patch
 from urllib.parse import unquote
 
+import pytest
 from custom_components.roomcall import announcements
 from custom_components.roomcall.communication import execute
 from custom_components.roomcall.errors import Problem
 from homeassistant import config_entries
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.exceptions import TemplateError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
@@ -423,3 +425,37 @@ async def test_reminders_never_reopen_and_retired_announcers_stay_quiet(
     with patch("custom_components.roomcall.announcements.send", send_then_reload):
         await announcer.async_play(sid)
     assert item.task_state == "open" and item._reminder is None
+
+
+async def test_task_actions_permissions_templates_and_former_recipients(
+    hass: HomeAssistant, house, hass_admin_user
+):
+    alex = async_mock_service(hass, "notify", "mobile_app_alex_phone")
+    sam = async_mock_service(hass, "notify", "mobile_app_sam_phone")
+    entry = await _setup(hass, hass_admin_user.id)
+    async_mock_service(hass, "media_player", "play_media")
+    sid = await _add(hass, entry, "triggered", {**LAUNDRY, "people": ["person.alex"]})
+    announcer = hass.data[DOMAIN].announcer
+    item = announcer.items[sid]
+    hass.states.async_set("sensor.dryer", "done", {"friendly_name": "Dryer"})
+    await hass.async_block_till_done()
+    assert item.task_state == "open" and len(alex) == 1 and not sam
+
+    # A phone action from someone without control of the task changes nothing.
+    await _action(hass, f"ROOMCALL_TASK_DONE_{sid}", "unknown")
+    await _action(hass, f"ROOMCALL_TASK_SNOOZE_{sid}", "unknown")
+    assert item.task_state == "open" and len(alex) == 1
+
+    # Recipients changed while open: completion still unpins it from Alex's phone.
+    hass.data[DOMAIN].notify = ["notify.mobile_app_sam_phone"]
+    alex.clear()
+    await _action(hass, f"ROOMCALL_TASK_DONE_{sid}", hass_admin_user.id)
+    assert item.task_state == "done" and item._phones == []
+    assert [c.data["message"] for c in alex] == ["clear_notification"]
+    assert [c.data["message"] for c in sam] == ["clear_notification"]
+
+    # A template that fails at runtime does not leave an open task behind.
+    item.data["message"] = "{{ 1 / 0 }}"
+    with pytest.raises(TemplateError):
+        await announcer.async_play(sid)
+    assert item.task_state == "done"

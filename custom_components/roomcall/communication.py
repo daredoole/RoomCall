@@ -187,6 +187,16 @@ async def validate_targets(
     }
 
 
+async def task_permitted(
+    hass: HomeAssistant, task_id: str, context: Context, assistant: str | None = None
+) -> bool:
+    """Changing a task needs control of its Mark done button, wherever the request comes from."""
+    from homeassistant.helpers import entity_registry as er
+
+    button = er.async_get(hass).async_get_entity_id("button", DOMAIN, f"{task_id}_complete")
+    return not button or await permitted(hass, button, context, assistant)
+
+
 async def _tasks(
     hass: HomeAssistant, data, values: dict[str, Any], context: Context, assistant: str | None
 ) -> dict:
@@ -197,8 +207,7 @@ async def _tasks(
     announcer = data.announcer
     if values["action"] != "list":
         task_id = values.get("id", "")
-        button = registry.async_get_entity_id("button", DOMAIN, f"{task_id}_complete")
-        if button and not await permitted(hass, button, context, assistant):
+        if not await task_permitted(hass, task_id, context, assistant):
             raise Problem("forbidden")
         if values["action"] == "complete":
             await announcer.async_complete(task_id, context)
