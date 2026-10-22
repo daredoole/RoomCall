@@ -81,11 +81,25 @@ def check_shortcuts(browser, errors) -> None:
         card.get_by_role("tab", name="Siri Shortcuts", exact=True).click()
         panel = card.locator(".shortcut-builder")
         panel.get_by_role("combobox", name="Destination room", exact=True).select_option("basement")
-        expect(panel).to_contain_text("Set areas to Text: basement")
+        expect(panel).to_contain_text("Fixed destination: Basement (basement)")
+        panel.get_by_role("combobox", name="Destination room", exact=True).select_option("ask")
+        panel.get_by_role("checkbox", name="Allow selecting several rooms", exact=True).check()
+        panel.get_by_role("combobox", name="Message source", exact=True).select_option("input")
+        expect(panel).to_contain_text("retrieves your current permitted RoomCall rooms")
+        expect(panel).to_contain_text("empty input is rejected")
+        with page.expect_download():
+            panel.get_by_role("button", name="Generate shortcut", exact=True).click()
+        exported = page.evaluate(
+            "ROOMCALL_HARNESS.requests.filter(r=>r.operation==='shortcut').at(-1).request"
+        )
+        assert exported["room"] == "ask" and exported["multiple"] is True
+        assert exported["format"] == "native" and exported["message_mode"] == "input"
         if width == 390:
+            card.locator(".settings-body").evaluate("e => { e.scrollTop = 0; }")
             card.locator("dialog").screenshot(path=OUT / "ha-siri-shortcuts.png")
-        expect(panel.get_by_role("button", name="Generate shortcut", exact=True)).to_be_hidden()
         panel.get_by_role("combobox", name="Setup method", exact=True).select_option("cherri")
+        expect(panel.get_by_role("button", name="Generate shortcut", exact=True)).to_be_disabled()
+        panel.get_by_role("combobox", name="Destination room", exact=True).select_option("basement")
         with page.expect_download() as pending:
             panel.get_by_role("button", name="Generate shortcut", exact=True).click()
         download = pending.value
@@ -98,7 +112,7 @@ def check_shortcuts(browser, errors) -> None:
         expect(panel).to_contain_text("require a HubSign key")
         assert (
             page.evaluate("ROOMCALL_HARNESS.requests.filter(r=>r.operation==='shortcut').length")
-            == 1
+            == 2
         )
         panel.get_by_role("textbox", name="HubSign API key (not saved)", exact=True).fill("bad")
         panel.get_by_role("checkbox").check()

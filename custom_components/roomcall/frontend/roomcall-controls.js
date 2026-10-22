@@ -774,7 +774,16 @@ class ShortcutBuilder {
     description.textContent = controls.t("shortcut_description");
     this.room = controls.select("shortcut_room");
     this.format = controls.select("shortcut_format");
-    for (const key of ["native", "cherri", "shortcut", "signed"]) this.format.append(new Option(controls.t(`shortcut_format_${key}`), key));
+    for (const key of ["native", "native_signed", "cherri", "shortcut", "signed"]) this.format.append(new Option(controls.t(`shortcut_format_${key}`), key));
+    this.multiple = document.createElement("input");
+    this.multiple.type = "checkbox";
+    this.multipleLabel = label("shortcut_multiple", this.multiple);
+    this.multipleLabel.className = "remote-consent";
+    this.messageMode = controls.select("shortcut_message_mode");
+    for (const key of ["ask", "input"]) this.messageMode.append(new Option(controls.t(`shortcut_message_${key}`), key));
+    this.messageLabel = label("shortcut_message_mode", this.messageMode);
+    this.multiple.addEventListener("change", () => this.update());
+    this.messageMode.addEventListener("change", () => this.update());
     this.key = document.createElement("input");
     this.key.type = "password";
     this.key.autocomplete = "off";
@@ -799,37 +808,45 @@ class ShortcutBuilder {
     this.download = controls.button("shortcut_download", () => this.generate());
     this.room.addEventListener("change", () => this.update());
     this.format.addEventListener("change", () => {
-      this.remote.hidden = this.format.value !== "signed";
       this.key.value = "";
       this.consent.checked = false;
       this.status.textContent = "";
       this.update();
     });
     this.root.append(description, label("shortcut_room", this.room), label("shortcut_format", this.format),
-      this.instructions, this.remote, this.download, this.status, hint);
+      this.multipleLabel, this.messageLabel, this.instructions, this.remote, this.download, this.status, hint);
     controls.dialog.addEventListener("close", () => { this.key.value = ""; this.consent.checked = false; });
   }
   rooms(rooms) {
     const selected = this.room.value || this.controls.card._target;
     this.room.replaceChildren(new Option(this.controls.t("shortcut_choose_room"), ""),
+      new Option(this.controls.t("shortcut_ask_each_time"), "ask"),
       ...rooms.map(room => new Option(room.name, room.area_id)));
     // Everywhere is an explicit destination, never a missing-room fallback.
     this.room.append(new Option(this.controls.t("shortcut_everywhere"), "all"));
-    this.room.value = selected || "";
+    this.room.value = selected || "ask";
     this.update();
   }
   update() {
     this.download.disabled = !this.room.value || this.busy;
-    for (const input of [this.room, this.format, this.key, this.consent]) input.disabled = Boolean(this.busy);
-    const native = this.format.value === "native";
-    this.download.hidden = native;
+    for (const input of [this.room, this.format, this.key, this.consent, this.multiple, this.messageMode]) input.disabled = Boolean(this.busy);
+    const native = this.format.value.startsWith("native");
+    const askOption = this.room.querySelector('option[value="ask"]');
+    if (askOption) askOption.disabled = !native;
+    if (!native && this.room.value === "ask") this.room.value = "";
+    this.download.disabled = !this.room.value || this.busy;
+    this.download.hidden = false;
     this.instructions.hidden = !native;
-    this.signingHint.hidden = native;
-    this.remote.hidden = this.format.value !== "signed";
+    this.signingHint.hidden = false;
+    this.remote.hidden = !["signed", "native_signed"].includes(this.format.value);
+    this.multipleLabel.hidden = !native || this.room.value !== "ask";
+    this.messageLabel.hidden = !native;
     const name = this.room.selectedOptions[0]?.textContent || "";
     const values = {room:this.room.value, name, prompt:this.controls.t("shortcut_prompt", {room:name})};
     this.instructions.replaceChildren(...(this.room.value ?
-      ["shortcut_native_ask", "shortcut_native_dictionary", "shortcut_native_action", "shortcut_native_note"] :
+      [this.room.value === "ask" ? "shortcut_live_help" : "shortcut_native_dictionary",
+        this.messageMode.value === "input" ? "shortcut_input_help" : "shortcut_native_ask",
+        "shortcut_native_import", "shortcut_native_note"] :
       ["shortcut_choose_room"]).map(key => {
         const paragraph = document.createElement("p");
         paragraph.textContent = this.controls.t(key, values);
@@ -837,8 +854,8 @@ class ShortcutBuilder {
       }));
   }
   async generate() {
-    if (this.busy || !this.room.value || this.format.value === "native") return;
-    if (this.format.value === "signed" && (!this.consent.checked || !this.key.value.trim())) {
+    if (this.busy || !this.room.value) return;
+    if (["signed", "native_signed"].includes(this.format.value) && (!this.consent.checked || !this.key.value.trim())) {
       this.status.textContent = this.controls.t("shortcut_signing_required");
       return;
     }
@@ -850,6 +867,8 @@ class ShortcutBuilder {
       const response = await this.controls.card._hass.fetchWithAuth("/api/roomcall/shortcut", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body:JSON.stringify({room:this.room.value, format:this.format.value,
+          multiple:this.format.value.startsWith("native") && this.room.value === "ask" && this.multiple.checked,
+          message_mode:this.format.value.startsWith("native") ? this.messageMode.value : "ask",
           language:["en","es","de","fr","nl"].includes(language)?language:"en",
           allow_remote:this.consent.checked, signing_key:this.key.value}),
       });
@@ -864,7 +883,7 @@ class ShortcutBuilder {
       const anchor = document.createElement("a");
       anchor.href = url; anchor.download = filename; this.root.append(anchor); anchor.click(); anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      this.status.textContent = this.controls.t(this.format.value === "signed" ? "shortcut_signed_ready" : "shortcut_source_ready");
+      this.status.textContent = this.controls.t(["signed", "native_signed"].includes(this.format.value) ? "shortcut_signed_ready" : "shortcut_source_ready");
     } catch (error) { this.status.textContent = error.message; }
     finally { this.key.value = ""; this.busy = false; this.update(); }
   }

@@ -93,11 +93,27 @@ def catalog(hass: HomeAssistant) -> dict[str, Any]:
             },
             "method": "POST",
             "path": "/api/roomcall/shortcut",
-            "formats": ["cherri", "shortcut", "signed"],
+            "formats": ["native", "native_signed", "cherri", "shortcut", "signed"],
+            "native_picker": {
+                "room": "ask",
+                "multiple": True,
+                "message_mode": ["ask", "input"],
+                "discovery": "shortcut_choices",
+                "setup": "select_server_and_action_on_device",
+            },
             "signed_requires": ["allow_remote", "signing_key"],
             "signing_key_persisted": False,
-            "export_transport": "homeassistant_url",
-            "export_requires_confirmation_each_run": True,
+            "export_transport": "format_specific",
+            "export_requires_confirmation_each_run": None,
+            "format_transports": {
+                name: {
+                    "transport": "perform_action"
+                    if name.startswith("native")
+                    else "homeassistant_url",
+                    "url_confirmation_each_run": not name.startswith("native"),
+                }
+                for name in ["native", "native_signed", "cherri", "shortcut", "signed"]
+            },
         },
         "audible": None,
     }
