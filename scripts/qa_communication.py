@@ -122,11 +122,11 @@ def main() -> None:
         for index in (0, 1):
             card = cards.nth(index)
             card.get_by_role("button", name="Settings", exact=True).click()
-            card.get_by_role("button", name="Room stations", exact=True).click()
+            card.get_by_role("tab", name="Room stations", exact=True).click()
             card.get_by_role("button", name="Enable this station", exact=True).click()
             card.get_by_role("button", name="Close", exact=True).click()
         cards.first.get_by_role("button", name="Settings", exact=True).click()
-        cards.first.get_by_role("button", name="Room stations", exact=True).click()
+        cards.first.get_by_role("tab", name="Room stations", exact=True).click()
         cards.first.get_by_role("button", name="Refresh", exact=True).click()
         page.wait_for_function("ROOMCALL_HARNESS.stations.size===2")
         cards.first.locator('select[aria-label="Call station"]').select_option(label="Basement")

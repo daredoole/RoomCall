@@ -7,7 +7,8 @@ final class RoomCallTests: XCTestCase {
         let server = try ServerAddress.parse(" https://ha.example/ha ")
         XCTAssertEqual(LiveConnection.websocketURL(server).absoluteString, "wss://ha.example/ha/api/websocket")
         XCTAssertEqual(try ServerAddress.parse("http://ha.local:8123").host, "ha.local")
-        for invalid in ["", "file:///etc/passwd", "https://user:password@ha.local", "https://ha.local?token=secret", "https://ha.local/#secret"] {
+        XCTAssertEqual(LiveConnection.websocketURL(try ServerAddress.parse("HTTPS://ha.example")).scheme, "wss")
+        for invalid in ["", "http://", "file:///etc/passwd", "https://user:password@ha.local", "https://ha.local?token=secret", "https://ha.local/#secret"] {
             XCTAssertThrowsError(try ServerAddress.parse(invalid))
         }
         XCTAssertFalse(LiveConnection.supportsPKCE(["ha_version": "2026.2.3"]))

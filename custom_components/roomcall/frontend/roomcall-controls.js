@@ -26,16 +26,18 @@ export class RoomCallControls {
         background:var(--secondary-background-color,var(--card-background-color)); padding:4px; border-radius:14px; }
       .communication nav[data-toolbar] button { justify-content:center; padding:6px; border-color:transparent; border-radius:10px; }
       .communication nav[data-toolbar] button[aria-pressed=true] { background:var(--primary-color); color:var(--text-primary-color,#fff); }
+      .communication .primary-action,.communication [role=tab][aria-selected=true] { background:var(--primary-color); color:var(--text-primary-color,#fff); border-color:var(--primary-color); }
       .communication dialog { color:var(--primary-text-color); background:var(--card-background-color);
         border:1px solid var(--divider-color); border-radius:20px; padding:0;
         width:min(840px,calc(100vw - 24px)); max-width:none; max-height:calc(100dvh - 32px);
         box-sizing:border-box; box-shadow:var(--ha-card-box-shadow,0 16px 60px #0005); }
       .communication dialog::backdrop { background:rgb(0 0 0 / .48); }
+      .communication dialog[open] { display:grid; grid-template-rows:auto minmax(0,1fr); }
       .settings-heading { display:flex; align-items:center; justify-content:space-between; gap:12px;
         padding:16px 20px; border-bottom:1px solid var(--divider-color); }
-      .settings-heading h2 { margin:0; font-size:1.125rem; }
+      .settings-heading h2 { margin:0; font-size:1.125rem; min-width:0; overflow-wrap:anywhere; }
       .settings-body { padding:16px 20px max(20px,env(safe-area-inset-bottom)); overflow:auto;
-        max-height:calc(100dvh - 128px); min-width:0; }
+        min-height:0; min-width:0; }
       .settings-body nav { margin-bottom:16px; }
       .settings-body [role=tabpanel] { min-width:0; }
       .communication.settings-surface { display:contents; }
@@ -43,6 +45,8 @@ export class RoomCallControls {
       .setup-review ul { padding-inline-start:20px; }
       .setup-wizard input[type=checkbox] { width:20px; height:20px; flex-shrink:0; }
       .setup-wizard label { min-height:44px; display:flex; align-items:center; gap:8px; }
+      .communication form label { min-height:44px; }
+      .communication input[type=checkbox] { width:20px; height:20px; }
       .setup-wizard label:has(select),.setup-wizard label:has(input[type=number]) { display:grid; }
       @media (max-width:400px) { .settings-heading,.settings-body { padding-inline:14px; } }
       .setup-wizard { display:grid; gap:10px; margin:12px 0; min-width:0 }
@@ -95,22 +99,42 @@ export class RoomCallControls {
     heading.className = "settings-heading";
     const title = document.createElement("h2");
     title.textContent = this.t("settings");
-    heading.append(title, this.button("close", () => this.dialog.close()));
+    const close = this.button("close", () => this.dialog.close());
+    close.setAttribute("aria-label", this.t("close")); close.textContent = "";
+    const closeIcon = document.createElement("ha-icon"); closeIcon.setAttribute("icon", "mdi:close");
+    close.append(closeIcon);
+    heading.append(title, close);
     const body = document.createElement("div");
     body.className = "settings-body";
     const tabs = document.createElement("nav");
     tabs.setAttribute("aria-label", this.t("settings"));
+    tabs.setAttribute("role", "tablist");
+    const prefix = `roomcall-${crypto.randomUUID()}`;
     this.panels = {};
     for (const key of ["setup", "stations", "voicemail"]) {
       const panel = document.createElement("section");
       panel.setAttribute("role", "tabpanel");
       panel.setAttribute("aria-label", this.t(key));
+      panel.id = `${prefix}-${key}`;
       this.panels[key] = panel;
       const button = this.button(key, () => this.settingsTab(key));
       button.dataset.panel = key;
+      button.id = `${prefix}-${key}-tab`;
+      button.setAttribute("role", "tab");
+      button.setAttribute("aria-controls", panel.id);
+      panel.setAttribute("aria-labelledby", button.id);
       tabs.append(button);
     }
     this.settingsTabs = tabs;
+    tabs.addEventListener("keydown", event => {
+      const items = [...tabs.children].filter(button => !button.hidden);
+      const index = items.indexOf(event.target);
+      if (index < 0 || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1
+        : (index + (event.key === "ArrowRight" ? 1 : -1) + items.length) % items.length;
+      this.settingsTab(items[next].dataset.panel); items[next].focus();
+    });
     body.append(tabs, ...Object.values(this.panels));
     this.dialog.append(heading, body);
     this.setup = document.createElement("div");
@@ -142,9 +166,14 @@ export class RoomCallControls {
 
   settingsTab(key) {
     for (const [name, panel] of Object.entries(this.panels)) panel.hidden = name !== key;
-    for (const button of this.settingsTabs.children) button.setAttribute("aria-pressed", String(button.dataset.panel === key));
+    for (const button of this.settingsTabs.children) {
+      const selected = button.dataset.panel === key;
+      button.setAttribute("aria-selected", String(selected));
+      button.tabIndex = selected ? 0 : -1;
+    }
   }
   openSettings() {
+    this.card._stop({ preventDefault() {} });
     if (!this.dialog.open) this.dialog.showModal();
     this.refresh().catch(error => this.error(error));
   }
@@ -157,6 +186,7 @@ export class RoomCallControls {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "chip small";
+    if (["send", "apply_plan", "create_plan"].includes(key)) button.classList.add("primary-action");
     button.textContent = this.t(key);
     button.addEventListener("click", () => Promise.resolve().then(action).catch((e) => this.error(e)));
     return button;

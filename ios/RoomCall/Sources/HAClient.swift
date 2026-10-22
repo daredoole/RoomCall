@@ -88,7 +88,7 @@ actor LiveConnection {
         let task = URLSession.shared.webSocketTask(with: websocketURL(server))
         task.resume()
         defer { task.cancel(with: .normalClosure, reason: nil) }
-        let hello = try decode(await task.receive())
+        let hello = try decode(await read(task))
         guard supportsPKCE(hello) else { throw NativeFailure.unsupportedServer }
     }
     func open(client: HAClient, room: Room) async throws {
@@ -97,14 +97,14 @@ actor LiveConnection {
         socket = task
         task.resume()
         do {
-            let hello = try Self.decode(await task.receive())
+            let hello = try Self.decode(await Self.read(task))
             guard hello["type"] as? String == "auth_required" else { throw NativeFailure.protocolError }
             try await send(["type": "auth", "access_token": token])
-            let authenticated = try Self.decode(await task.receive())
+            let authenticated = try Self.decode(await Self.read(task))
             guard authenticated["type"] as? String == "auth_ok" else { throw NativeFailure.unauthorized }
             try await send(["id": 1, "type": "roomcall/live", "target": room.id, "from": "RoomCall iOS"])
             for _ in 0..<8 {
-                let message = try Self.decode(await task.receive())
+                let message = try Self.decode(await Self.read(task))
                 if message["success"] as? Bool == false {
                     let error = message["error"] as? [String: Any]
                     throw NativeFailure.backend(error?["message"] as? String ?? L("ios_connection_failed"))
@@ -138,7 +138,24 @@ actor LiveConnection {
         }
         return object
     }
+    static func read(_ socket: URLSessionWebSocketTask) async throws -> URLSessionWebSocketTask.Message {
+        try await withThrowingTaskGroup(of: URLSessionWebSocketTask.Message.self) { group in
+            group.addTask {
+                try await withTaskCancellationHandler(operation: {
+                    try await socket.receive()
+                }, onCancel: { socket.cancel(with: .goingAway, reason: nil) })
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: 30_000_000_000)
+                socket.cancel(with: .goingAway, reason: nil)
+                throw NativeFailure.protocolError
+            }
+            defer { group.cancelAll() }
+            return try await group.next()!
+        }
+    }
     func pcm(_ bytes: Data) async throws {
+        guard !bytes.isEmpty else { return }
         guard let socket, let handler else { throw NativeFailure.protocolError }
         try await socket.send(.data(Data([handler]) + bytes))
     }
@@ -146,7 +163,7 @@ actor LiveConnection {
         guard let socket, let handler else { throw NativeFailure.protocolError }
         try await socket.send(.data(Data([handler])))
         for _ in 0..<16 {
-            let message = try Self.decode(await socket.receive())
+            let message = try Self.decode(await Self.read(socket))
             if let event = message["event"] as? [String: Any] {
                 if event["type"] as? String == "error" {
                     throw NativeFailure.backend(event["message"] as? String ?? L("ios_connection_failed"))

@@ -94,12 +94,13 @@ enum RoomCache {
 
 enum ServerAddress {
     static func parse(_ text: String) throws -> URL {
-        guard let parts = URLComponents(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
+        guard var parts = URLComponents(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
               ["https", "http"].contains(parts.scheme?.lowercased() ?? ""),
-              parts.host != nil, parts.user == nil, parts.password == nil,
+              let host = parts.host, !host.isEmpty, parts.user == nil, parts.password == nil,
               parts.query == nil, parts.fragment == nil, let url = parts.url else {
             throw NativeFailure.invalidServer
         }
-        return url
+        parts.scheme = url.scheme?.lowercased()
+        return parts.url!
     }
 }
