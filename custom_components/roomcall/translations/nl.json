@@ -322,7 +322,8 @@
         "ios_microphone_permission": "RoomCall stuurt je stem naar de kamer die je kiest.",
         "ios_local_network_permission": "RoomCall maakt verbinding met Home Assistant en je luidsprekers.",
         "ios_phrase_open": "Open ${applicationName}",
-        "ios_phrase_announce": "Kondig aan met ${applicationName}"
+        "ios_phrase_announce": "Kondig aan met ${applicationName}",
+        "ios_connecting_audio": "Audio verbinden…"
       }
     },
     "audio_processing": {

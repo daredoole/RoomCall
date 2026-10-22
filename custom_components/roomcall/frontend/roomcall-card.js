@@ -190,7 +190,7 @@ class RoomCallCard extends HTMLElement {
           color: var(--primary-text-color); border-radius: 999px; padding: 8px 14px;
           font-family: inherit; font-size: 0.875rem; cursor: pointer; display: inline-flex; gap: 6px; align-items: center;
           max-width: 100%; overflow-wrap: anywhere;
-          min-height:44px; box-sizing:border-box;
+          min-height:44px; min-width:44px; box-sizing:border-box;
         }
         .chip.small { padding: 5px 10px; font-size: 0.8125rem; }
         .chip[aria-pressed="true"] { background: var(--primary-color); border-color: var(--primary-color); color: var(--text-primary-color, #fff); }

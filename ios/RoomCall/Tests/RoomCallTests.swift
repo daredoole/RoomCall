@@ -16,7 +16,7 @@ final class RoomCallTests: XCTestCase {
         XCTAssertFalse(LiveConnection.supportsPKCE([:]))
     }
     @MainActor
-    func testOAuthStateAndPKCE() throws {
+    func testOAuthStateAndPKCE() async throws {
         XCTAssertEqual(OAuthLogin.challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
                        "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
         XCTAssertEqual(try OAuthLogin.code(from: URL(string: "roomcall://auth-callback?state=expected&code=code")!, state: "expected"), "code")

@@ -56,6 +56,31 @@ def check_layout(browser) -> None:
         page.close()
 
 
+def check_large_text(browser) -> None:
+    for width in (240, 390, 900):
+        page = browser.new_page(viewport={"width": width, "height": 820})
+        open_card(page, "mobile", "dark")
+        page.add_style_tag(content="html { font-size:200% !important; }")
+        card = page.locator("roomcall-card")
+        assert card.evaluate("e=>e.scrollWidth<=e.clientWidth")
+        for button in card.locator("[data-toolbar] button").all():
+            bounds = button.bounding_box()
+            assert bounds and bounds["width"] >= 44 and bounds["height"] >= 44, bounds
+        card.get_by_role("button", name="Settings", exact=True).click()
+        dialog = card.get_by_role("dialog", name="Settings", exact=True)
+        expect(dialog).to_be_visible()
+        assert dialog.evaluate("e=>e.scrollWidth<=e.clientWidth")
+        setup = dialog.get_by_role("tab", name="Setup and sound tests", exact=True)
+        setup.focus()
+        page.keyboard.press("ArrowRight")
+        expect(dialog.get_by_role("tab", name="Room stations", exact=True)).to_be_focused()
+        page.keyboard.press("Home")
+        expect(setup).to_be_focused()
+        page.keyboard.press("Escape")
+        expect(card.get_by_role("button", name="Settings", exact=True)).to_be_focused()
+        page.close()
+
+
 def assert_contained(page, *, fixed: bool) -> None:
     dimensions = page.evaluate("""() => {
       const host=document.querySelector('roomcall-card');

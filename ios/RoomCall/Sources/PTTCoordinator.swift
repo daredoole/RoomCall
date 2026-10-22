@@ -8,6 +8,8 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
     @Published private(set) var joined = false
     @Published private(set) var transmitting = false
     @Published private(set) var finishing = false
+    @Published private(set) var requested = false
+    @Published private(set) var activeRoomName: String?
     @Published var status = L("ios_choose_room")
     private var manager: PTChannelManager?
     private var channel: UUID?
@@ -25,6 +27,15 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
 
     override init() {
         super.init()
+        do {
+            if let credentials = try SecureStore.load(),
+               let id = RoomCache.defaults.string(forKey: "activeRoom"),
+               let restored = RoomCache.load().first(where: { $0.id == id }) {
+                client = HAClient(credentials)
+                room = restored
+                activeRoomName = restored.name
+            }
+        } catch { status = error.localizedDescription }
         interruption = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification,
             object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in self?.stop() }
@@ -44,6 +55,7 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
                                                           options: [.defaultToSpeaker, .allowBluetoothHFP])
         } catch { status = error.localizedDescription; return }
         self.room = room
+        activeRoomName = room.name
         self.client = client
         let id = UUID()
         channel = id
@@ -59,10 +71,13 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
     func begin() {
         guard let channel, joined, !finishing else { return }
         cancelPendingStart = false
+        requested = true
+        status = L("ios_connecting_audio")
         manager?.requestBeginTransmitting(channelUUID: channel)
     }
     func stop() {
         cancelPendingStart = true
+        requested = false
         wanted = false
         if let channel { manager?.stopTransmitting(channelUUID: channel) }
         endAudio()
@@ -86,6 +101,7 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
                     status = error.localizedDescription
                     audio.stop()
                     wanted = false
+                    requested = false
                     if let channel { manager?.stopTransmitting(channelUUID: channel) }
                 }
                 await connection.close()
@@ -109,6 +125,7 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
             await connection.close()
             live = nil
             finishing = false
+            requested = false
             status = error.localizedDescription
             if let channel { manager?.stopTransmitting(channelUUID: channel) }
         }
@@ -131,10 +148,12 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
     nonisolated func channelManager(_ manager: PTChannelManager, didLeaveChannel channelUUID: UUID, reason: PTChannelLeaveReason) {
         Task { @MainActor in
             wanted = false
+            requested = false
             cancelPendingStart = false
             endAudio()
             joined = false
             channel = nil
+            activeRoomName = nil
             RoomCache.defaults.removeObject(forKey: "channel")
             status = L("ios_choose_room")
         }
@@ -143,12 +162,14 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
         Task { @MainActor in
             guard !finishing, !cancelPendingStart else { manager.stopTransmitting(channelUUID: channelUUID); return }
             wanted = true
+            requested = true
             await startAudio()
         }
     }
     nonisolated func channelManager(_ manager: PTChannelManager, channelUUID: UUID, didEndTransmittingFrom source: PTChannelTransmitRequestSource) {
         Task { @MainActor in
             wanted = false
+            requested = false
             cancelPendingStart = false
             endAudio()
         }
@@ -157,13 +178,13 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
         Task { @MainActor in audioActive = true; await startAudio() }
     }
     nonisolated func channelManager(_ manager: PTChannelManager, didDeactivate audioSession: AVAudioSession) {
-        Task { @MainActor in audioActive = false; wanted = false; endAudio() }
+        Task { @MainActor in audioActive = false; wanted = false; requested = false; endAudio() }
     }
     nonisolated func channelManager(_ manager: PTChannelManager, failedToJoinChannel channelUUID: UUID, error: Error) {
         Task { @MainActor in status = error.localizedDescription }
     }
     nonisolated func channelManager(_ manager: PTChannelManager, failedToBeginTransmittingInChannel channelUUID: UUID, error: Error) {
-        Task { @MainActor in wanted = false; cancelPendingStart = false; status = error.localizedDescription }
+        Task { @MainActor in wanted = false; requested = false; cancelPendingStart = false; status = error.localizedDescription }
     }
     nonisolated func channelManager(_ manager: PTChannelManager, receivedEphemeralPushToken pushToken: Data) {
         // Outbound prototype: no push token is advertised without a provisioned receiving service.
@@ -172,7 +193,7 @@ final class PTTCoordinator: NSObject, ObservableObject, PTChannelManagerDelegate
         .leaveChannel
     }
     nonisolated func channelDescriptor(restoredChannelUUID channelUUID: UUID) -> PTChannelDescriptor {
-        // didJoinChannel leaves restored channels until authenticated app state is available.
-        PTChannelDescriptor(name: "RoomCall", image: nil)
+        // The authenticated room is restored at startup; capture still requires user transmission.
+        PTChannelDescriptor(name: RoomCache.load().first { $0.id == RoomCache.defaults.string(forKey: "activeRoom") }?.name ?? "RoomCall", image: nil)
     }
 }

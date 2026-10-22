@@ -44,7 +44,11 @@ targets:
   RoomCallControls:
     type: app-extension
     platform: iOS
-    sources: [Controls, Shared, Resources]
+    sources:
+      - Controls
+      - Shared
+      - path: Resources
+        excludes: ['**/AppShortcuts.strings']
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.daredoole.RoomCall.Controls

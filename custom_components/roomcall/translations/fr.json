@@ -322,7 +322,8 @@
         "ios_microphone_permission": "RoomCall envoie votre voix dans la pièce sélectionnée.",
         "ios_local_network_permission": "RoomCall se connecte à Home Assistant et à vos haut-parleurs.",
         "ios_phrase_open": "Ouvre ${applicationName}",
-        "ios_phrase_announce": "Annonce avec ${applicationName}"
+        "ios_phrase_announce": "Annonce avec ${applicationName}",
+        "ios_connecting_audio": "Connexion audio…"
       }
     },
     "audio_processing": {

@@ -2,6 +2,7 @@
 "ios_announce" = "Anunciar un mensaje";
 "ios_announce_description" = "Envía un anuncio de texto hablado mediante Home Assistant a la habitación que elijas.";
 "ios_choose_room" = "Elige dónde hablar";
+"ios_connecting_audio" = "Conectando audio…";
 "ios_connection_failed" = "RoomCall no pudo completar la conexión. Comprueba Home Assistant e inténtalo de nuevo.";
 "ios_delivery_failed" = "Fallaron algunas solicitudes de reproducción. Consulta Home Assistant.";
 "ios_error" = "RoomCall necesita atención";

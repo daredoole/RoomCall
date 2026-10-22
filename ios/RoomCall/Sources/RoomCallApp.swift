@@ -118,12 +118,12 @@ struct ContentView: View {
                                 }
                             }
                             VStack(spacing: 20) {
-                                if let room = model.selected { Text(room.name).font(.title2.bold()) }
+                                if let name = ptt.joined ? ptt.activeRoomName : model.selected?.name { Text(name).font(.title2.bold()) }
                                 if ptt.joined {
                                     Button {
-                                        if ptt.transmitting { ptt.stop() } else { ptt.begin() }
+                                        if ptt.requested { ptt.stop() } else { ptt.begin() }
                                     } label: {
-                                        Label(LocalizedStringKey(ptt.transmitting ? "ios_stop_talking" : "ios_talk"), systemImage: "mic.fill")
+                                        Label(LocalizedStringKey(ptt.requested ? "ios_stop_talking" : "ios_talk"), systemImage: "mic.fill")
                                             .font(.title3.bold()).frame(maxWidth: .infinity, minHeight: 100)
                                     }
                                     .buttonStyle(.borderedProminent)

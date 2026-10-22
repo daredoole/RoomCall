@@ -2,6 +2,7 @@
 "ios_announce" = "Een bericht omroepen";
 "ios_announce_description" = "Stuur via Home Assistant een gesproken tekstaankondiging naar de gekozen kamer.";
 "ios_choose_room" = "Kies waar je wilt spreken";
+"ios_connecting_audio" = "Audio verbinden…";
 "ios_connection_failed" = "RoomCall kon de verbinding niet voltooien. Controleer Home Assistant en probeer opnieuw.";
 "ios_delivery_failed" = "Sommige afspeelverzoeken zijn mislukt. Controleer Home Assistant.";
 "ios_error" = "RoomCall heeft aandacht nodig";

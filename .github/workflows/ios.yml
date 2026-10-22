@@ -8,6 +8,7 @@ permissions:
 jobs:
   simulator:
     runs-on: macos-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Check native translation catalogs
@@ -33,7 +34,11 @@ jobs:
           xcodebuild test -project ios/RoomCall/RoomCall.xcodeproj -scheme RoomCall \
             -destination "platform=iOS Simulator,id=$ROOMCALL_SIMULATOR" \
             -derivedDataPath /tmp/roomcall-ios-build -resultBundlePath /tmp/RoomCall.xcresult \
-            CODE_SIGNING_ALLOWED=NO | tee /tmp/roomcall-ios-build.log
+            -parallel-testing-enabled NO -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 60 -maximum-test-execution-time-allowance 120 \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES | tee /tmp/roomcall-ios-build.log
+      - name: Package simulator app
+        run: ditto -c -k --sequesterRsrc --keepParent /tmp/roomcall-ios-build/Build/Products/Debug-iphonesimulator/RoomCall.app /tmp/RoomCall-simulator.zip
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -41,4 +46,4 @@ jobs:
           path: |
             /tmp/RoomCall.xcresult
             /tmp/roomcall-ios-build.log
-            /tmp/roomcall-ios-build/Build/Products/Debug-iphonesimulator/RoomCall.app
+            /tmp/RoomCall-simulator.zip

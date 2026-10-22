@@ -2,6 +2,7 @@
 "ios_announce" = "Nachricht ansagen";
 "ios_announce_description" = "Sende eine gesprochene Textansage über Home Assistant an den gewählten Raum.";
 "ios_choose_room" = "Wähle, wo du sprechen möchtest";
+"ios_connecting_audio" = "Audio wird verbunden…";
 "ios_connection_failed" = "RoomCall konnte die Verbindung nicht abschließen. Prüfe Home Assistant und versuche es erneut.";
 "ios_delivery_failed" = "Einige Wiedergabeanfragen sind fehlgeschlagen. Prüfe Home Assistant.";
 "ios_error" = "RoomCall benötigt Aufmerksamkeit";
