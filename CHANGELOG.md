@@ -10,6 +10,10 @@ All notable changes are listed here. The format follows
   satellite in a room (Atom Echo, ESP32-S3, Home Assistant Voice), a room-to-room call listens
   for a spoken reply and plays its transcription in the caller's room. Opt in under
   Configure → Communication; silent replies send nothing and replies never ask for replies.
+- Answer the door ([#21](https://github.com/daredoole/RoomCall/issues/21)): choose a doorbell,
+  its camera and rooms under Configure → Communication. A press is announced in those rooms,
+  phones and watches get the snapshot with an **Answer** button, and RoomCall cards show a
+  banner; Answer opens the camera's live view, with two-way talk where the camera supports it.
 
 ## 0.11.0 — 2026-10-22
 

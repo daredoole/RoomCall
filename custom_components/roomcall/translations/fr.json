@@ -109,10 +109,16 @@
               "voicemail_retention": "Conservation des messages (secondes)",
               "translation_entity": "Fournisseur IA de traduction (facultatif)",
               "audio_processing": "Traitement de la voix enregistrée",
-              "talk_back": "Réponse mains libres"
+              "talk_back": "Réponse mains libres",
+              "doorbell_entity": "Sonnette",
+              "doorbell_camera": "Caméra de la sonnette",
+              "doorbell_rooms": "Pièces où sonner"
             },
             "data_description": {
-              "talk_back": "Quand quelqu'un parle à une pièce depuis une autre, un satellite Assist de cette pièce (Atom Echo, ESP32-S3, Home Assistant Voice) écoute une réponse, que la pièce de l'appelant entend. Les réponses sont transcrites puis dites avec la voix choisie."
+              "talk_back": "Quand quelqu'un parle à une pièce depuis une autre, un satellite Assist de cette pièce (Atom Echo, ESP32-S3, Home Assistant Voice) écoute une réponse, que la pièce de l'appelant entend. Les réponses sont transcrites puis dites avec la voix choisie.",
+              "doorbell_entity": "Le bouton ou l'événement de la sonnette. Quand elle sonne, RoomCall annonce qui est à la porte, prévient les téléphones avec un bouton Répondre et affiche un bandeau sur les cartes RoomCall.",
+              "doorbell_camera": "Répondre ouvre le direct de cette caméra, où l'on peut parler si la caméra le permet.",
+              "doorbell_rooms": "Laisser vide pour sonner partout."
             }
           }
         }
@@ -376,7 +382,10 @@
         "station_room": "Pièce de ce tableau de bord",
         "no_stations": "Aucune autre station n'est ouverte. Ouvrez RoomCall sur un autre tableau de bord et activez sa station pour l'appeler.",
         "talk_back_prompt": "Une réponse ?",
-        "talk_back_reply": "{room} dit : {text}"
+        "talk_back_reply": "{room} dit : {text}",
+        "doorbell_message": "Quelqu'un est à {name}.",
+        "answer_door": "Répondre",
+        "open_camera": "Ouvrir la caméra"
       }
     },
     "audio_processing": {

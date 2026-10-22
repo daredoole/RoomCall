@@ -55,6 +55,7 @@ replies, quiet nights, reminders that don't go away until the chore is done, and
 - **Urgent, Do Not Disturb and quiet hours** — quieter nights, skipped bedrooms, and an override when it matters.
 - **Call history** with replay and speech-to-text transcripts.
 - **Your chime** — walkie-talkie, ding, doorbell… or your own file, before talk, typed messages, Siri and announcements alike.
+- **Answer the door** — the doorbell rings your rooms, and phones, watches and every card get the camera snapshot with an **Answer** button that opens the live view.
 - **Browser room stations** — call another open dashboard over WebRTC; the other side answers before any audio connects.
 
 ### ✅ Announcements and tasks

@@ -98,6 +98,10 @@
       text: "Laundry is done", has_audio: false },
   ];
   const states = { "switch.roomcall_do_not_disturb": { state: params.get("dnd") === "on" ? "on" : "off" } };
+  if (params.get("doorbell") === "on") {
+    states["binary_sensor.front_door_visitor"] = { state: "off", last_changed: ago(30), attributes: {} };
+    states["camera.front_door"] = { state: "idle", attributes: { entity_picture: "/logo.svg" } };
+  }
   const tasks = [{ id: "laundry", name: "Laundry", task: "Took out the dry clothes",
     state: params.get("tasks") === "open" ? "open" : "idle", opened: ago(12), done: null, done_by: null,
     remind_every: 15, entity_id: "sensor.laundry_task" }];
@@ -185,6 +189,8 @@
       if (path === "roomcall/history") return { calls: HISTORY };
       return {
         rooms: ROOMS, speakers: 5, dnd: false, dnd_entity: "switch.roomcall_do_not_disturb",
+        doorbell: params.get("doorbell") === "on"
+          ? { entity: "binary_sensor.front_door_visitor", camera: "camera.front_door", name: "Front Door" } : null,
         people: [{ entity_id: "person.alex", name: "Alex" }, { entity_id: "person.sam", name: "Sam" }],
       };
     },

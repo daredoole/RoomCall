@@ -109,10 +109,16 @@
               "voicemail_retention": "Retención de mensajes (segundos)",
               "translation_entity": "Proveedor de traducción IA (opcional)",
               "audio_processing": "Procesamiento de voz grabada",
-              "talk_back": "Respuesta sin manos"
+              "talk_back": "Respuesta sin manos",
+              "doorbell_entity": "Timbre",
+              "doorbell_camera": "Cámara del timbre",
+              "doorbell_rooms": "Salas donde suena"
             },
             "data_description": {
-              "talk_back": "Cuando alguien habla a una sala desde otra, un satélite de Assist en esa sala (Atom Echo, ESP32-S3, Home Assistant Voice) escucha una respuesta y la sala de origen la oye. Las respuestas se transcriben y se dicen con la voz configurada."
+              "talk_back": "Cuando alguien habla a una sala desde otra, un satélite de Assist en esa sala (Atom Echo, ESP32-S3, Home Assistant Voice) escucha una respuesta y la sala de origen la oye. Las respuestas se transcriben y se dicen con la voz configurada.",
+              "doorbell_entity": "El botón o evento del timbre. Cuando suena, RoomCall dice quién está en la puerta, avisa a los teléfonos con un botón Contestar y muestra un aviso en las tarjetas de RoomCall.",
+              "doorbell_camera": "Contestar abre la vista en directo de esta cámara, donde se puede hablar si la cámara lo admite.",
+              "doorbell_rooms": "Déjalo vacío para que suene en todas partes."
             }
           }
         }
@@ -376,7 +382,10 @@
         "station_room": "Sala de este panel",
         "no_stations": "No hay otras estaciones abiertas. Abre RoomCall en otro panel y activa su estación para llamarla.",
         "talk_back_prompt": "¿Respuesta?",
-        "talk_back_reply": "{room} dice: {text}"
+        "talk_back_reply": "{room} dice: {text}",
+        "doorbell_message": "Hay alguien en {name}.",
+        "answer_door": "Contestar",
+        "open_camera": "Abrir la cámara"
       }
     },
     "audio_processing": {

@@ -161,6 +161,27 @@ intended for mutually reachable networks. HTTPS and browser microphone permissio
 are still required. A suspended/background browser cannot be treated as a reliably
 available phone. Speakers without an accessible microphone remain playback-only.
 
+## Answer the door
+
+![Doorbell banner on the card](assets/ha-card-doorbell.png){ width="260" align=right }
+
+Under **Configure → Communication**, pick the **Doorbell** (a binary sensor such as a
+Reolink or UniFi "visitor" sensor, an `event` entity, or a button), its **Doorbell
+camera**, and the **Rooms to ring** (empty rings everywhere). When someone presses it:
+
+- the rooms hear "*Someone is at the Front Door.*" with your chime;
+- phones get a time-sensitive notification with the camera snapshot and an **Answer**
+  button (on Apple Watch too). Answer opens the camera's live view in the Home
+  Assistant app;
+- every RoomCall card shows a banner with the snapshot and **Answer**, which opens the
+  same live view on that dashboard or wall tablet.
+
+The live view is Home Assistant's own camera dialog. Talking back to the visitor works
+there when the camera's stream supports two-way audio (for example through go2rtc).
+RoomCall does not relay doorbell audio itself. Presses within 10 seconds ring once, and a
+doorbell coming back online doesn't ring. Use this instead of the *Announce the doorbell*
+blueprint, not alongside it, or the rooms hear it twice.
+
 ## Hands-free talk-back
 
 Speakers like Sonos, HomePod and Nest keep their microphones for their own assistants.
@@ -205,6 +226,8 @@ satellite's Assist pipeline and played in the caller's room as
 - **Translation provider:** an explicitly selected `ai_task` entity. A message with
   `translate: true` and a target language uses this provider; an invalid translation
   fails without sending the original. No cloud provider is selected automatically.
+- **Doorbell, camera and rooms:** ring rooms, phones and cards with an Answer button
+  ([details](#answer-the-door)).
 - **Hands-free talk-back:** an Assist satellite in a called room listens for a reply
   ([details](#hands-free-talk-back)). Off by default.
 - **Speech processing:** optional recorded-audio high-pass filtering, noise reduction,

@@ -109,10 +109,16 @@
               "voicemail_retention": "Voicemailbewaartermijn (seconden)",
               "translation_entity": "AI-vertaaldienst (optioneel)",
               "audio_processing": "Verwerking van opgenomen spraak",
-              "talk_back": "Handsfree terugpraten"
+              "talk_back": "Handsfree terugpraten",
+              "doorbell_entity": "Deurbel",
+              "doorbell_camera": "Deurbelcamera",
+              "doorbell_rooms": "Ruimtes om te laten bellen"
             },
             "data_description": {
-              "talk_back": "Als iemand vanuit een andere ruimte tegen een ruimte praat, luistert een Assist-satelliet daar (Atom Echo, ESP32-S3, Home Assistant Voice) naar een antwoord, dat in de ruimte van de beller klinkt. Antwoorden worden uitgeschreven en uitgesproken met de ingestelde stem."
+              "talk_back": "Als iemand vanuit een andere ruimte tegen een ruimte praat, luistert een Assist-satelliet daar (Atom Echo, ESP32-S3, Home Assistant Voice) naar een antwoord, dat in de ruimte van de beller klinkt. Antwoorden worden uitgeschreven en uitgesproken met de ingestelde stem.",
+              "doorbell_entity": "De deurbelknop of het deurbelevenement. Als die gaat, zegt RoomCall wie er aan de deur is, meldt het telefoons met een Opnemen-knop en toont het een melding op RoomCall-kaarten.",
+              "doorbell_camera": "Opnemen opent het livebeeld van deze camera, waar terugpraten werkt als de camera dat ondersteunt.",
+              "doorbell_rooms": "Leeg laten om overal te bellen."
             }
           }
         }
@@ -376,7 +382,10 @@
         "station_room": "Ruimte van dit dashboard",
         "no_stations": "Geen andere stations geopend. Open RoomCall op een ander dashboard en schakel daar het station in om het te bellen.",
         "talk_back_prompt": "Antwoord?",
-        "talk_back_reply": "{room} zegt: {text}"
+        "talk_back_reply": "{room} zegt: {text}",
+        "doorbell_message": "Er staat iemand bij {name}.",
+        "answer_door": "Opnemen",
+        "open_camera": "Camera openen"
       }
     },
     "audio_processing": {

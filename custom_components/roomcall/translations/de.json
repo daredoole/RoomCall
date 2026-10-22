@@ -109,10 +109,16 @@
               "voicemail_retention": "Aufbewahrung von Nachrichten (Sekunden)",
               "translation_entity": "KI-Übersetzungsanbieter (optional)",
               "audio_processing": "Verarbeitung aufgenommener Sprache",
-              "talk_back": "Freihändig antworten"
+              "talk_back": "Freihändig antworten",
+              "doorbell_entity": "Türklingel",
+              "doorbell_camera": "Türklingel-Kamera",
+              "doorbell_rooms": "Räume zum Klingeln"
             },
             "data_description": {
-              "talk_back": "Spricht jemand aus einem anderen Raum in einen Raum, hört ein Assist-Satellit dort (Atom Echo, ESP32-S3, Home Assistant Voice) auf eine Antwort, die im Raum des Anrufers zu hören ist. Antworten werden transkribiert und mit der eingestellten Stimme gesprochen."
+              "talk_back": "Spricht jemand aus einem anderen Raum in einen Raum, hört ein Assist-Satellit dort (Atom Echo, ESP32-S3, Home Assistant Voice) auf eine Antwort, die im Raum des Anrufers zu hören ist. Antworten werden transkribiert und mit der eingestellten Stimme gesprochen.",
+              "doorbell_entity": "Taste oder Ereignis der Türklingel. Beim Klingeln sagt RoomCall, wer an der Tür ist, benachrichtigt Telefone mit einer Annehmen-Taste und zeigt einen Hinweis auf RoomCall-Karten.",
+              "doorbell_camera": "Annehmen öffnet die Live-Ansicht dieser Kamera, in der Gegensprechen funktioniert, wenn die Kamera es unterstützt.",
+              "doorbell_rooms": "Leer lassen, um überall zu klingeln."
             }
           }
         }
@@ -376,7 +382,10 @@
         "station_room": "Raum dieses Dashboards",
         "no_stations": "Keine anderen Stationen geöffnet. Öffne RoomCall auf einem anderen Dashboard und aktiviere dort die Station, um sie anzurufen.",
         "talk_back_prompt": "Antwort?",
-        "talk_back_reply": "{room} sagt: {text}"
+        "talk_back_reply": "{room} sagt: {text}",
+        "doorbell_message": "Jemand ist an der {name}.",
+        "answer_door": "Annehmen",
+        "open_camera": "Kamera öffnen"
       }
     },
     "audio_processing": {

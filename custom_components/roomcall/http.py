@@ -31,6 +31,7 @@ from .const import (
     PRIORITY_NORMAL,
 )
 from .core import friendly, mp3_seconds, render_chime, rooms
+from .doorbell import info as doorbell_info
 from .errors import Problem
 from .localization import catalog
 
@@ -84,6 +85,7 @@ class RoomsView(HomeAssistantView):
                     "switch", DOMAIN, f"{data.entry_id}_dnd"
                 ),
                 "chimes": [*chimes.STYLES],
+                "doorbell": doorbell_info(hass, data),
                 "quiet": data.quiet.active(dt_util.now()),
             }
         )
