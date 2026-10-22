@@ -67,11 +67,12 @@ def _record(
     kind: str = "talk",
     ok: bool = True,
     owner: str | None = None,
+    speaker: str = "media_player.basement_sonos",
 ):
     record = CallRecord(
         target=target,
         kind=kind,
-        results=[Delivery("media_player.basement_sonos", "Basement", ok, 10)],
+        results=[Delivery(speaker, speaker, ok, 10)],
     )
     record.from_room, record.owner = origin, owner
     return record
@@ -125,7 +126,9 @@ async def test_talk_back_only_listens_when_it_makes_sense(hass: HomeAssistant, h
         _record(basement, origin=None),  # no room to answer to
         _record(basement, origin="Apple Home"),
         _record(f"{basement},all"),  # everywhere
-        _record(kitchen),  # no satellite in the kitchen
+        _record(kitchen, speaker="media_player.kitchen_sonos"),  # no satellite in the kitchen
+        # Quiet hours skipped the basement: only the kitchen played, so nobody listens.
+        _record(f"{basement},{kitchen}", speaker="media_player.kitchen_sonos"),
         _record(basement, origin=basement),  # calling your own room
     ):
         await talkback.listen(hass, data, record)
@@ -227,3 +230,22 @@ async def test_unloading_cancels_a_pending_reply(hass: HomeAssistant, house, tts
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done(wait_background_tasks=True)
     assert not tts_audio.await_args_list
+
+
+async def test_talk_back_waits_for_the_call_to_finish_playing(hass: HomeAssistant, house):
+    await _setup(hass, house)
+    data = hass.data[DOMAIN]
+    asked = _answers(hass, None)
+    # The basement speaker is still playing the call: its lease is held.
+    lease = await data.scheduler.acquire("media_player.basement_sonos", None)
+    listening = hass.async_create_task(talkback.listen(hass, data, _record(house["basement"])))
+    await asyncio.sleep(0.05)
+    assert not asked
+    lease.release()
+    await listening
+    assert len(asked) == 1
+
+    # A call that never finishes playing gives up instead of talking over it.
+    with patch.object(data.scheduler, "acquire", side_effect=TimeoutError):
+        await talkback.listen(hass, data, _record(house["basement"]))
+    assert len(asked) == 1

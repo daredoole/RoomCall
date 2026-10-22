@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 LISTEN_SECONDS = 30  # upper bound for the satellite to prompt, listen and transcribe
+PLAYBACK_WAIT = 300  # longest wait for the original call to finish playing
 
 
 async def satellites(hass: HomeAssistant, areas: set[str], context: Context) -> list[str]:
@@ -66,10 +67,21 @@ async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) ->
         or not hass.services.has_service("assist_satellite", "ask_question")
     ):
         return
+    # Only rooms whose speakers actually played: quiet hours may have skipped some.
+    delivered = [result.entity_id for result in record.results if result.ok]
+    heard = {area for entity_id in delivered if (area := speaker_area(hass, entity_id))}
     # The caller's permissions apply to the listening device and to the reply's room.
     context = Context(user_id=record.owner)
-    ears = await satellites(hass, targets - {origin}, context)
+    ears = await satellites(hass, heard - {origin}, context)
     if not ears:
+        return
+    # Ask only once the call has finished playing, so "Reply?" never talks over it. The
+    # scheduler holds each speaker until its playback (and any restore) has ended.
+    deadline = asyncio.get_running_loop().time() + PLAYBACK_WAIT
+    try:
+        for entity_id in delivered:
+            (await data.scheduler.acquire(entity_id, deadline)).release()
+    except (TimeoutError, RuntimeError):
         return
 
     async def ask(entity_id: str) -> str | None:
