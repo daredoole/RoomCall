@@ -179,6 +179,9 @@ class RoomCallCard extends HTMLElement {
     const previous = this._doorbellState;
     this._doorbellState = state.state;
     if (["unavailable", "unknown", "off"].includes(state.state) || previous === "unavailable") return;
+    // Same 10-second cooldown as the backend, so a bounce doesn't reopen a dismissed banner.
+    if (Date.now() - (this._doorbellShown || 0) < 10000) return;
+    this._doorbellShown = Date.now();
     const box = this.shadowRoot.querySelector(".doorbell");
     const camera = bell.camera && this._hass.states[bell.camera];
     box.replaceChildren();

@@ -67,6 +67,8 @@ def async_track(hass: HomeAssistant, data: RoomCallData) -> Callable[[], None]:
         # came back online, which is not a press.
         if new is None or new.state in QUIET or (old is not None and old.state == "unavailable"):
             return
+        if old is not None and old.state == new.state:  # attribute-only or forced update
+            return
         if rung is not None and monotonic() - rung < COOLDOWN:
             return
         rung = monotonic()

@@ -103,6 +103,12 @@ async def test_doorbell_rings_rooms_phones_and_cards(
     assert note["data"]["push"] == {"interruption-level": "time-sensitive"}
     assert hass.data[DOMAIN].metrics.counters["doorbell_rings"] == 1
 
+    # An attribute-only update while held "on" is not another press.
+    clock[0] += 60
+    hass.states.async_set("binary_sensor.front_door_visitor", "on", {"battery": 90})
+    await hass.async_block_till_done()
+    assert len(phone) == 1
+    clock[0] -= 60  # back within the first ring's cooldown for the checks below
     # Releasing, a bounce within the cooldown, or coming back from unavailable don't ring.
     await _press(hass, "off")
     await _press(hass)

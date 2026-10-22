@@ -182,8 +182,8 @@ def check_doorbell(browser, errors) -> None:
         answer.click()
         assert page.evaluate("window.opened") == "camera.front_door"
         expect(banner).to_be_hidden()
-        # Coming back from unavailable is not a press, as on the backend.
-        for state in ("unavailable", "on"):
+        # A bounce within 10 seconds, or coming back from unavailable, doesn't reopen it.
+        for state in ("off", "on", "unavailable", "on"):
             page.evaluate(
                 """state => {
               const h = ROOMCALL_HARNESS, card = document.querySelector("roomcall-card");
