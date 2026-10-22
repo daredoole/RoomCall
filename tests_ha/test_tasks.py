@@ -517,3 +517,37 @@ async def test_snooze_and_reminder_due_times_survive_a_restart(
     played.clear()
     await _advance(hass, 11)
     assert len(played) == 1
+
+
+async def test_a_reload_during_completion_sees_the_task_done(
+    hass: HomeAssistant, house, hass_admin_user
+):
+    async_mock_service(hass, "notify", "mobile_app_alex_phone")
+    async_mock_service(hass, "notify", "mobile_app_sam_phone")
+    entry = await _setup(hass, hass_admin_user.id)
+    async_mock_service(hass, "media_player", "play_media")
+    sid = await _add(hass, entry, "triggered", {**LAUNDRY, "rooms": [house["kitchen"]]})
+    hass.states.async_set("sensor.dryer", "done", {"friendly_name": "Dryer"})
+    await hass.async_block_till_done()
+    announcer = hass.data[DOMAIN].announcer
+    real_get_user = hass.auth.async_get_user
+    paused, release = asyncio.Event(), asyncio.Event()
+
+    async def slow_get_user(user_id):
+        paused.set()
+        await release.wait()
+        return await real_get_user(user_id)
+
+    with patch.object(hass.auth, "async_get_user", slow_get_user):
+        completing = hass.async_create_task(
+            announcer.async_complete(sid, Context(user_id=hass_admin_user.id))
+        )
+        await paused.wait()
+        replacement = announcements.Announcer(hass, entry)
+        loading = hass.async_create_task(replacement.async_load())
+        await asyncio.sleep(0)
+        assert not loading.done()  # waits for the completion to be stored
+        release.set()
+        await completing
+        await loading
+    assert replacement.items[sid].task_state == "done"

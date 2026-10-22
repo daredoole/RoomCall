@@ -14,6 +14,7 @@ confirmation; only the task action, the card, the button entity or the API compl
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -71,6 +72,7 @@ from .messages import send
 from .replies import clear_task, notify_task
 
 _LOGGER = logging.getLogger(__name__)
+TASK_LOCK = "roomcall_task_lock"  # shared by every announcer, so a reload waits for completions
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -170,12 +172,14 @@ class Announcer:
             if sub.subentry_type in (SUBENTRY_SCHEDULED, SUBENTRY_TRIGGERED)
         }
         self._unsubs: list[Callable[[], None]] = []
+        self._lock: asyncio.Lock = hass.data.setdefault(TASK_LOCK, asyncio.Lock())
         self._stopped = False  # a reload replaces this announcer; plays in flight must not remind
         self._store: Store[dict[str, Any]] = Store(hass, 1, f"roomcall.{entry.entry_id}.tasks")
 
     async def async_load(self) -> None:
         """Open tasks survive restarts and reloads, so reminders carry on."""
-        saved_tasks = await self._store.async_load() or {}
+        async with self._lock:
+            saved_tasks = await self._store.async_load() or {}
         for sid, saved in saved_tasks.items():
             if (item := self.items.get(sid)) is None or not item.task:
                 # Deleted, or no longer a task: forget it and unpin its notification.
@@ -288,16 +292,18 @@ class Announcer:
 
     async def async_complete(self, subentry_id: str, context: Context) -> Announcement:
         """Someone confirms the task was done: stop reminders and tell automations."""
-        item = self._task(subentry_id)
-        # Claim it before awaiting anything, so simultaneous confirmations complete it once.
-        opened = item.task_opened
-        item.task_opened = None
-        self._cancel_reminder(item)
-        user = await self.hass.auth.async_get_user(context.user_id) if context.user_id else None
-        item.task_done, item.task_done_by = dt_util.utcnow(), user.name if user else None
-        await self._clear(item)
-        item._phones = []
-        await self._save()
+        # Simultaneous confirmations complete it once, and a reload replacing this announcer
+        # loads the saved state only after the completion is stored.
+        async with self._lock:
+            item = self._task(subentry_id)
+            opened = item.task_opened
+            item.task_opened = None
+            self._cancel_reminder(item)
+            user = await self.hass.auth.async_get_user(context.user_id) if context.user_id else None
+            item.task_done, item.task_done_by = dt_util.utcnow(), user.name if user else None
+            await self._clear(item)
+            item._phones = []
+            await self._save()
         self.hass.bus.async_fire(
             EVENT_TASK_COMPLETED,
             {
