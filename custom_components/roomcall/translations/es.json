@@ -323,7 +323,8 @@
         "ios_local_network_permission": "RoomCall se conecta a tu Home Assistant y tus altavoces.",
         "ios_phrase_open": "Abre ${applicationName}",
         "ios_phrase_announce": "Anuncia con ${applicationName}",
-        "ios_connecting_audio": "Conectando audio…"
+        "ios_connecting_audio": "Conectando audio…",
+        "reply_to": "Responder a {name}"
       }
     },
     "audio_processing": {

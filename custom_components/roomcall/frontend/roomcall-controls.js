@@ -135,7 +135,10 @@ export class RoomCallControls {
         : (index + (event.key === "ArrowRight" ? 1 : -1) + items.length) % items.length;
       this.settingsTab(items[next].dataset.panel); items[next].focus();
     });
-    body.append(tabs, ...Object.values(this.panels));
+    this.settingsStatus = document.createElement("div");
+    this.settingsStatus.setAttribute("role", "status");
+    this.settingsStatus.className = "result";
+    body.append(tabs, this.settingsStatus, ...Object.values(this.panels));
     this.dialog.append(heading, body);
     this.setup = document.createElement("div");
     this.setup.className = "setup-content";
@@ -174,6 +177,7 @@ export class RoomCallControls {
   }
   openSettings() {
     this.card._stop({ preventDefault() {} });
+    this.settingsStatus.textContent = "";
     if (!this.dialog.open) this.dialog.showModal();
     this.refresh().catch(error => this.error(error));
   }
@@ -202,7 +206,11 @@ export class RoomCallControls {
       { problem: result.error });
     return result;
   }
-  error(error) { this.result.textContent = error.message || String(error); }
+  error(error) {
+    const message = error.message || String(error);
+    this.result.textContent = message;
+    if (this.dialog.open) this.settingsStatus.textContent = message;
+  }
   targets() {
     return this.card._person ? { people: [this.card._person] } : { areas: [this.card._target] };
   }
@@ -294,6 +302,7 @@ export class RoomCallControls {
     }), peers, this.button("call_station", async () => {
       if (!this.station) throw new Error(this.t("station_unavailable"));
       await this.station.call(peers.value);
+      this.dialog.close();
     }));
     this.settingsTabs.querySelector('[data-panel="voicemail"]').hidden = !this.capabilities.features.voicemail;
     if (this.capabilities.features.voicemail) {

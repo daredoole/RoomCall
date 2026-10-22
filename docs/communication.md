@@ -10,7 +10,7 @@ using the existing buttons. Type a message, preview its recipients, and send it.
 Ask selects a compatible Assist satellite and displays its transcribed answer.
 The Talk button also supports holding Space or Enter on a keyboard.
 
-Expand **Setup and sound tests** to test each selected speaker. After the sound
+Open **Settings → Setup and sound tests** to test each selected speaker. After the sound
 plays, choose **I heard it** or **I heard nothing**. Only this explicit confirmation
 marks a test as heard. Results survive integration reloads and HA restarts.
 
@@ -140,7 +140,7 @@ processing. An unanswered question expires; RoomCall does not invent an answer.
 
 ## Browser room stations
 
-In **Setup and sound tests**, select the current room and enable the station.
+In **Settings → Room stations**, select the current room and enable the station.
 Enable a station on another open dashboard, refresh the station list, and call it.
 The recipient must press **Answer** before signaling audio. Microphone capture
 starts only after the local Call/Answer action. Hang-up or removing the card

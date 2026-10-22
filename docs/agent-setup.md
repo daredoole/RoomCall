@@ -70,7 +70,7 @@ commit on retry. Undo refuses to remove a new entry if announcements were added
 afterward. Store capacity is 32 plans; expired, draft, or rolled-back plans may be
 evicted. Undo does not undo previously delivered audio or unrelated HA changes.
 
-The card's **Setup and sound tests → Guided setup** provides discovery, speaker
+The card's **Settings → Setup and sound tests → Guided setup** provides discovery, speaker
 selection, speech provider, volume, review, apply, resume, sound tests, verification,
 and explicitly confirmed undo. It uses native controls and HA theme colors.
 

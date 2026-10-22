@@ -54,6 +54,19 @@ def check_guided_setup(browser, errors) -> None:
         wizard.get_by_role("checkbox", name="Confirm restoring", exact=False).check()
         wizard.get_by_role("button", name="Undo this setup", exact=True).click()
         expect(wizard.locator(".setup-review")).to_contain_text("Previous settings restored")
+        page.evaluate("""() => {
+          const hass=document.querySelector('roomcall-card')._hass;
+          const original=hass.callApi.bind(hass);
+          hass.callApi=async(method,path,body)=>body?.operation==='sound_test'
+            ? {ok:false,error:{message:'Speaker temporarily unavailable'}}
+            : original(method,path,body);
+        }""")
+        card.locator(".quick-tests").get_by_role(
+            "button", name="Play test sound", exact=True
+        ).first.click()
+        expect(card.locator(".settings-body > .result")).to_contain_text(
+            "Speaker temporarily unavailable"
+        )
         context.close()
 
 
@@ -132,7 +145,6 @@ def main() -> None:
         page.wait_for_function("ROOMCALL_HARNESS.stations.size===2")
         cards.first.locator('select[aria-label="Call station"]').select_option(label="Basement")
         cards.first.get_by_role("button", name="Call station", exact=True).click()
-        cards.first.get_by_role("button", name="Close", exact=True).click()
         expect(cards.nth(1).get_by_role("button", name="Answer", exact=True)).to_be_visible()
         assert page.evaluate("qaTracks.length") == 1  # Callee mic is still closed.
         cards.nth(1).get_by_role("button", name="Answer", exact=True).click()

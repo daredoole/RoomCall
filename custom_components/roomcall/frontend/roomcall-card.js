@@ -227,7 +227,7 @@ class RoomCallCard extends HTMLElement {
         .call ha-icon { --mdc-icon-size: 20px; }
 
         :host([layout="compact"]) ha-card { padding:12px; gap:10px; }
-        :host([layout="compact"]) .head, :host([layout="compact"]) .recipients-title, :host([layout="compact"]) .history { display: none; }
+        :host([layout="compact"]) .title, :host([layout="compact"]) .recipients-title, :host([layout="compact"]) .history { display: none; }
         :host([layout="compact"]) .workspace { gap:12px; }
         :host([layout="compact"]) .chips.rooms { flex: 1; }
         :host([layout="compact"]) .wrap { flex: 0 0 auto; min-height: 0; }
@@ -384,6 +384,7 @@ class RoomCallCard extends HTMLElement {
       if (call.has_audio) {
         const play = document.createElement("button");
         play.title = "Play";
+        play.setAttribute("aria-label", this._t("replay"));
         play.innerHTML = `<ha-icon icon="mdi:play-circle-outline"></ha-icon>`;
         play.addEventListener("click", () => this._replay(call.id));
         actions.append(play);
@@ -397,6 +398,7 @@ class RoomCallCard extends HTMLElement {
       if (call.from && (this._rooms || []).some((r) => r.area_id === call.from)) {
         const reply = document.createElement("button");
         reply.title = `Reply to ${from}`;
+        reply.setAttribute("aria-label", this._t("reply_to", { name: from }));
         reply.innerHTML = `<ha-icon icon="mdi:reply"></ha-icon>`;
         reply.addEventListener("click", () => {
           this._replyTo = call.from;

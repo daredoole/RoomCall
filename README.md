@@ -56,6 +56,8 @@ intercom, organised by your Home Assistant **areas**.
 - 🍏 **Apple Home intercom** — every room is a camera tile in the Home app; tap the mic on your iPhone or Apple Watch to talk in that room.
 - 🗣️ **Automations and Siri** — `roomcall.broadcast` from automations, Shortcuts, Apple Watch and CarPlay.
 - 🖥️ **Visual card editor**, plus kiosk and compact layouts for wall tablets and busy dashboards.
+- 📐 **Adaptive controls** — layouts follow the card width, Talk/Type/Ask remain available in compact mode, and setup lives in a separate keyboard-accessible panel.
+- 📱 **Native iOS prototype** — SwiftUI, HA sign-in, live Push to Talk broadcasts, Siri announcements and a Control Center launcher ([build and limitations](docs/native-ios.md)).
 - ⏰ **Scheduled and triggered announcements** — "Bus in 10 minutes" on weekdays, "{{ name }} is on" when the porch light switches, "the garage has been open 10 minutes" — to rooms, specific speakers or people.
 - 🤖 **AI-ready** — Assist agents can announce and inspect results through RoomCall's tools; agents can manage announcements through Home Assistant's APIs ([guide](https://daredoole.github.io/RoomCall/ai/), [`llms.txt`](https://daredoole.github.io/RoomCall/llms.txt)).
 - 💬 **Talk, Type or Ask** — preview recipients, queue messages, request acknowledgment, or collect a real answer from an Assist satellite.
