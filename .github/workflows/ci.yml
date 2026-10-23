@@ -35,20 +35,12 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           python-version: ${{ matrix.python }}
-      - name: Ensure ffmpeg is available
+      - name: Set up pinned ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@36c6454b5a2348e7794ba2d82a21506605921e3d # v3
         timeout-minutes: 5
-        run: |
-          if ! command -v ffmpeg >/dev/null 2>&1; then
-            # Some hosted runners have a very slow Azure package mirror.
-            for apt_source in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
-              if [ -f "$apt_source" ]; then
-                sudo sed -i 's|http://azure.archive.ubuntu.com|https://archive.ubuntu.com|g' "$apt_source"
-              fi
-            done
-            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update
-            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y --no-install-recommends ffmpeg
-          fi
-          ffmpeg -version
+        with:
+          ffmpeg-version: "7.0.2"
+      - run: ffmpeg -version
       - run: uv venv && uv pip install -e ".[dev]"
       - run: uv run pytest -q --cov=src/roomcall --cov-fail-under=100
 
@@ -59,20 +51,12 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           python-version: "3.13"
-      - name: Ensure ffmpeg is available
+      - name: Set up pinned ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@36c6454b5a2348e7794ba2d82a21506605921e3d # v3
         timeout-minutes: 5
-        run: |
-          if ! command -v ffmpeg >/dev/null 2>&1; then
-            # Some hosted runners have a very slow Azure package mirror.
-            for apt_source in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
-              if [ -f "$apt_source" ]; then
-                sudo sed -i 's|http://azure.archive.ubuntu.com|https://archive.ubuntu.com|g' "$apt_source"
-              fi
-            done
-            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update
-            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y --no-install-recommends ffmpeg
-          fi
-          ffmpeg -version
+        with:
+          ffmpeg-version: "7.0.2"
+      - run: ffmpeg -version
       - run: uv venv && uv pip install "pytest-homeassistant-custom-component==0.13.316" ha-ffmpeg "HAP-python==5.0.0" pytest-cov
       - run: uv run python scripts/install_ha_test_deps.py
       - name: Home Assistant tests with 100% statement coverage
@@ -99,20 +83,12 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           python-version: "3.14"
-      - name: Ensure ffmpeg is available
+      - name: Set up pinned ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@36c6454b5a2348e7794ba2d82a21506605921e3d # v3
         timeout-minutes: 5
-        run: |
-          if ! command -v ffmpeg >/dev/null 2>&1; then
-            # Some hosted runners have a very slow Azure package mirror.
-            for apt_source in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
-              if [ -f "$apt_source" ]; then
-                sudo sed -i 's|http://azure.archive.ubuntu.com|https://archive.ubuntu.com|g' "$apt_source"
-              fi
-            done
-            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update
-            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y --no-install-recommends ffmpeg
-          fi
-          ffmpeg -version
+        with:
+          ffmpeg-version: "7.0.2"
+      - run: ffmpeg -version
       - run: uv venv && uv pip install "pytest-homeassistant-custom-component==0.13.373" ha-ffmpeg "HAP-python==5.0.0" pytest-cov
       - run: uv run python scripts/install_ha_test_deps.py
       - run: uv run pytest tests_ha -q --cov=custom_components/roomcall --cov-fail-under=100 --junitxml=ha-results.xml -o junit_family=xunit1
