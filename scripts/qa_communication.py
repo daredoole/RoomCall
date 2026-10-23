@@ -288,7 +288,7 @@ def main() -> None:
         check_task_added_later(browser, errors)
         check_doorbell(browser, errors)
         check_doorbell_changes(browser, errors)
-        for width, height in [(390, 844), (1280, 900)]:
+        for width, height in [(240, 800), (390, 844), (1280, 900)]:
             context = browser.new_context(viewport={"width": width, "height": height})
             context.grant_permissions(["microphone"], origin=ORIGIN)
             page = context.new_page()

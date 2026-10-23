@@ -21,6 +21,7 @@ export class RoomCallControls {
       .communication .setup-content { display:grid; gap:8px; padding-top:8px }
       .communication .test-row { display:flex; align-items:center; flex-wrap:wrap; gap:6px }
       .communication .result,.communication .settings-result { overflow-wrap:anywhere; white-space:pre-wrap }
+      .communication ol { min-width:0; margin:0; padding-inline-start:24px; overflow-wrap:anywhere; }
       .communication button { min-height:44px; min-width:44px }
       .communication button:disabled { opacity:.5; cursor:not-allowed }
       .communication nav[data-toolbar] { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 44px; gap:4px;
