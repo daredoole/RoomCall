@@ -34,7 +34,9 @@ final class RoomCallUITests: XCTestCase {
         let done = app.buttons["done-laundry"]
         XCTAssertTrue(done.waitForExistence(timeout: 30))
         done.tap()
-        XCTAssertTrue(app.staticTexts["Marked done."].waitForExistence(timeout: 10))
+        let notice = app.staticTexts["notice"]
+        XCTAssertTrue(notice.waitForExistence(timeout: 10))
+        XCTAssertEqual(notice.label, "Marked done.")
         XCTAssertFalse(app.buttons["done-laundry"].waitForExistence(timeout: 3))
         // Pick a room, then type a message to it.
         app.buttons["Kitchen"].tap()
@@ -44,8 +46,11 @@ final class RoomCallUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap()
         field.typeText("Dinner is ready")
-        app.buttons["Send"].tap()
-        XCTAssertTrue(app.staticTexts["Message queued; audibility is unconfirmed."].waitForExistence(timeout: 10))
+        let send = app.buttons["send-message"]
+        XCTAssertEqual(send.label, "Send")
+        send.tap()
+        XCTAssertTrue(notice.waitForExistence(timeout: 10))
+        XCTAssertEqual(notice.label, "Message queued; audibility is unconfirmed.")
     }
 
     // MARK: Documentation screenshots (exported from the result bundle in CI)

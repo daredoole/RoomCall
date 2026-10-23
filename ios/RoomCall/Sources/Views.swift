@@ -241,6 +241,7 @@ struct MessageScreen: View {
                         Task { if await model.send(text) { text = "" } }
                     } label: { Label("ios_send", systemImage: "paperplane.fill").frame(maxWidth: .infinity) }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("send-message")
                     .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
                     .listRowBackground(Color.clear)
                 } else {
@@ -591,6 +592,7 @@ struct Toast: View {
     var body: some View {
         if let notice = model.notice {
             Text(verbatim: notice)
+                .accessibilityIdentifier("notice")
                 .font(.callout.weight(.medium))
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 .background(.thinMaterial, in: Capsule())

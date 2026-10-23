@@ -4,6 +4,14 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.13.0 — 2026-10-23
+
+- Complete the sideloadable native iOS app with task controls, history, questions,
+  widgets, Live Activity and QR-based Home Assistant connection.
+- Correct shifted translations across all five languages, including Send, doorbell,
+  task confirmation and Do Not Disturb labels. Add regression checks for native
+  label meanings and format arguments; retain end-to-end simulator assertions.
+
 ## 0.12.0 — 2026-10-22
 
 - Hands-free talk-back ([#11](https://github.com/daredoole/RoomCall/issues/11)): with an Assist
