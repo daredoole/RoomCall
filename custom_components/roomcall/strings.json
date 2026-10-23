@@ -368,7 +368,7 @@
         "ios_request_accepted": "Playback requests accepted; audibility is unconfirmed.",
         "ios_delivery_failed": "Some playback requests failed. Check Home Assistant for details.",
         "ios_transmitting": "Microphone on · transmitting",
-        "ios_sending": "Finishing your message…",
+        "ios_sending": "Waiting for speakers to accept playback…",
         "ios_setup_required": "Set up RoomCall in Home Assistant before connecting.",
         "ios_welcome": "Your home, within speaking distance.",
         "ios_sign_in_description": "Connect to your Home Assistant. Your account stays in its secure login screen.",
@@ -485,7 +485,8 @@
         "phase_interrupted": "Interrupted; playback may have started.",
         "agent_policy_denied": "This RoomCall account policy does not allow that operation, destination, time, urgency or volume.",
         "agent_rate_limited": "The account has reached its RoomCall message rate limit.",
-        "tool_policy": "Inspect this account’s RoomCall permissions and limits."
+        "tool_policy": "Inspect this account’s RoomCall permissions and limits.",
+        "ios_delivery_unknown": "Delivery confirmation is still pending. Some speakers may already be playing. Check call history before sending again."
       }
     },
     "audio_processing": {

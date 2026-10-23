@@ -159,7 +159,7 @@ actor LiveConnection {
         }
         return object
     }
-    static func read(_ socket: URLSessionWebSocketTask) async throws -> URLSessionWebSocketTask.Message {
+    static func read(_ socket: URLSessionWebSocketTask, timeout: TimeInterval = 30) async throws -> URLSessionWebSocketTask.Message {
         try await withThrowingTaskGroup(of: URLSessionWebSocketTask.Message.self) { group in
             group.addTask {
                 try await withTaskCancellationHandler(operation: {
@@ -167,7 +167,7 @@ actor LiveConnection {
                 }, onCancel: { socket.cancel(with: .goingAway, reason: nil) })
             }
             group.addTask {
-                try await Task.sleep(nanoseconds: 30_000_000_000)
+                try await Task.sleep(nanoseconds: UInt64(max(0, timeout) * 1_000_000_000))
                 socket.cancel(with: .goingAway, reason: nil)
                 throw NativeFailure.protocolError
             }
@@ -180,19 +180,41 @@ actor LiveConnection {
         guard let socket, let handler else { throw NativeFailure.protocolError }
         try await socket.send(.data(Data([handler]) + bytes))
     }
-    func finish() async throws -> [String: Any] {
-        guard let socket, let handler else { throw NativeFailure.protocolError }
-        try await socket.send(.data(Data([handler])))
+    /// Dispatch acceptance is independent of transcription/history/notification work.
+    /// The server's queued live-call deadline is 120 seconds; allow its final reply
+    /// without applying the shorter connection-handshake timeout to delivery.
+    static func deliveryResult(receive: (TimeInterval) async throws -> [String: Any]) async throws -> [String: Any] {
+        let deadline = ProcessInfo.processInfo.systemUptime + 130
         for _ in 0..<16 {
-            let message = try Self.decode(await Self.read(socket))
+            let remaining = deadline - ProcessInfo.processInfo.systemUptime
+            guard remaining > 0 else { throw NativeFailure.deliveryUnknown }
+            let message: [String: Any]
+            do { message = try await receive(remaining) }
+            catch { throw NativeFailure.deliveryUnknown }
+            if message["success"] as? Bool == false {
+                let error = message["error"] as? [String: Any]
+                throw NativeFailure.backend(error?["message"] as? String ?? L("ios_delivery_failed"))
+            }
             if let event = message["event"] as? [String: Any] {
                 if event["type"] as? String == "error" {
-                    throw NativeFailure.backend(event["message"] as? String ?? L("ios_connection_failed"))
+                    throw NativeFailure.backend(event["message"] as? String ?? L("ios_delivery_failed"))
                 }
-                if event["type"] as? String == "done" { close(); return event }
+                if ["delivered", "done"].contains(event["type"] as? String ?? "") {
+                    guard event["ok"] is Bool else { throw NativeFailure.deliveryUnknown }
+                    return event  // Preserve partial/failed results and unknown audibility.
+                }
             }
         }
-        throw NativeFailure.protocolError
+        throw NativeFailure.deliveryUnknown
+    }
+    func finish() async throws -> [String: Any] {
+        guard let socket, let handler else { throw NativeFailure.deliveryUnknown }
+        defer { close() }
+        do { try await socket.send(.data(Data([handler]))) }
+        catch { throw NativeFailure.deliveryUnknown }
+        return try await Self.deliveryResult { timeout in
+            try Self.decode(await Self.read(socket, timeout: timeout))
+        }
     }
     func close() {
         socket?.cancel(with: .normalClosure, reason: nil)

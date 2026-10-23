@@ -368,7 +368,7 @@
         "ios_request_accepted": "Demandes de lecture acceptées ; audibilité non confirmée.",
         "ios_delivery_failed": "Certaines demandes de lecture ont échoué. Consultez Home Assistant.",
         "ios_transmitting": "Microphone actif · transmission en cours",
-        "ios_sending": "Finalisation de votre message…",
+        "ios_sending": "En attente de l’acceptation par les haut-parleurs…",
         "ios_setup_required": "Configurez RoomCall dans Home Assistant avant de vous connecter.",
         "ios_welcome": "Votre maison, à portée de voix.",
         "ios_sign_in_description": "Connectez-vous à Home Assistant. Votre compte reste dans son écran de connexion sécurisé.",
@@ -485,7 +485,8 @@
         "phase_interrupted": "Interrompu ; la lecture a pu commencer.",
         "agent_policy_denied": "Cette règle n’autorise pas cette opération, destination, heure, urgence ou volume.",
         "agent_rate_limited": "Le compte a atteint sa limite de messages RoomCall.",
-        "tool_policy": "Consulter les droits et limites RoomCall de ce compte."
+        "tool_policy": "Consulter les droits et limites RoomCall de ce compte.",
+        "ios_delivery_unknown": "La confirmation de diffusion est toujours en attente. Certains haut-parleurs lisent peut-être déjà le message. Consultez l’historique avant de renvoyer."
       }
     },
     "audio_processing": {

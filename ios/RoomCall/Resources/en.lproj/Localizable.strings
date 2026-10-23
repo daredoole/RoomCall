@@ -16,6 +16,7 @@
 "ios_connecting_audio" = "Connecting audio…";
 "ios_connection_failed" = "RoomCall could not complete the connection. Check Home Assistant and try again.";
 "ios_delivery_failed" = "Some playback requests failed. Check Home Assistant for details.";
+"ios_delivery_unknown" = "Delivery confirmation is still pending. Some speakers may already be playing. Check call history before sending again.";
 "ios_dnd" = "Do Not Disturb";
 "ios_dnd_description" = "Turn RoomCall Do Not Disturb on or off. While it's on, only urgent calls play.";
 "ios_dnd_hint" = "While it's on, only urgent calls play.";
@@ -73,7 +74,7 @@
 "ios_secure_storage_failed" = "RoomCall could not access secure storage.";
 "ios_send" = "Send";
 "ios_send_to" = "Send to";
-"ios_sending" = "Finishing your message…";
+"ios_sending" = "Waiting for speakers to accept playback…";
 "ios_server" = "Server";
 "ios_server_url" = "Home Assistant address";
 "ios_setup_required" = "Set up RoomCall in Home Assistant before connecting.";

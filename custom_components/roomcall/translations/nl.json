@@ -368,7 +368,7 @@
         "ios_request_accepted": "Afspeelverzoeken geaccepteerd; hoorbaarheid niet bevestigd.",
         "ios_delivery_failed": "Sommige afspeelverzoeken zijn mislukt. Controleer Home Assistant.",
         "ios_transmitting": "Microfoon aan · uitzending actief",
-        "ios_sending": "Je bericht wordt afgerond…",
+        "ios_sending": "Wachten tot de luidsprekers het afspelen accepteren…",
         "ios_setup_required": "Stel RoomCall in Home Assistant in voordat je verbinding maakt.",
         "ios_welcome": "Je huis, binnen spreekafstand.",
         "ios_sign_in_description": "Maak verbinding met Home Assistant. Je account blijft in het beveiligde aanmeldscherm.",
@@ -485,7 +485,8 @@
         "phase_interrupted": "Onderbroken; afspelen kan zijn begonnen.",
         "agent_policy_denied": "Dit accountbeleid staat die actie, bestemming, tijd, urgentie of volume niet toe.",
         "agent_rate_limited": "Het account heeft de RoomCall-berichtlimiet bereikt.",
-        "tool_policy": "Bekijk de RoomCall-rechten en limieten van dit account."
+        "tool_policy": "Bekijk de RoomCall-rechten en limieten van dit account.",
+        "ios_delivery_unknown": "De afleverbevestiging is nog niet binnen. Sommige luidsprekers spelen mogelijk al. Controleer de oproepgeschiedenis voordat je opnieuw verzendt."
       }
     },
     "audio_processing": {

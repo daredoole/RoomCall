@@ -5,7 +5,7 @@ func L(_ key: String) -> String { NSLocalizedString(key, comment: "") }
 
 enum NativeFailure: LocalizedError {
     case invalidServer, unauthorized, invalidCallback, unsupportedServer, protocolError
-    case backend(String), keychain(OSStatus), backpressure
+    case backend(String), keychain(OSStatus), backpressure, deliveryUnknown
 
     var errorDescription: String? {
         switch self {
@@ -17,6 +17,7 @@ enum NativeFailure: LocalizedError {
         case .backend(let message): return message
         case .keychain: return L("ios_secure_storage_failed")
         case .backpressure: return L("ios_network_slow")
+        case .deliveryUnknown: return L("ios_delivery_unknown")
         }
     }
 }

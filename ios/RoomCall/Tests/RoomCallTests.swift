@@ -67,6 +67,61 @@ final class RoomCallTests: XCTestCase {
             XCTAssertEqual(try SecureStore.load(account: account)?.clientID, credentials.clientID)
         }
     }
+    func testLiveReceiptFinishesBeforeTranscriptionAndPreservesEvidence() async throws {
+        var receives = 0
+        let result = try await LiveConnection.deliveryResult { timeout in
+            XCTAssertGreaterThan(timeout, 30) // Queued delivery has its own budget.
+            receives += 1
+            if receives == 1 { return ["type": "result", "success": true] }
+            XCTAssertEqual(receives, 2, "Must not wait for the later done/transcript event")
+            return ["event": ["type": "delivered", "id": "call", "ok": true,
+                              "audible": NSNull(), "evidence": ["speaker": ["request_accepted": true]]]]
+        }
+        XCTAssertEqual(receives, 2)
+        XCTAssertEqual(result["type"] as? String, "delivered")
+        XCTAssertEqual(result["ok"] as? Bool, true)
+        XCTAssertTrue(result["audible"] is NSNull)
+        XCTAssertNotNil(result["evidence"])
+    }
+    func testLiveReceiptPreservesPartialFailureAndLegacyDone() async throws {
+        for kind in ["delivered", "done"] {
+            let result = try await LiveConnection.deliveryResult { _ in
+                ["event": ["type": kind, "ok": false, "results": [
+                    ["speaker": "Fast", "ok": true], ["speaker": "Slow", "ok": false]
+                ]]]
+            }
+            XCTAssertEqual(result["ok"] as? Bool, false)
+            XCTAssertEqual((result["results"] as? [[String: Any]])?.count, 2)
+        }
+    }
+    func testLiveReceiptKeepsKnownErrorsSeparateFromLostConfirmation() async throws {
+        for message in [["event": ["type": "error", "message": "Blocked"]],
+                        ["success": false, "error": ["message": "Blocked"]]] as [[String: Any]] {
+            do {
+                _ = try await LiveConnection.deliveryResult { _ in message }
+                XCTFail("Server rejection must remain a failure")
+            } catch { XCTAssertEqual(error.localizedDescription, "Blocked") }
+        }
+        do {
+            _ = try await LiveConnection.deliveryResult { _ in throw URLError(.timedOut) }
+            XCTFail("Lost acknowledgment must remain unknown")
+        } catch { XCTAssertEqual(error.localizedDescription, NativeFailure.deliveryUnknown.localizedDescription) }
+        do {
+            _ = try await LiveConnection.deliveryResult { _ in ["event": ["type": "delivered"]] }
+            XCTFail("Malformed receipt must not imply failure or success")
+        } catch { XCTAssertEqual(error.localizedDescription, NativeFailure.deliveryUnknown.localizedDescription) }
+    }
+    func testLiveReceiptBoundsUnrelatedMessages() async throws {
+        var receives = 0
+        do {
+            _ = try await LiveConnection.deliveryResult { _ in
+                receives += 1
+                return ["type": "unrelated"]
+            }
+            XCTFail("Missing receipt must remain unknown")
+        } catch { XCTAssertEqual(error.localizedDescription, NativeFailure.deliveryUnknown.localizedDescription) }
+        XCTAssertEqual(receives, 16)
+    }
     func testNativePCMConversionUsesServerFormat() throws {
         let input = AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1)!
         let converter = try AudioCapture.converter(from: input)
