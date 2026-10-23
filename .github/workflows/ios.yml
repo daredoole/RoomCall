@@ -76,3 +76,32 @@ jobs:
             /tmp/roomcall-ios-build.log
             /tmp/RoomCall-simulator.zip
             /tmp/ios-screenshots
+
+  ipa:
+    # An unsigned device build for sideloading: sign it with your own certificate.
+    runs-on: macos-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate --spec ios/RoomCall/project.yml
+      - name: Build release app for iPhone without signing
+        run: |
+          set -o pipefail
+          xcodebuild build -project ios/RoomCall/RoomCall.xcodeproj -scheme RoomCall \
+            -configuration Release -sdk iphoneos -destination "generic/platform=iOS" \
+            -derivedDataPath /tmp/roomcall-device \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" | tee /tmp/roomcall-device.log
+      - name: Package unsigned .ipa
+        run: |
+          mkdir -p /tmp/ipa/Payload
+          cp -R /tmp/roomcall-device/Build/Products/Release-iphoneos/RoomCall.app /tmp/ipa/Payload/
+          test -d /tmp/ipa/Payload/RoomCall.app/PlugIns/RoomCallControls.appex
+          (cd /tmp/ipa && zip -qry RoomCall-unsigned.ipa Payload)
+          ls -la /tmp/ipa/RoomCall-unsigned.ipa
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: roomcall-ios-unsigned-ipa
+          path: /tmp/ipa/RoomCall-unsigned.ipa

@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -31,7 +35,12 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           python-version: ${{ matrix.python }}
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Set up pinned ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@36c6454b5a2348e7794ba2d82a21506605921e3d # v3
+        timeout-minutes: 5
+        with:
+          ffmpeg-version: "7.0.2"
+      - run: ffmpeg -version
       - run: uv venv && uv pip install -e ".[dev]"
       - run: uv run pytest -q --cov=src/roomcall --cov-fail-under=100
 
@@ -42,7 +51,12 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           python-version: "3.13"
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Set up pinned ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@36c6454b5a2348e7794ba2d82a21506605921e3d # v3
+        timeout-minutes: 5
+        with:
+          ffmpeg-version: "7.0.2"
+      - run: ffmpeg -version
       - run: uv venv && uv pip install "pytest-homeassistant-custom-component==0.13.316" ha-ffmpeg "HAP-python==5.0.0" pytest-cov
       - run: uv run python scripts/install_ha_test_deps.py
       - name: Home Assistant tests with 100% statement coverage
@@ -54,7 +68,7 @@ jobs:
         if: always()
         run: test -f coverage.md && cat coverage.md >> "$GITHUB_STEP_SUMMARY" || true
       - name: Protocol-agent acceptance summary
-        if: always()
+        if: always() && hashFiles('ha-results.xml') != ''
         run: uv run python scripts/agent_benchmark_report.py ha-results.xml >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
@@ -69,12 +83,17 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           python-version: "3.14"
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Set up pinned ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@36c6454b5a2348e7794ba2d82a21506605921e3d # v3
+        timeout-minutes: 5
+        with:
+          ffmpeg-version: "7.0.2"
+      - run: ffmpeg -version
       - run: uv venv && uv pip install "pytest-homeassistant-custom-component==0.13.373" ha-ffmpeg "HAP-python==5.0.0" pytest-cov
       - run: uv run python scripts/install_ha_test_deps.py
       - run: uv run pytest tests_ha -q --cov=custom_components/roomcall --cov-fail-under=100 --junitxml=ha-results.xml -o junit_family=xunit1
       - name: Protocol-agent acceptance summary
-        if: always()
+        if: always() && hashFiles('ha-results.xml') != ''
         run: uv run python scripts/agent_benchmark_report.py ha-results.xml >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
@@ -88,7 +107,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
       - run: uv venv && uv pip install playwright
-      - run: uv run playwright install --with-deps chromium
+      - name: Install Chromium
+        timeout-minutes: 5
+        run: uv run playwright install chromium
+      - name: Ensure Chromium runtime dependencies
+        timeout-minutes: 5
+        run: |
+          if ! uv run python -c "from playwright.sync_api import sync_playwright; p=sync_playwright().start(); b=p.chromium.launch(); b.close(); p.stop()"; then
+            uv run playwright install-deps chromium
+          fi
       - run: uv run python scripts/qa_communication.py
 
   docs:

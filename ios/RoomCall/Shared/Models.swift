@@ -119,3 +119,107 @@ enum ServerAddress {
         return parts.url!
     }
 }
+
+struct Person: Codable, Hashable, Identifiable {
+    let entity_id: String
+    let name: String
+    var id: String { entity_id }
+}
+
+struct Doorbell: Codable, Hashable {
+    let entity: String
+    let camera: String?
+    let name: String
+}
+
+/// `GET api/roomcall/rooms`: what the card and the app need to draw the intercom.
+struct Overview: Codable {
+    var rooms: [Room]?
+    var people: [Person]?
+    var configured: Bool?
+    var dnd: Bool?
+    var dnd_entity: String?
+    var doorbell: Doorbell?
+}
+
+struct RoomTask: Codable, Hashable, Identifiable {
+    let id: String
+    let name: String
+    let task: String
+    let state: String
+    let opened: String?
+    let done: String?
+    let done_by: String?
+    var isOpen: Bool { state == "open" }
+}
+
+struct CallSummary: Codable, Hashable, Identifiable {
+    let id: String
+    let at: String
+    let from: String?
+    let target: String
+    let kind: String
+    let priority: String
+    let ok: Bool
+    let text: String?
+    let has_audio: Bool
+    let requires_ack: Bool?
+}
+
+struct Satellite: Hashable, Identifiable {
+    let entity_id: String
+    let name: String
+    var id: String { entity_id }
+}
+
+/// Who a message goes to: a room (or everywhere) or a person, wherever they are.
+enum Target: Hashable {
+    case room(Room)
+    case person(Person)
+
+    var name: String {
+        switch self {
+        case .room(let room): room.name
+        case .person(let person): person.name
+        }
+    }
+    /// Request fields for `send` and `preview`.
+    var request: [String: Any] {
+        switch self {
+        case .room(let room):
+            if room.id == "all" { return ["everywhere": true] }
+            return ["areas": [room.id]]
+        case .person(let person):
+            return ["people": [person.entity_id]]
+        }
+    }
+}
+
+/// HA timestamps carry microseconds, which ISO8601DateFormatter does not accept.
+enum Timestamp {
+    private static let formatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    private static let plain = ISO8601DateFormatter()
+
+    static func parse(_ value: String?) -> Date? {
+        guard let value else { return nil }
+        if let date = plain.date(from: value) { return date }
+        let trimmed = value.replacingOccurrences(
+            of: #"(\.\d{3})\d+"#, with: "$1", options: .regularExpression)
+        return formatter.date(from: trimmed)
+    }
+}
+
+/// Open tasks shared with the widget extension (empty there when re-signing removed the group).
+enum TaskCache {
+    static func save(_ tasks: [RoomTask]) {
+        RoomCache.defaults.set(try? JSONEncoder().encode(tasks), forKey: "tasks")
+    }
+    static func load() -> [RoomTask] {
+        guard let data = RoomCache.defaults.data(forKey: "tasks") else { return [] }
+        return (try? JSONDecoder().decode([RoomTask].self, from: data)) ?? []
+    }
+}
