@@ -94,12 +94,11 @@ async def request_for(
         if engine is None:
             raise CallError("No text-to-speech engine is available", code="tts_unavailable")
         media_id = f"media-source://tts/{engine}?message={quote(message)}&cache=true"
-        if preset.get("voice"):
-            media_id += f"&voice={quote(preset['voice'])}"
+        voice = preset.get("voice") or speech.get("voice")
+        if voice:
+            media_id += f"&voice={quote(voice)}"
         if language:
             media_id += f"&language={quote(language)}"
-        if speech.get("voice"):
-            media_id += f"&voice={quote(speech['voice'])}"
         kind = "message"
         if data.chime_style or data.chime_url or preset or values.get("_prepare"):
             from .communication import validate_targets
@@ -119,7 +118,7 @@ async def request_for(
                 base = base_url(hass)
             except NoURLAvailableError as err:
                 raise Problem("speaker_url_missing") from err
-            if not preset.get("voice"):
+            if not voice:
                 media_id = media_id.replace("cache=true", "cache=false")
             started = time.monotonic()
             try:
