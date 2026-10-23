@@ -311,3 +311,20 @@ identity across restart, bounded to 128 retained jobs and up to 24 hours. Old te
 jobs may be evicted when that bound is reached; keys are valid only while retained.
 Repeating an unchanged key returns the original job; changing its fields conflicts.
 Satellite questions do not opt into durable replay.
+
+## Prepared speech and voice profiles
+
+Configure Communication → Speech profiles with `fast`, `balanced` and/or `quality`
+objects, each containing an `engine` (such as `tts.piper`) and explicit `voice`
+(such as `en_US-lessac-medium`). These are labels you assign, not speed guarantees.
+Send `speech_profile: fast` with a message to select that voice without changing
+Piper's global default. The same option is available to agents through send.
+
+Use operation `speech`, request `{action: prepare, areas: [basement], message: "Dinner",
+speech_profile: fast}` to pre-generate without playing. Targets and caller permissions
+are checked first. Reusing the same message, language, voice and chime avoids both
+speech generation and audio composition; translated text is part of that identity.
+The cache is memory-only, owner-scoped, limited to ten minutes and 32 entries / 16 MiB.
+Configuration reloads clear it; changes to the explicit engine, voice or chime use another key. After changing a provider's default voice or replacing a custom chime
+file in place, an administrator must call `speech` with `{action: clear}` or reload
+RoomCall. Cached audio is never proof of playback or audibility.
