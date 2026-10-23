@@ -447,7 +447,12 @@
         "ios_widget_tasks_description": "Tareas de anuncios por hacer.",
         "ios_camera_permission": "RoomCall escanea el código QR de tu tarjeta de RoomCall para conectarse.",
         "ios_phrase_done": "Marcar como hecha una tarea de ${applicationName}",
-        "ios_phrase_dnd": "Ajustar No molestar de ${applicationName}"
+        "ios_phrase_dnd": "Ajustar No molestar de ${applicationName}",
+        "phone": "App de iPhone",
+        "phone_intro": "Escanea este código con la app RoomCall para iPhone para conectarla a este Home Assistant.",
+        "phone_open": "Abrir en la app RoomCall",
+        "phone_hint": "El código solo contiene la dirección de este Home Assistant, nunca una contraseña ni un token. Inicias sesión en la página de acceso de Home Assistant.",
+        "phone_qr": "Código QR para conectar la app RoomCall para iPhone"
       }
     },
     "audio_processing": {

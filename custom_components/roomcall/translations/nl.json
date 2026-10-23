@@ -447,7 +447,12 @@
         "ios_widget_tasks_description": "Openstaande taken van omroepberichten.",
         "ios_camera_permission": "RoomCall scant de QR-code op je RoomCall-kaart om te verbinden.",
         "ios_phrase_done": "Een ${applicationName}-taak als gedaan markeren",
-        "ios_phrase_dnd": "Niet storen van ${applicationName} instellen"
+        "ios_phrase_dnd": "Niet storen van ${applicationName} instellen",
+        "phone": "iPhone-app",
+        "phone_intro": "Scan deze code met de RoomCall-iPhone-app om die met deze Home Assistant te verbinden.",
+        "phone_open": "Openen in de RoomCall-app",
+        "phone_hint": "De code bevat alleen het adres van deze Home Assistant, nooit een wachtwoord of token. Inloggen gebeurt op de inlogpagina van Home Assistant.",
+        "phone_qr": "QR-code om de RoomCall-iPhone-app te verbinden"
       }
     },
     "audio_processing": {

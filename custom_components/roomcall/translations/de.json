@@ -447,7 +447,12 @@
         "ios_widget_tasks_description": "Offene Aufgaben von Durchsagen.",
         "ios_camera_permission": "RoomCall scannt den QR-Code auf Ihrer RoomCall-Karte, um sich zu verbinden.",
         "ios_phrase_done": "Eine ${applicationName}-Aufgabe als erledigt markieren",
-        "ios_phrase_dnd": "${applicationName} „Nicht stören“ einstellen"
+        "ios_phrase_dnd": "${applicationName} „Nicht stören“ einstellen",
+        "phone": "iPhone-App",
+        "phone_intro": "Scannen Sie diesen Code mit der RoomCall-iPhone-App, um sie mit diesem Home Assistant zu verbinden.",
+        "phone_open": "In der RoomCall-App öffnen",
+        "phone_hint": "Der Code enthält nur die Adresse dieses Home Assistant, nie ein Passwort oder Token. Die Anmeldung erfolgt auf der Anmeldeseite von Home Assistant.",
+        "phone_qr": "QR-Code zum Verbinden der RoomCall-iPhone-App"
       }
     },
     "audio_processing": {

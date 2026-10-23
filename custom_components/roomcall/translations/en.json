@@ -447,7 +447,12 @@
         "ios_widget_tasks_description": "Announcement tasks waiting to be done.",
         "ios_camera_permission": "RoomCall scans the QR code on your RoomCall card to connect.",
         "ios_phrase_done": "Mark a ${applicationName} task done",
-        "ios_phrase_dnd": "Set ${applicationName} Do Not Disturb"
+        "ios_phrase_dnd": "Set ${applicationName} Do Not Disturb",
+        "phone": "iPhone app",
+        "phone_intro": "Scan this code with the RoomCall iPhone app to connect it to this Home Assistant.",
+        "phone_open": "Open in the RoomCall app",
+        "phone_hint": "The code holds only this Home Assistant address, never a password or token. You still sign in on Home Assistant's own login page.",
+        "phone_qr": "QR code to connect the RoomCall iPhone app"
       }
     },
     "audio_processing": {
