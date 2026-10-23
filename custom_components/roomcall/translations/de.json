@@ -368,7 +368,7 @@
         "ios_request_accepted": "Wiedergabeanfragen angenommen; Hörbarkeit unbestätigt.",
         "ios_delivery_failed": "Einige Wiedergabeanfragen sind fehlgeschlagen. Prüfe Home Assistant.",
         "ios_transmitting": "Mikrofon an · Übertragung läuft",
-        "ios_sending": "Deine Nachricht wird abgeschlossen…",
+        "ios_sending": "Warte auf die Wiedergabeannahme der Lautsprecher…",
         "ios_setup_required": "Richte RoomCall vor der Verbindung in Home Assistant ein.",
         "ios_welcome": "Dein Zuhause, in Rufweite.",
         "ios_sign_in_description": "Verbinde dich mit Home Assistant. Dein Konto bleibt im sicheren Anmeldebildschirm.",
@@ -485,7 +485,8 @@
         "phase_interrupted": "Unterbrochen; die Wiedergabe könnte begonnen haben.",
         "agent_policy_denied": "Diese Kontorichtlinie erlaubt den Vorgang, das Ziel, die Zeit, Dringlichkeit oder Lautstärke nicht.",
         "agent_rate_limited": "Das Konto hat sein RoomCall-Nachrichtenlimit erreicht.",
-        "tool_policy": "RoomCall-Rechte und Grenzen dieses Kontos anzeigen."
+        "tool_policy": "RoomCall-Rechte und Grenzen dieses Kontos anzeigen.",
+        "ios_delivery_unknown": "Die Zustellbestätigung steht noch aus. Einige Lautsprecher spielen die Nachricht möglicherweise bereits ab. Prüfe den Anrufverlauf, bevor du erneut sendest."
       }
     },
     "audio_processing": {

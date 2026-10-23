@@ -22,6 +22,10 @@ not required. The optional [Apple Home camera bridge](apple-home.md) is a separa
 - **Talk:** pick a room, Everywhere or a person, then hold the microphone button.
   Release to finish. VoiceOver users double-tap to start and again to stop.
   Capture starts only after the local action and microphone permission.
+  After release, the app confirms playback-request acceptance without waiting
+  for transcription/history processing. It does not claim the audio was heard.
+  Slow or queued destinations can take longer to accept an Everywhere call;
+  if confirmation is lost, inspect history before sending the same message again.
 - Ordered, bounded live WebSocket audio in mono 16 kHz PCM. Releasing while
   connecting sends no recording. Accepted playback remains separate from audibility.
 - **Message:** type to speak in the selected destination, or ask a compatible Assist

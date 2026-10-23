@@ -111,3 +111,47 @@ async def test_live_call_refused_by_do_not_disturb(
 async def test_unknown_live_stream_is_404(hass: HomeAssistant, setup_roomcall, hass_client_no_auth):
     client = await hass_client_no_auth()
     assert (await client.get("/api/roomcall/live/nope.mp3")).status == 404
+
+
+@needs_ffmpeg
+async def test_acceptance_receipt_precedes_transcription_and_survives_disconnect(
+    hass, setup_roomcall, house, hass_ws_client
+):
+    from unittest.mock import AsyncMock, patch
+
+    data = hass.data[DOMAIN]
+    data.stt_engine = "stt.example"
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def transcribe(*args):
+        started.set()
+        await release.wait()
+        return "Recorded message"
+
+    async_mock_service(hass, "media_player", "play_media")
+    with (
+        patch("custom_components.roomcall.calls._transcribe_pcm", side_effect=transcribe),
+        patch("custom_components.roomcall.scheduler.wait_for_playback", new=AsyncMock()),
+    ):
+        ws = await hass_ws_client(hass)
+        await ws.send_json({"id": 5, "type": "roomcall/live", "target": house["basement"]})
+        assert (await ws.receive_json())["success"]
+        handler = (await ws.receive_json())["event"]["handler_id"]
+        frames = _tone_frames(1.0)
+        for frame in frames:
+            await ws.send_bytes(bytes([handler]) + frame)
+        await ws.send_bytes(bytes([handler]))
+        receipt = (await ws.receive_json())["event"]
+        assert receipt["type"] == "delivered" and receipt["ok"]
+        assert receipt["audible"] is None
+        await asyncio.wait_for(started.wait(), 5)
+        assert not data.history.records()  # Postprocessing is still waiting.
+        await ws.close()  # The app can finish on acceptance without losing the recording.
+        release.set()
+        await hass.async_block_till_done(wait_background_tasks=True)
+        record = data.history.records()[0]
+        assert record.call_id == receipt["id"] and record.transcript == "Recorded message"
+        assert record.has_audio and record.ok
+        stream = next(iter(data.live._streams.values()))
+        assert len(stream.pcm) == sum(map(len, frames))

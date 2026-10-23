@@ -368,7 +368,7 @@
         "ios_request_accepted": "Solicitudes de reproducción aceptadas; audición sin confirmar.",
         "ios_delivery_failed": "Fallaron algunas solicitudes de reproducción. Consulta Home Assistant.",
         "ios_transmitting": "Micrófono encendido · transmitiendo",
-        "ios_sending": "Terminando tu mensaje…",
+        "ios_sending": "Esperando a que los altavoces acepten la reproducción…",
         "ios_setup_required": "Configura RoomCall en Home Assistant antes de conectar.",
         "ios_welcome": "Tu hogar, al alcance de la voz.",
         "ios_sign_in_description": "Conecta con tu Home Assistant. Tu cuenta permanece en su pantalla de inicio de sesión segura.",
@@ -485,7 +485,8 @@
         "phase_interrupted": "Interrumpido; la reproducción puede haber empezado.",
         "agent_policy_denied": "La política de esta cuenta no permite esa operación, destino, horario, urgencia o volumen.",
         "agent_rate_limited": "La cuenta alcanzó el límite de mensajes de RoomCall.",
-        "tool_policy": "Consultar los permisos y límites de RoomCall de esta cuenta."
+        "tool_policy": "Consultar los permisos y límites de RoomCall de esta cuenta.",
+        "ios_delivery_unknown": "La confirmación de entrega sigue pendiente. Es posible que algunos altavoces ya estén reproduciendo el mensaje. Revisa el historial antes de volver a enviarlo."
       }
     },
     "audio_processing": {

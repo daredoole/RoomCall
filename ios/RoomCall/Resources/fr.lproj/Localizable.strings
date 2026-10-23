@@ -16,6 +16,7 @@
 "ios_connecting_audio" = "Connexion audio…";
 "ios_connection_failed" = "RoomCall n’a pas pu terminer la connexion. Vérifiez Home Assistant et réessayez.";
 "ios_delivery_failed" = "Certaines demandes de lecture ont échoué. Consultez Home Assistant.";
+"ios_delivery_unknown" = "La confirmation de diffusion est toujours en attente. Certains haut-parleurs lisent peut-être déjà le message. Consultez l’historique avant de renvoyer.";
 "ios_dnd" = "Ne pas déranger";
 "ios_dnd_description" = "Activer ou désactiver Ne pas déranger de RoomCall. Tant qu'il est actif, seuls les appels urgents sont joués.";
 "ios_dnd_hint" = "Tant qu'il est actif, seuls les appels urgents sont joués.";
@@ -73,7 +74,7 @@
 "ios_secure_storage_failed" = "RoomCall n’a pas pu accéder au stockage sécurisé.";
 "ios_send" = "Envoyer";
 "ios_send_to" = "Envoyer à";
-"ios_sending" = "Finalisation de votre message…";
+"ios_sending" = "En attente de l’acceptation par les haut-parleurs…";
 "ios_server" = "Serveur";
 "ios_server_url" = "Adresse Home Assistant";
 "ios_setup_required" = "Configurez RoomCall dans Home Assistant avant de vous connecter.";

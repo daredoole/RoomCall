@@ -4,6 +4,17 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.18.2 — 2026-10-23
+
+- Native live calls finish on HA’s playback-request acceptance receipt instead of
+  waiting for transcription/history/notification completion. Preserve failed and
+  partial results; acceptance still does not prove audibility.
+- Give queued live delivery its own bounded wait rather than the connection’s
+  30-second handshake timeout. Lost confirmation reports an unknown outcome and
+  directs users to history before retrying, avoiding an incorrect failure report.
+- Translate the new waiting/uncertainty status and add native receipt regressions
+  plus a real-ffmpeg HA test for disconnecting after acceptance during transcription.
+
 ## 0.18.1 — 2026-10-23
 
 - Fix native iOS sign-in behind a private certificate authority: advertise the

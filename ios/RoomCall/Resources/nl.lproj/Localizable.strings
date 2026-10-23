@@ -16,6 +16,7 @@
 "ios_connecting_audio" = "Audio verbinden…";
 "ios_connection_failed" = "RoomCall kon de verbinding niet voltooien. Controleer Home Assistant en probeer opnieuw.";
 "ios_delivery_failed" = "Sommige afspeelverzoeken zijn mislukt. Controleer Home Assistant.";
+"ios_delivery_unknown" = "De afleverbevestiging is nog niet binnen. Sommige luidsprekers spelen mogelijk al. Controleer de oproepgeschiedenis voordat je opnieuw verzendt.";
 "ios_dnd" = "Niet storen";
 "ios_dnd_description" = "Zet Niet storen van RoomCall aan of uit. Zolang het aan staat, klinken alleen dringende oproepen.";
 "ios_dnd_hint" = "Zolang het aan staat, klinken alleen dringende oproepen.";
@@ -73,7 +74,7 @@
 "ios_secure_storage_failed" = "RoomCall kon de beveiligde opslag niet openen.";
 "ios_send" = "Verzenden";
 "ios_send_to" = "Verzenden naar";
-"ios_sending" = "Je bericht wordt afgerond…";
+"ios_sending" = "Wachten tot de luidsprekers het afspelen accepteren…";
 "ios_server" = "Server";
 "ios_server_url" = "Home Assistant-adres";
 "ios_setup_required" = "Stel RoomCall in Home Assistant in voordat je verbinding maakt.";
