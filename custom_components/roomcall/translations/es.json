@@ -113,6 +113,7 @@
               "doorbell_entity": "Timbre",
               "doorbell_camera": "Cámara del timbre",
               "doorbell_rooms": "Salas donde suena",
+              "speech_profiles": "Perfiles de voz",
               "household_profiles": "Perfiles del hogar"
             },
             "data_description": {
@@ -346,10 +347,8 @@
         "doorbell_message": "Hay alguien en {name}.",
         "answer_door": "Contestar",
         "open_camera": "Abrir la cámara",
-        "household_profiles": "Perfiles del hogar",
-        "profile_missing": "Elige un perfil del hogar configurado.",
-        "profile_none": "Habitación seleccionada",
-        "profile_destination": "Perfil: {name}",
+        "tool_speech": "Preparar voz sin reproducir o borrar la caché de voz preparada.",
+        "speech_profile_missing": "Elige un perfil de voz configurado.",
         "phone": "App de iPhone",
         "phone_intro": "Escanea este código con la app RoomCall para iPhone para conectarla a este Home Assistant.",
         "phone_open": "Abrir en la app RoomCall",
@@ -457,7 +456,14 @@
         "ios_widget_tasks_description": "Tareas de anuncios por hacer.",
         "ios_camera_permission": "RoomCall escanea el código QR de tu tarjeta de RoomCall para conectarse.",
         "ios_phrase_done": "Marcar como hecha una tarea de ${applicationName}",
-        "ios_phrase_dnd": "Ajustar No molestar de ${applicationName}"
+        "ios_phrase_dnd": "Ajustar No molestar de ${applicationName}",
+        "durable_key_required": "Los mensajes persistentes requieren una clave de idempotencia.",
+        "job_interrupted": "La reproducción puede haber empezado antes de la interrupción. Comprueba el altavoz antes de enviar otro mensaje.",
+        "interrupted": "Interrumpido; la reproducción puede haber empezado.",
+        "household_profiles": "Perfiles del hogar",
+        "profile_missing": "Elige un perfil del hogar configurado.",
+        "profile_none": "Habitación seleccionada",
+        "profile_destination": "Perfil: {name}"
       }
     },
     "audio_processing": {

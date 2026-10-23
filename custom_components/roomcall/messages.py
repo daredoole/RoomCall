@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import time
 from collections.abc import Callable
@@ -82,16 +83,25 @@ async def request_for(
     audio = None
     seconds = None
     if message:
-        engine = data.tts_engine or next(iter(hass.states.async_entity_ids("tts")), None)
+        preset = data.speech_profiles.get(values.get("speech_profile", ""), {})
+        if values.get("speech_profile") and not preset:
+            raise Problem("speech_profile_missing")
+        engine = (
+            preset.get("engine")
+            or data.tts_engine
+            or next(iter(hass.states.async_entity_ids("tts")), None)
+        )
         if engine is None:
             raise CallError("No text-to-speech engine is available", code="tts_unavailable")
         media_id = f"media-source://tts/{engine}?message={quote(message)}&cache=true"
+        if preset.get("voice"):
+            media_id += f"&voice={quote(preset['voice'])}"
         if language:
             media_id += f"&language={quote(language)}"
         if speech.get("voice"):
             media_id += f"&voice={quote(speech['voice'])}"
         kind = "message"
-        if data.chime_style or data.chime_url:
+        if data.chime_style or data.chime_url or preset or values.get("_prepare"):
             from .communication import validate_targets
             from .http import base_url
 
@@ -109,11 +119,14 @@ async def request_for(
                 base = base_url(hass)
             except NoURLAvailableError as err:
                 raise Problem("speaker_url_missing") from err
+            if not preset.get("voice"):
+                media_id = media_id.replace("cache=true", "cache=false")
             started = time.monotonic()
             try:
-                async with asyncio.timeout(30):
+
+                async def build():
                     extension, speech = await async_get_media_source_audio(hass, media_id)
-                    audio, content_type = await to_playable(
+                    result = await to_playable(
                         get_ffmpeg_manager(hass).binary,
                         speech,
                         f"audio/{extension}",
@@ -121,8 +134,23 @@ async def request_for(
                         data.chime_style,
                         data.chime_url,
                     )
-                if not audio:
-                    raise ValueError("empty TTS audio")
+                    if not result[0]:
+                        raise ValueError("empty TTS audio")
+                    return result
+
+                key = hashlib.sha256(
+                    json.dumps(
+                        [
+                            context.user_id,
+                            media_id,
+                            data.chime_style,
+                            data.chime_url,
+                        ]
+                    ).encode()
+                ).hexdigest()
+                async with asyncio.timeout(30):
+                    audio, content_type, hit = await data.speech_cache.prepare(key, build)
+                data.metrics.counters["speech_cache_hits" if hit else "speech_cache_misses"] += 1
             except Exception as err:
                 raise Problem("tts_preparation_failed", retryable=True) from err
             data.metrics.observe("tts_prepare", (time.monotonic() - started) * 1000)

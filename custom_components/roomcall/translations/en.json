@@ -113,6 +113,7 @@
               "doorbell_entity": "Doorbell",
               "doorbell_camera": "Doorbell camera",
               "doorbell_rooms": "Rooms to ring",
+              "speech_profiles": "Speech profiles",
               "household_profiles": "Household profiles"
             },
             "data_description": {
@@ -346,10 +347,8 @@
         "doorbell_message": "Someone is at the {name}.",
         "answer_door": "Answer",
         "open_camera": "Open the camera",
-        "household_profiles": "Household profiles",
-        "profile_missing": "Choose a configured household profile.",
-        "profile_none": "Selected room",
-        "profile_destination": "Profile: {name}",
+        "tool_speech": "Prepare speech without playback or clear the prepared speech cache.",
+        "speech_profile_missing": "Choose a configured speech profile.",
         "phone": "iPhone app",
         "phone_intro": "Scan this code with the RoomCall iPhone app to connect it to this Home Assistant.",
         "phone_open": "Open in the RoomCall app",
@@ -457,7 +456,14 @@
         "ios_widget_tasks_description": "Announcement tasks waiting to be done.",
         "ios_camera_permission": "RoomCall scans the QR code on your RoomCall card to connect.",
         "ios_phrase_done": "Mark a ${applicationName} task done",
-        "ios_phrase_dnd": "Set ${applicationName} Do Not Disturb"
+        "ios_phrase_dnd": "Set ${applicationName} Do Not Disturb",
+        "durable_key_required": "Durable messages require an idempotency key.",
+        "job_interrupted": "Playback may have started before interruption. Check the speaker before sending a new message.",
+        "interrupted": "Interrupted; playback may have started.",
+        "household_profiles": "Household profiles",
+        "profile_missing": "Choose a configured household profile.",
+        "profile_none": "Selected room",
+        "profile_destination": "Profile: {name}"
       }
     },
     "audio_processing": {
