@@ -28,6 +28,23 @@ async def request_for(
     values: dict[str, Any],
     context: Context,
 ) -> CallRequest:
+    from dataclasses import replace
+
+    if values.get("profile"):
+        profile = data.household_profiles.get(values["profile"])
+        if profile is None:
+            raise Problem("profile_missing")
+        speech = profile.get("speech", {})
+        data = replace(
+            data,
+            tts_engine=speech.get("engine", data.tts_engine),
+            chime_url=None if "chime" in speech else data.chime_url,
+            chime_style=(
+                None if speech.get("chime") == "off" else speech.get("chime", data.chime_style)
+            ),
+        )
+    else:
+        speech = {}
     message = values.get("message")
     language = values.get("language")
     preferred = {data.preferences.get(p, {}).get("language") for p in values.get("people", [])}
@@ -71,6 +88,8 @@ async def request_for(
         media_id = f"media-source://tts/{engine}?message={quote(message)}&cache=true"
         if language:
             media_id += f"&language={quote(language)}"
+        if speech.get("voice"):
+            media_id += f"&voice={quote(speech['voice'])}"
         kind = "message"
         if data.chime_style or data.chime_url:
             from .communication import validate_targets

@@ -112,7 +112,8 @@
               "talk_back": "Handsfree terugpraten",
               "doorbell_entity": "Deurbel",
               "doorbell_camera": "Deurbelcamera",
-              "doorbell_rooms": "Ruimtes om te laten bellen"
+              "doorbell_rooms": "Ruimtes om te laten bellen",
+              "household_profiles": "Huishoudprofielen"
             },
             "data_description": {
               "talk_back": "Als iemand vanuit een andere ruimte tegen een ruimte praat, luistert een Assist-satelliet daar (Atom Echo, ESP32-S3, Home Assistant Voice) naar een antwoord, dat in de ruimte van de beller klinkt. Antwoorden worden uitgeschreven en uitgesproken met de ingestelde stem.",
@@ -385,7 +386,10 @@
         "talk_back_reply": "{room} zegt: {text}",
         "doorbell_message": "Er staat iemand bij {name}.",
         "answer_door": "Opnemen",
-        "open_camera": "Camera openen"
+        "open_camera": "Camera openen",
+        "household_profiles": "Huishoudprofielen",
+        "profile_missing": "Kies een ingesteld huishoudprofiel.",
+        "profile_none": "Geselecteerde kamer"
       }
     },
     "audio_processing": {

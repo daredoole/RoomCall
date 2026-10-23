@@ -112,7 +112,8 @@
               "talk_back": "Freihändig antworten",
               "doorbell_entity": "Türklingel",
               "doorbell_camera": "Türklingel-Kamera",
-              "doorbell_rooms": "Räume zum Klingeln"
+              "doorbell_rooms": "Räume zum Klingeln",
+              "household_profiles": "Haushaltsprofile"
             },
             "data_description": {
               "talk_back": "Spricht jemand aus einem anderen Raum in einen Raum, hört ein Assist-Satellit dort (Atom Echo, ESP32-S3, Home Assistant Voice) auf eine Antwort, die im Raum des Anrufers zu hören ist. Antworten werden transkribiert und mit der eingestellten Stimme gesprochen.",
@@ -385,7 +386,10 @@
         "talk_back_reply": "{room} sagt: {text}",
         "doorbell_message": "Jemand ist an der {name}.",
         "answer_door": "Annehmen",
-        "open_camera": "Kamera öffnen"
+        "open_camera": "Kamera öffnen",
+        "household_profiles": "Haushaltsprofile",
+        "profile_missing": "Wähle ein eingerichtetes Haushaltsprofil.",
+        "profile_none": "Ausgewählter Raum"
       }
     },
     "audio_processing": {

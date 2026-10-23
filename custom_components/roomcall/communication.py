@@ -22,6 +22,7 @@ from .protocol import API_VERSION, SETUP_KEY
 from .schema import vol
 
 TARGETS = {
+    vol.Optional("profile"): vol.All(cv.string, vol.Length(min=1, max=40)),
     vol.Optional("areas"): vol.All(cv.ensure_list, [cv.string]),
     vol.Optional("speakers"): cv.entity_ids,
     vol.Optional("people"): cv.entity_ids,
@@ -241,6 +242,15 @@ async def _execute(hass, operation, values, context, *, assistant=None):
     try:
         if operation not in SCHEMAS:
             raise Problem("invalid_request")
+        if operation in {"preview", "send"} and values.get("profile"):
+            from .profiles import expand
+
+            configured = hass.data.get(DOMAIN)
+            if configured is None:
+                raise Problem("not_ready", retryable=True)
+            values = expand(configured, values)
+            if operation == "preview":
+                values = {k: v for k, v in values.items() if k in {str(k) for k in TARGETS}}
         values = SCHEMAS[operation](values)
         if operation == "catalog":
             from .protocol import catalog
@@ -270,6 +280,9 @@ async def _execute(hass, operation, values, context, *, assistant=None):
             from .shortcuts import room_choices
 
             result = discover(hass, data)
+            from .profiles import available
+
+            result["profiles"] = await available(hass, data, context, assistant)
             result["shortcut_choices"] = await room_choices(
                 hass, data, context, assistant=assistant
             )

@@ -112,7 +112,8 @@
               "talk_back": "Hands-free talk-back",
               "doorbell_entity": "Doorbell",
               "doorbell_camera": "Doorbell camera",
-              "doorbell_rooms": "Rooms to ring"
+              "doorbell_rooms": "Rooms to ring",
+              "household_profiles": "Household profiles"
             },
             "data_description": {
               "talk_back": "After someone talks to a room from another room, an Assist satellite in that room (Atom Echo, ESP32-S3, Home Assistant Voice) listens for a reply and the caller's room hears it. Replies are transcribed, then spoken in your voice of choice.",
@@ -385,7 +386,10 @@
         "talk_back_reply": "{room} says: {text}",
         "doorbell_message": "Someone is at the {name}.",
         "answer_door": "Answer",
-        "open_camera": "Open the camera"
+        "open_camera": "Open the camera",
+        "household_profiles": "Household profiles",
+        "profile_missing": "Choose a configured household profile.",
+        "profile_none": "Selected room"
       }
     },
     "audio_processing": {

@@ -112,7 +112,8 @@
               "talk_back": "Réponse mains libres",
               "doorbell_entity": "Sonnette",
               "doorbell_camera": "Caméra de la sonnette",
-              "doorbell_rooms": "Pièces où sonner"
+              "doorbell_rooms": "Pièces où sonner",
+              "household_profiles": "Profils du foyer"
             },
             "data_description": {
               "talk_back": "Quand quelqu'un parle à une pièce depuis une autre, un satellite Assist de cette pièce (Atom Echo, ESP32-S3, Home Assistant Voice) écoute une réponse, que la pièce de l'appelant entend. Les réponses sont transcrites puis dites avec la voix choisie.",
@@ -385,7 +386,10 @@
         "talk_back_reply": "{room} dit : {text}",
         "doorbell_message": "Quelqu'un est à {name}.",
         "answer_door": "Répondre",
-        "open_camera": "Ouvrir la caméra"
+        "open_camera": "Ouvrir la caméra",
+        "household_profiles": "Profils du foyer",
+        "profile_missing": "Choisissez un profil du foyer configuré.",
+        "profile_none": "Pièce sélectionnée"
       }
     },
     "audio_processing": {

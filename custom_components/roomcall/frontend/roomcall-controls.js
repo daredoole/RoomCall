@@ -91,6 +91,12 @@ export class RoomCallControls {
     this.input.maxLength = 4000;
     this.input.required = true;
     this.input.setAttribute("aria-label", this.t("message"));
+    this.profiles = this.select("household_profiles");
+    this.profiles.hidden = true;
+    this.profiles.addEventListener("change", () => {
+      const profile = (this.capabilities?.profiles || []).find(p => p.id === this.profiles.value);
+      if (profile) this.input.value = profile.message || "";
+    });
     this.satellites = this.select("satellite");
     const ackLabel = document.createElement("label");
     this.ack = document.createElement("input");
@@ -101,7 +107,7 @@ export class RoomCallControls {
     actions.append(this.button("preview", () => this.preview()), this.button("send", () => {
       if (this.form.reportValidity()) this.send();
     }));
-    this.form.append(this.input, this.satellites, ackLabel, actions);
+    this.form.append(this.profiles, this.input, this.satellites, ackLabel, actions);
     this.form.addEventListener("submit", (event) => { event.preventDefault(); this.send(); });
     this.result = document.createElement("div");
     this.result.className = "result muted";
@@ -248,12 +254,14 @@ export class RoomCallControls {
     if (this.dialog.open) this.settingsStatus.textContent = message;
   }
   targets() {
+    if (this.profiles.value && this.currentMode !== "ask") return {profile: this.profiles.value};
     return this.card._person ? { people: [this.card._person] } : { areas: [this.card._target] };
   }
   mode(mode) {
     if (mode !== "talk") this.card._stop({ preventDefault() {} });
     this.currentMode = mode;
     this.form.hidden = mode === "talk";
+    this.profiles.hidden = mode !== "type" || !(this.capabilities?.profiles || []).length;
     this.satellites.hidden = mode !== "ask";
     this.ackLabel.hidden = mode === "ask";
     this.card.shadowRoot.querySelector(".wrap").hidden = mode !== "talk";
@@ -276,8 +284,11 @@ export class RoomCallControls {
     if (this.currentMode === "ask") {
       if (!this.satellites.value) throw new Error(this.t("satellite_unavailable"));
       request.satellites = [this.satellites.value];
-    } else Object.assign(request, this.targets(), { require_ack: this.ack.checked,
-      priority: this.card._urgent ? "urgent" : "normal" });
+    } else {
+      Object.assign(request, this.targets());
+      if (!this.profiles.value || this.ack.checked) request.require_ack = this.ack.checked;
+      if (!this.profiles.value || this.card._urgent) request.priority = this.card._urgent ? "urgent" : "normal";
+    }
     const job = await this.command(this.currentMode === "ask" ? "ask" : "send", request);
     this.watch(job.id);
   }
@@ -303,6 +314,10 @@ export class RoomCallControls {
     if (this.card._configured === false) return;
     this.capabilities = await this.command("discover");
     if (this.closed) return;
+    const selectedProfile = this.profiles.value;
+    this.profiles.replaceChildren(new Option(this.t("profile_none"), ""), ...(this.capabilities.profiles || []).map(p => new Option(p.name, p.id)));
+    this.profiles.value = selectedProfile;
+    this.profiles.hidden = this.currentMode !== "type" || !(this.capabilities.profiles || []).length;
     this.satellites.replaceChildren(...this.capabilities.satellites.filter((s) => s.can_ask && s.available).map((s) => new Option(s.name, s.entity_id)));
     this.shortcutBuilder.rooms(this.capabilities.rooms || this.capabilities.areas.map(a => ({area_id:a.id,name:a.name})));
     this.setup.replaceChildren();

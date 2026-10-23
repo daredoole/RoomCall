@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.16.0 — 2026-10-23
+
+- Named household profiles provide reusable targets, message, volume, language, chime and voice defaults through a dashboard picker and the existing preview/send API.
+
 ## 0.12.0 — 2026-10-22
 
 - Hands-free talk-back ([#11](https://github.com/daredoole/RoomCall/issues/11)): with an Assist
