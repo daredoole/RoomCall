@@ -13,7 +13,7 @@ from .schema import vol
 
 API_VERSION = "1.0"
 SETUP_KEY = "roomcall_setup"
-READ_ONLY = {"catalog", "discover", "diagnose", "preview", "status"}
+READ_ONLY = {"policy", "catalog", "discover", "diagnose", "preview", "status"}
 OUTPUT_SCHEMA = {
     "type": "object",
     "required": ["ok", "api_version"],

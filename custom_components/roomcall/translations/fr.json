@@ -114,7 +114,8 @@
               "doorbell_camera": "Caméra de la sonnette",
               "doorbell_rooms": "Pièces où sonner",
               "speech_profiles": "Profils vocaux",
-              "household_profiles": "Profils du foyer"
+              "household_profiles": "Profils du foyer",
+              "agent_policies": "Règles des comptes agents"
             },
             "data_description": {
               "talk_back": "Quand quelqu'un parle à une pièce depuis une autre, un satellite Assist de cette pièce (Atom Echo, ESP32-S3, Home Assistant Voice) écoute une réponse, que la pièce de l'appelant entend. Les réponses sont transcrites puis dites avec la voix choisie.",
@@ -481,7 +482,10 @@
         "phase_waiting_ack": "Attente de confirmation",
         "phase_audio_fetched_ms": "Audio téléchargé après envoi",
         "phase_playback_reported_ms": "Lecture signalée après envoi",
-        "phase_interrupted": "Interrompu ; la lecture a pu commencer."
+        "phase_interrupted": "Interrompu ; la lecture a pu commencer.",
+        "agent_policy_denied": "Cette règle n’autorise pas cette opération, destination, heure, urgence ou volume.",
+        "agent_rate_limited": "Le compte a atteint sa limite de messages RoomCall.",
+        "tool_policy": "Consulter les droits et limites RoomCall de ce compte."
       }
     },
     "audio_processing": {

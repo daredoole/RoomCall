@@ -194,6 +194,8 @@ async def send(
     notify: bool = True,
     on_progress: Callable[[str], None] | None = None,
 ) -> CallRecord:
+    data.agent_policies.authorize(context.user_id, "send")
+    data.agent_policies.consume(context.user_id)
     request = await request_for(hass, data, values, context, on_progress=on_progress)
     if on_progress:
         on_progress("waiting_speakers")

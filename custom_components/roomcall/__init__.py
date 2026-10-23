@@ -29,6 +29,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from . import chimes, doorbell, frontend, intents, localization, repairs, talkback, ws
+from .agent_policy import AgentPolicies
 from .announcements import Announcer
 from .calls import CallError
 from .communication import SCHEMAS, execute, task_permitted
@@ -180,6 +181,7 @@ class RoomCallData:
     sound_tests: dict[str, Any] = field(default_factory=dict)
     tests: dict[str, tuple[str, float, str | None]] = field(default_factory=dict)
     setup_store: Any = None
+    agent_policies: AgentPolicies = field(default_factory=lambda: AgentPolicies({}))
 
     def __post_init__(self) -> None:
         self.evidence = Evidence(self.metrics)
@@ -211,6 +213,7 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         volume=_float(opts.get(CONF_VOLUME)),
         gain_db=float(opts.get(CONF_GAIN_DB, DEFAULT_GAIN_DB)),
         tts_engine=opts.get(CONF_TTS_ENGINE) or None,
+        agent_policies=AgentPolicies(communication.get("agent_policies") or {}),
         household_profiles=validate_profiles(communication.get("household_profiles") or {}),
         speech_profiles=dict(communication.get("speech_profiles") or {}),
         chime_style=None if style == chimes.OFF else style,

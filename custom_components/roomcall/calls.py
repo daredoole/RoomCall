@@ -106,6 +106,9 @@ def prepare_call(hass: HomeAssistant, data: RoomCallData, request: CallRequest) 
     entity_ids, duplicates = deduplicate(hass, entity_ids, data.aliases)
     if not entity_ids:
         raise CallError(f"No RoomCall speakers in {', '.join(targets)}", 404, "no_targets")
+    maximum = data.agent_policies.playback(
+        hass, request.caller_user_id, entity_ids, request.priority, request.volume
+    )
     try:
         routing = plan(
             hass,
@@ -123,7 +126,8 @@ def prepare_call(hass: HomeAssistant, data: RoomCallData, request: CallRequest) 
         ) from err
     routing.skipped.update(duplicates)
     routing.volumes = {
-        e: _limited_volume(hass, e, v, data.max_volume) for e, v in routing.volumes.items()
+        e: _limited_volume(hass, e, v, min(data.max_volume, maximum))
+        for e, v in routing.volumes.items()
     }
     return Prepared(targets, routing)
 
@@ -157,6 +161,9 @@ async def place_call(
     for entity_id in routing.entity_ids:
         if not await permitted(hass, entity_id, Context(user_id=request.caller_user_id)):
             raise CallError("forbidden", 403, "forbidden")
+    data.agent_policies.authorize(request.caller_user_id, "send")
+    if request.kind == "talk":
+        data.agent_policies.consume(request.caller_user_id)
     record = CallRecord(
         target=", ".join(targets),
         kind=request.kind,

@@ -114,7 +114,8 @@
               "doorbell_camera": "Türklingel-Kamera",
               "doorbell_rooms": "Räume zum Klingeln",
               "speech_profiles": "Sprachprofile",
-              "household_profiles": "Haushaltsprofile"
+              "household_profiles": "Haushaltsprofile",
+              "agent_policies": "Richtlinien für Agentenkonten"
             },
             "data_description": {
               "talk_back": "Spricht jemand aus einem anderen Raum in einen Raum, hört ein Assist-Satellit dort (Atom Echo, ESP32-S3, Home Assistant Voice) auf eine Antwort, die im Raum des Anrufers zu hören ist. Antworten werden transkribiert und mit der eingestellten Stimme gesprochen.",
@@ -481,7 +482,10 @@
         "phase_waiting_ack": "Warte auf Bestätigung",
         "phase_audio_fetched_ms": "Audio nach Versand abgerufen",
         "phase_playback_reported_ms": "Wiedergabe nach Versand gemeldet",
-        "phase_interrupted": "Unterbrochen; die Wiedergabe könnte begonnen haben."
+        "phase_interrupted": "Unterbrochen; die Wiedergabe könnte begonnen haben.",
+        "agent_policy_denied": "Diese Kontorichtlinie erlaubt den Vorgang, das Ziel, die Zeit, Dringlichkeit oder Lautstärke nicht.",
+        "agent_rate_limited": "Das Konto hat sein RoomCall-Nachrichtenlimit erreicht.",
+        "tool_policy": "RoomCall-Rechte und Grenzen dieses Kontos anzeigen."
       }
     },
     "audio_processing": {
