@@ -402,7 +402,8 @@
         "phase_answered": "Respondido",
         "phase_waiting_ack": "Esperando confirmación",
         "phase_audio_fetched_ms": "Audio descargado tras el envío",
-        "phase_playback_reported_ms": "Reproducción indicada tras el envío"
+        "phase_playback_reported_ms": "Reproducción indicada tras el envío",
+        "phase_interrupted": "Interrumpido; la reproducción puede haber empezado."
       }
     },
     "audio_processing": {

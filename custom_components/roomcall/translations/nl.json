@@ -402,7 +402,8 @@
         "phase_answered": "Beantwoord",
         "phase_waiting_ack": "Wachten op bevestiging",
         "phase_audio_fetched_ms": "Audio opgehaald na verzending",
-        "phase_playback_reported_ms": "Afspelen gemeld na verzending"
+        "phase_playback_reported_ms": "Afspelen gemeld na verzending",
+        "phase_interrupted": "Onderbroken; afspelen kan zijn begonnen."
       }
     },
     "audio_processing": {

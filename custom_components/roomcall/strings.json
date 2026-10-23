@@ -402,7 +402,8 @@
         "phase_answered": "Answered",
         "phase_waiting_ack": "Waiting for acknowledgment",
         "phase_audio_fetched_ms": "Audio fetched after dispatch",
-        "phase_playback_reported_ms": "Playback reported after dispatch"
+        "phase_playback_reported_ms": "Playback reported after dispatch",
+        "phase_interrupted": "Interrupted; playback may have started."
       }
     },
     "audio_processing": {
