@@ -58,6 +58,7 @@ async def test_public_ios_client_validates_when_private_server_ca_is_untrusted(
     client_id = "https://daredoole.github.io/RoomCall/ios-client.html"
     callback = "roomcall://auth-callback"
     private_id = "https://ha.example.test/roomcall/ios"
+
     def read_metadata():
         return (Path(__file__).resolve().parents[1] / "docs/ios-client.html").read_text()
 
