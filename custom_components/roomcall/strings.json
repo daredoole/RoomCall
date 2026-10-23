@@ -463,7 +463,25 @@
         "household_profiles": "Household profiles",
         "profile_missing": "Choose a configured household profile.",
         "profile_none": "Selected room",
-        "profile_destination": "Profile: {name}"
+        "profile_destination": "Profile: {name}",
+        "delivery_timeline": "Delivery timeline",
+        "phase_queued": "Queued",
+        "phase_waiting_presence": "Waiting for presence",
+        "phase_synthesizing": "Generating speech",
+        "phase_composing": "Adding chime",
+        "phase_waiting_speakers": "Waiting for speakers",
+        "phase_dispatching": "Sending playback requests",
+        "phase_completed": "Requests completed",
+        "phase_partial": "Some requests failed",
+        "phase_failed": "Failed",
+        "phase_expired": "Expired",
+        "phase_cancelled": "Cancelled",
+        "phase_acknowledged": "Acknowledged",
+        "phase_answered": "Answered",
+        "phase_waiting_ack": "Waiting for acknowledgment",
+        "phase_audio_fetched_ms": "Audio fetched after dispatch",
+        "phase_playback_reported_ms": "Playback reported after dispatch",
+        "phase_interrupted": "Interrupted; playback may have started."
       }
     },
     "audio_processing": {

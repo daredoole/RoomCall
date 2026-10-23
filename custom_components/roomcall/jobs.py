@@ -52,12 +52,24 @@ class Job:
     task: asyncio.Task | None = None
     acknowledged: asyncio.Event = field(default_factory=asyncio.Event)
 
+    started_mono: float = field(default_factory=time.monotonic)
+    progress: list[dict[str, Any]] = field(default_factory=list)
     saved_result: dict[str, Any] | None = None
+
+    def phase(self, stage: str) -> None:
+        self.progress.append(
+            {
+                "stage": stage,
+                "elapsed_ms": max(0, round((time.monotonic() - self.started_mono) * 1000)),
+            }
+        )
+        self.progress[:] = self.progress[-16:]
 
     def summary(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "state": self.state,
+            "progress": list(self.progress),
             "created": self.created,
             "result": self.record.summary() if self.record else self.saved_result,
             "error": self.error,
@@ -169,6 +181,7 @@ class Jobs:
             asyncio.get_running_loop().time() + values.get("expires_in", 300),
             assistant=assistant,
         )
+        job.phase("queued")
         self.items[job.id] = job
         if key[1]:
             self.keys[key] = (job.id, fingerprint)
@@ -234,12 +247,15 @@ class Jobs:
     async def _run(self, job: Job) -> None:
         def dispatched() -> None:
             job.state = "running"
+            if not any(p["stage"] == "dispatching" for p in job.progress):
+                job.phase("dispatching")
 
         try:
             if job.values.get("durable"):
                 await self.save()
             async with asyncio.timeout_at(job.deadline):
                 if job.values.get("defer_until_present"):
+                    job.phase("waiting_presence")
                     await self._wait_for_presence(job)
                 if job.values.get("satellites"):
                     dispatched()
@@ -259,6 +275,7 @@ class Jobs:
                     call_id=job.id,
                     deadline=job.deadline,
                     on_dispatch=dispatched,
+                    on_progress=job.phase,
                 )
                 if not job.record.ok:
                     accepted = sum(r.ok for r in job.record.results)
@@ -280,6 +297,7 @@ class Jobs:
                 if job.values.get("require_ack"):
                     job.record.requires_ack = True
                     job.state = "waiting_ack"
+                    job.phase("waiting_ack")
                     try:
                         async with asyncio.timeout(job.values.get("ack_timeout", 60)):
                             await job.acknowledged.wait()
@@ -319,6 +337,7 @@ class Jobs:
         finally:
             if job.record and job.state != "waiting_ack":
                 job.record.requires_ack = False
+            job.phase(job.state)
             self.data.metrics.counters[f"jobs_{job.state}"] += 1
             if job.values.get("durable"):
                 await self.save()

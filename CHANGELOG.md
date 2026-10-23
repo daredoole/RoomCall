@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.17.0 — 2026-10-23
+
+- Show measured preparation and dispatch stages, with endpoint fetch/playback evidence separate from human acknowledgment. Completion still means requests finished, not audible playback.
+
 ## 0.16.0 — 2026-10-23
 
 - Named household profiles provide reusable targets, message, volume, language, chime and voice defaults through a dashboard picker and the existing preview/send API.

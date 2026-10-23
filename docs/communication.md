@@ -292,6 +292,21 @@ coverage for both Python packages on every supported Python/HA test job, without
 source omissions. This does not measure JavaScript statement coverage. Physical speaker and
 doorbell behavior must still be checked on the chosen hardware.
 
+## Delivery timeline
+
+Every message job exposes a bounded `progress` list with stage codes and monotonic
+elapsed milliseconds. The card renders queueing, presence wait, speech generation,
+chime composition, speaker wait, dispatch and terminal outcome. Stage timestamps mark
+observed transitions; the gap to the next stage is elapsed work/wait, not an acoustic
+measurement. Direct TTS routes may not expose provider preparation separately.
+
+Endpoint audio-fetch and matching playback reports are shown separately, measured
+from endpoint dispatch. Those clocks must not be added to whole-job elapsed times.
+A completed request is not a claim that playback finished or somebody heard it.
+Explicit human acknowledgment remains separate. Existing structured errors provide
+recovery instructions for blocked/failed messages. The UI uses the shared translated
+labels and preserves narrow layouts and screen-reader status announcements.
+
 ## Household profiles
 
 Configure Communication → Household profiles with at most 32 named presets:

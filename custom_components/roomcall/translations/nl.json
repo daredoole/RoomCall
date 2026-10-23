@@ -463,7 +463,25 @@
         "household_profiles": "Huishoudprofielen",
         "profile_missing": "Kies een ingesteld huishoudprofiel.",
         "profile_none": "Geselecteerde kamer",
-        "profile_destination": "Profiel: {name}"
+        "profile_destination": "Profiel: {name}",
+        "delivery_timeline": "Bezorgtijdlijn",
+        "phase_queued": "In wachtrij",
+        "phase_waiting_presence": "Wachten op aanwezigheid",
+        "phase_synthesizing": "Spraak genereren",
+        "phase_composing": "Signaal toevoegen",
+        "phase_waiting_speakers": "Wachten op luidsprekers",
+        "phase_dispatching": "Afspeelverzoeken versturen",
+        "phase_completed": "Verzoeken voltooid",
+        "phase_partial": "Enkele verzoeken mislukt",
+        "phase_failed": "Mislukt",
+        "phase_expired": "Verlopen",
+        "phase_cancelled": "Geannuleerd",
+        "phase_acknowledged": "Bevestigd",
+        "phase_answered": "Beantwoord",
+        "phase_waiting_ack": "Wachten op bevestiging",
+        "phase_audio_fetched_ms": "Audio opgehaald na verzending",
+        "phase_playback_reported_ms": "Afspelen gemeld na verzending",
+        "phase_interrupted": "Onderbroken; afspelen kan zijn begonnen."
       }
     },
     "audio_processing": {
