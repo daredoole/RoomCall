@@ -39,6 +39,10 @@
 
 ---
 
+The browser captures use the real card in a test harness with sample rooms and
+simulated delivery. Native captures use iOS Simulator demo mode. They illustrate
+the interface, not physical-speaker results; see the [capture record](docs/screenshots.md).
+
 ## Why RoomCall?
 
 Apple's Intercom only works on HomePods, Google's Broadcast only on Google speakers, and Sonos has
@@ -48,7 +52,7 @@ replies, quiet nights, reminders that don't go away until the chore is done, and
 
 ### 🎙️ Talk to any room
 
-- **Hold to talk, live** — speakers start playing while you are still talking, from the Home Assistant app or any browser.
+- **Hold to talk, live** — stream while you talk from the Home Assistant app or a compatible browser; speaker startup and queues determine when playback begins.
 - **Rooms are your areas** — one room, the whole house, or **a person** wherever they are right now.
 - **Talk, Type or Ask** — speak, type a message for text-to-speech, or ask a question and collect a real answer from an Assist satellite. Preview intended speaker destinations before sending.
 - **Reply** — hands-free from the called room through a small Assist satellite, or from your phone's notification, aimed back at the caller.
@@ -92,7 +96,7 @@ Tap the sliders icon on the card for **Settings**:
 - **Room stations** — turn the dashboard you're on into a station other rooms can call.
 - **Voicemail** — when enabled, list, replay or delete retained messages.
 
-Everything is keyboard accessible and fits from a 240 px column to a wall tablet.
+Browser QA exercises keyboard controls and layouts from a 240 px column to a wall tablet.
 
 ### 📱 Your phone and Apple devices
 
@@ -120,7 +124,7 @@ Everything is keyboard accessible and fits from a 240 px column to a wall tablet
 - 🔒 **Local audio delivery** — recordings go from your phone to Home Assistant to the speaker. Optional speech and translation processing follows only the providers you configure.
 
 <p align="center">
-  <img src="docs/assets/ha-card-reply.png" alt="Replying from a notification" width="200">
+  <img src="docs/assets/ha-card-reply.png" alt="Card aimed back at the caller in reply mode" width="200">
   &nbsp;
   <img src="docs/assets/ha-card-compact.png" alt="Compact layout" width="200">
   &nbsp;
@@ -135,6 +139,9 @@ Everything is keyboard accessible and fits from a 240 px column to a wall tablet
 | Speakers | Any `media_player` that can play an MP3 URL: Sonos, Google Cast / Nest, AirPlay, … |
 | Microphone | Open the dashboard over **HTTPS** (Nabu Casa, a reverse proxy, Tailscale) or in the Home Assistant mobile app. Browsers block the mic on plain `http://`. |
 | Optional | A speech-to-text engine (transcripts), room presence such as [Bermuda](https://github.com/agittins/bermuda) (call a person) |
+
+The declared HA minimum is 2025.6; CI tests HA 2026.2.3 and 2026.10.2.
+The native app's PKCE sign-in requires HA 2026.10 or later.
 
 ## Install
 
@@ -205,8 +212,9 @@ data:
   priority: urgent             # ignores Do Not Disturb and quiet hours
 ```
 
-Play an audio file instead of text with `media_url:`. The action returns which speakers played
-the message, and `sensor.roomcall_last_call` records every call. More examples in the
+Play an audio file instead of text with `media_url:`. The action returns per-speaker
+request results, not proof of audible playback. `sensor.roomcall_last_call` summarizes
+recent calls. More examples in the
 [Home Assistant guide](https://daredoole.github.io/RoomCall/home-assistant/), and
 "Hey Siri, run RoomCall Basement" in [Siri and Shortcuts](https://daredoole.github.io/RoomCall/siri-shortcuts/).
 
@@ -274,9 +282,10 @@ sequenceDiagram
     H-->>P: delivered, then history, transcript and notifications
 ```
 
-With **live calls** (the default) speakers start shortly after you press and play while you are
-still talking; how soon depends on each speaker's buffering. With `live: false` the card records
-the whole message first and it plays about 1–2 seconds after you let go (AirPlay adds ~2 s).
+With **live calls** (the default), audio streams while you hold the button; each
+speaker's startup, buffering and playback queue determine when you hear it.
+With `live: false`, the card records the whole message before sending. No fixed
+latency is guaranteed for either route, especially for Everywhere or repeated calls.
 
 ## FAQ
 
@@ -301,8 +310,10 @@ See [Troubleshooting](https://daredoole.github.io/RoomCall/troubleshooting/).
 <details>
 <summary><b>It says "Delivered" but I hear nothing.</b></summary>
 
-The speaker couldn't download the clip. Set **Settings → System → Network → Local network** to an
-address your speakers can reach, e.g. `http://192.168.1.10:8123`.
+Acceptance does not establish audibility. Check the selected destination, volume,
+active playback/queue and delivery evidence. A common cause is an unreachable clip
+URL: set **Settings → System → Network → Local network** to an address your speakers
+can reach, e.g. `http://192.168.1.10:8123`. See [troubleshooting](docs/troubleshooting.md).
 </details>
 
 ## Standalone server (no Home Assistant)
@@ -310,9 +321,11 @@ address your speakers can reach, e.g. `http://192.168.1.10:8123`.
 RoomCall also runs on its own, discovering speakers over mDNS and serving a web app:
 
 ```bash
-pipx install "roomcall[all]"
+pipx install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.18.2/roomcall-0.18.2-py3-none-any.whl"
 roomcall serve        # http://<this-machine>:8765
 ```
+
+The standalone package is distributed in GitHub releases; it is not currently published on PyPI.
 
 See [Getting started](https://daredoole.github.io/RoomCall/getting-started/).
 

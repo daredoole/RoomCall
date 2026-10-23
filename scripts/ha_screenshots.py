@@ -77,7 +77,7 @@ def record_demo(browser, viewport: dict[str, int]) -> None:
         video = page.video.path()
         context.close()
         palette = Path(tmp) / "palette.png"
-        crop = "crop=iw:ih*0.72:0:0,fps=12,scale=360:-1:flags=lanczos"
+        crop = "fps=12,scale=360:-1:flags=lanczos"
         subprocess.run(
             [
                 "ffmpeg",
@@ -128,7 +128,7 @@ def main() -> int:
         for name, viewport, layout, scheme, extra in shots:
             page = browser.new_page(viewport=viewport, device_scale_factor=2)
             open_card(page, layout, scheme, extra)
-            page.screenshot(path=OUT / name)
+            page.screenshot(path=OUT / name, full_page=True)
             page.close()
 
         page = browser.new_page(viewport=phone, device_scale_factor=2)
@@ -138,13 +138,13 @@ def main() -> int:
         talk.hover()
         page.mouse.down()
         page.wait_for_timeout(1500)
-        page.screenshot(path=OUT / "ha-card-talking.png")
+        page.screenshot(path=OUT / "ha-card-talking.png", full_page=True)
         page.mouse.up()
         page.wait_for_function(
             "document.querySelector('roomcall-card').shadowRoot"
             ".querySelector('.status').textContent.startsWith('Playback requests accepted')"
         )
-        page.screenshot(path=OUT / "ha-card-delivered.png")
+        page.screenshot(path=OUT / "ha-card-delivered.png", full_page=True)
         page.close()
 
         # Every Settings tab: setup and sound tests, Siri Shortcuts, room stations, voicemail.

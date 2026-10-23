@@ -10,7 +10,9 @@ HomePod Intercom command instead of running RoomCall.
 ## Recommended: Home Assistant Perform Action
 
 Open the RoomCall card's **Settings → Siri Shortcuts**, choose your destination,
-and leave **Perform Action — recommended setup** selected. The instructions use
+and select **Native Perform Action template — unsigned, sign on a Mac**. The panel also
+shows manual setup instructions; follow those without downloading/signing a file.
+The instructions use
 the exact room ID from your installation.
 
 ![Room-specific Siri setup](assets/ha-siri-shortcuts.png)

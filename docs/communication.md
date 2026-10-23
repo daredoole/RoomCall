@@ -341,8 +341,12 @@ chime composition, speaker wait, dispatch and terminal outcome. Stage timestamps
 observed transitions; the gap to the next stage is elapsed work/wait, not an acoustic
 measurement. Direct TTS routes may not expose provider preparation separately.
 
-Endpoint audio-fetch and matching playback reports are shown separately, measured
-from endpoint dispatch. Those clocks must not be added to whole-job elapsed times.
+Endpoint audio-fetch and matching playback reports are shown separately. Their
+clocks start when RoomCall prepares the endpoint URL/watcher, before its playback
+request; they can include queue waits, stagger and route preparation. They do not
+isolate speaker buffering and must not be added to whole-job elapsed times.
+The current card labels these observations "after dispatch"; interpret those
+labels using the broader clock boundaries above, not as isolated device startup.
 A completed request is not a claim that playback finished or somebody heard it.
 Explicit human acknowledgment remains separate. Existing structured errors provide
 recovery instructions for blocked/failed messages. The UI uses the shared translated

@@ -1,6 +1,7 @@
 # Communication roadmap implementation
 
-This plan implements the five requested stages on `feat/communication-platform`.
+This is the historical implementation record for the five communication stages,
+merged through PR #42; the completed work is available on `main` and in releases.
 The Home Assistant integration is the implementation target; the standalone server
 continues to provide its existing push-to-talk API.
 

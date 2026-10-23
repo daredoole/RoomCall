@@ -12,9 +12,12 @@ talk, and your voice plays in the room you picked — on Sonos, AirPlay and Goog
 ![Settings panel](assets/ha-settings.png){ width="200" }
 </div>
 
+Browser captures show sample data in the card harness. Native captures use simulator
+demo mode; neither proves speaker delivery. See [screenshots and validation](screenshots.md).
+
 ## What you get
 
-- **Hold-to-talk card, live** — speakers play while you are still talking; set it up in the
+- **Hold-to-talk card, live** — stream while you talk; speaker startup and queues determine when playback begins. Set it up in the
   visual card editor, with compact and kiosk layouts.
 - **Rooms are your areas** — talk to one room, everywhere, specific speakers, or a person
   wherever they are.
@@ -55,9 +58,12 @@ talk, and your voice plays in the room you picked — on Sonos, AirPlay and Goog
 No Home Assistant? RoomCall also runs as its own server with mDNS speaker discovery.
 
 ```bash
-pipx install roomcall
+pipx install "roomcall @ https://github.com/daredoole/RoomCall/releases/download/v0.18.2/roomcall-0.18.2-py3-none-any.whl"
 roomcall serve --demo
 ```
+
+The package is available from GitHub releases, not currently from PyPI. Install
+[speaker extras](getting-started.md#install) for real devices.
 
 Open <http://localhost:8765>, pick a room and hold the button. Demo mode uses fake speakers, so
 nothing is played.

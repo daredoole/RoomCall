@@ -181,6 +181,7 @@ keep their saved values; use setup discovery's current `settings_schema` before 
 - **Repairs** explain unavailable speakers and unusable internal URLs.
 - **Diagnostics** (download on the integration) list speakers, rooms, announce support, recent
   calls and Apple Home status, with what people said redacted.
-- A call that reports `ok` but stays silent usually means the speaker cannot fetch
-  `http://<internal_url>/api/roomcall/…` — check the internal URL is plain `http://` and
-  reachable from the speaker's network.
+- `ok` establishes request acceptance, not audibility. Check the intended target,
+  volume, queue and independent device evidence. For missing fetch evidence on
+  RoomCall-hosted audio, check that the internal media URL is reachable from the
+  speaker's network and uses a certificate it trusts (often plain HTTP on the LAN).
