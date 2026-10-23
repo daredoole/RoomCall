@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.core import Context, HomeAssistant, callback
+from homeassistant.helpers.start import async_at_started
+from homeassistant.helpers.storage import Store
 
 from .calls import CallError
 from .core import CallRecord
@@ -22,7 +24,16 @@ from .policy import person_area
 if TYPE_CHECKING:
     from . import RoomCallData
 
-TERMINAL = {"completed", "partial", "failed", "expired", "cancelled", "acknowledged", "answered"}
+TERMINAL = {
+    "completed",
+    "partial",
+    "failed",
+    "expired",
+    "cancelled",
+    "acknowledged",
+    "answered",
+    "interrupted",
+}
 
 
 @dataclass
@@ -43,6 +54,7 @@ class Job:
 
     started_mono: float = field(default_factory=time.monotonic)
     progress: list[dict[str, Any]] = field(default_factory=list)
+    saved_result: dict[str, Any] | None = None
 
     def phase(self, stage: str) -> None:
         self.progress.append(
@@ -59,7 +71,7 @@ class Job:
             "state": self.state,
             "progress": list(self.progress),
             "created": self.created,
-            "result": self.record.summary() if self.record else None,
+            "result": self.record.summary() if self.record else self.saved_result,
             "error": self.error,
             "responses": self.responses,
             "audible": None,
@@ -69,10 +81,84 @@ class Job:
 class Jobs:
     def __init__(self, hass: HomeAssistant, data: RoomCallData) -> None:
         self.hass, self.data = hass, data
+        self.store = Store(hass, 1, f"roomcall.{data.entry_id}.jobs")
+        self.store_lock = asyncio.Lock()
+        self.closing = False
+        self.stop_start = lambda: None
         self.items: dict[str, Job] = {}
         self.keys: dict[tuple[str | None, str], tuple[str, str]] = {}
 
+    async def save(self) -> None:
+        async with self.store_lock:
+            await self.store.async_save(
+                {
+                    "jobs": [
+                        {
+                            "id": j.id,
+                            "owner": j.owner,
+                            "values": j.values,
+                            "assistant": j.assistant,
+                            "state": j.state,
+                            "created": j.created,
+                            "result": j.summary()["result"],
+                            "error": j.error,
+                            "responses": j.responses,
+                        }
+                        for j in self.items.values()
+                        if j.values.get("durable")
+                    ]
+                }
+            )
+
+    async def load(self) -> None:
+        saved = await self.store.async_load() or {}
+        for item in saved.get("jobs", [])[:128]:
+            # Retain idempotency through a bounded 24-hour window, including expiry.
+            remaining = item["created"] + item["values"].get("expires_in", 300) - time.time()
+            if time.time() - item["created"] > 86400:
+                continue
+            job = Job(
+                item["id"],
+                item["owner"],
+                item["values"],
+                Context(user_id=item["owner"]),
+                asyncio.get_running_loop().time() + max(0, remaining),
+                assistant=item.get("assistant"),
+                state=item["state"],
+                created=item["created"],
+                error=item.get("error"),
+                responses=item.get("responses", []),
+                saved_result=item.get("result"),
+            )
+            # A crash after dispatch can never justify another playback request.
+            if job.state in {"running", "waiting_ack"}:
+                job.state = "interrupted"
+                job.error = Problem("job_interrupted").as_dict(self.hass)["error"]
+            if job.state == "queued" and remaining <= 0:
+                job.state = "expired"
+            self.items[job.id] = job
+            key = job.values["idempotency_key"]
+            fingerprint = hashlib.sha256(
+                json.dumps(job.values, sort_keys=True).encode()
+            ).hexdigest()
+            self.keys[(job.owner, key)] = (job.id, fingerprint)
+        await self.save()
+
+        @callback
+        def resume(_hass):
+            for job in self.items.values():
+                if job.state == "queued":
+                    job.task = self.hass.async_create_background_task(
+                        self._run(job), f"roomcall recovered {job.id}"
+                    )
+
+        self.stop_start = async_at_started(self.hass, resume)
+
     def submit(self, values: dict[str, Any], context: Context, assistant: str | None = None) -> Job:
+        if values.get("durable") and (
+            not values.get("idempotency_key") or values.get("satellites")
+        ):
+            raise Problem("durable_key_required")
         fingerprint = hashlib.sha256(json.dumps(values, sort_keys=True).encode()).hexdigest()
         key = (context.user_id, values.get("idempotency_key", ""))
         if key[1] and key in self.keys:
@@ -128,6 +214,8 @@ class Jobs:
         if job.task:
             job.task.cancel()
         self.data.metrics.counters["jobs_cancelled"] += 1
+        if job.values.get("durable"):
+            await self.save()
         return job
 
     async def acknowledge(self, job_id: str, context: Context, response: str) -> Job:
@@ -152,6 +240,8 @@ class Jobs:
         if job.record:
             job.record.requires_ack = False
             job.record.evidence.setdefault("human", {})["acknowledged"] = True
+        if job.values.get("durable"):
+            await self.save()
         return job
 
     async def _run(self, job: Job) -> None:
@@ -161,6 +251,8 @@ class Jobs:
                 job.phase("dispatching")
 
         try:
+            if job.values.get("durable"):
+                await self.save()
             async with asyncio.timeout_at(job.deadline):
                 if job.values.get("defer_until_present"):
                     job.phase("waiting_presence")
@@ -172,6 +264,9 @@ class Jobs:
                 from .communication import validate_targets
 
                 await validate_targets(self.hass, job.values, job.context, job.assistant)
+                if job.values.get("durable"):
+                    job.state = "running"
+                    await self.save()  # durable dispatch barrier, before any provider/device work
                 job.record = await send(
                     self.hass,
                     self.data,
@@ -230,7 +325,11 @@ class Jobs:
             job.state, job.error = "failed", problem.as_dict(self.hass)["error"]
             await self._retain(job)
         except asyncio.CancelledError:
-            job.state = "cancelled"
+            if job.values.get("durable"):
+                if not (self.closing and job.state == "queued"):
+                    job.state = "interrupted" if job.state == "running" else "cancelled"
+            else:
+                job.state = "cancelled"
             raise
         except Exception:
             logging.getLogger(__name__).exception("RoomCall job %s failed", job.id)
@@ -240,6 +339,8 @@ class Jobs:
                 job.record.requires_ack = False
             job.phase(job.state)
             self.data.metrics.counters[f"jobs_{job.state}"] += 1
+            if job.values.get("durable"):
+                await self.save()
 
     async def _ask(self, job: Job) -> None:
         async def ask(entity_id: str) -> None:
@@ -322,6 +423,8 @@ class Jobs:
                 )
 
     async def close(self) -> None:
+        self.closing = True
+        self.stop_start()
         tasks = [job.task for job in self.items.values() if job.task and not job.task.done()]
         for task in tasks:
             task.cancel()

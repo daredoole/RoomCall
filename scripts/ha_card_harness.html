@@ -166,12 +166,14 @@
           return {ok:true,plan};
         }
         if (body.operation === "discover") return { ok:true, schema_version:1,
+          profiles:[{id:"dinner",name:"Dinner",message:"Dinner is ready"}],
           endpoints:ROOMS.map((r) => ({ entity_id:`media_player.${r.area_id}`,name:r.name,selected:true,
             sound_test:tests.get(`media_player.${r.area_id}`) })),
           areas:ROOMS.map((r) => ({id:r.area_id,name:r.name})),
           satellites:[{entity_id:"assist_satellite.kitchen",name:"Kitchen Voice",available:true,can_ask:true}],
           stations:[...stations.values()].map((s) => ({id:s.id,name:s.name,room:s.room})),
           features:{voicemail:params.get("voicemail")==="on"} };
+        if (body.operation === "preview" && request.profile && !request.areas && !request.people) return {ok:true,endpoints:["media_player.kitchen"]};
         if (body.operation === "preview") return {ok:true,endpoints:ROOMS.filter((r) => request.areas?.includes("all") || request.areas?.includes(r.area_id)).map((r) => `media_player.${r.area_id}`)};
         if (["send","ask","sound_test"].includes(body.operation)) {
           const id=crypto.randomUUID();
