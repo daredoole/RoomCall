@@ -292,6 +292,33 @@ coverage for both Python packages on every supported Python/HA test job, without
 source omissions. This does not measure JavaScript statement coverage. Physical speaker and
 doorbell behavior must still be checked on the chosen hardware.
 
+## Household profiles
+
+Configure Communication → Household profiles with at most 32 named presets:
+
+```yaml
+household_profiles:
+  dinner:
+    name: Dinner
+    defaults:
+      areas: [kitchen, basement]
+      message: Dinner is ready
+      volume: 0.4
+    speech:
+      engine: tts.piper
+      voice: en_US-lessac-medium
+      chime: ding
+```
+
+The Type tab offers a profile picker and fills its reusable message. Preview recipients
+before sending. Agents discover permitted profiles in `discover.profiles`, then use
+`preview` or `send` with `profile: dinner`; a message override is optional. Supplying
+an explicit destination replaces every profile destination rather than adding to it.
+Volume, language, expiry and acknowledgment defaults use the ordinary send contract.
+Profiles require explicit destinations, cannot reference another profile, and do not
+bypass HA permissions, DND, quiet hours or entity exposure. Voice/chime choices apply
+to that message only, leaving the global engine and chime unchanged.
+
 ## Durable message jobs
 
 Send `durable: true` with an explicit `idempotency_key` to persist a message through

@@ -113,7 +113,8 @@
               "doorbell_entity": "Türklingel",
               "doorbell_camera": "Türklingel-Kamera",
               "doorbell_rooms": "Räume zum Klingeln",
-              "speech_profiles": "Sprachprofile"
+              "speech_profiles": "Sprachprofile",
+              "household_profiles": "Haushaltsprofile"
             },
             "data_description": {
               "talk_back": "Spricht jemand aus einem anderen Raum in einen Raum, hört ein Assist-Satellit dort (Atom Echo, ESP32-S3, Home Assistant Voice) auf eine Antwort, die im Raum des Anrufers zu hören ist. Antworten werden transkribiert und mit der eingestellten Stimme gesprochen.",
@@ -458,7 +459,11 @@
         "ios_phrase_dnd": "${applicationName} „Nicht stören“ einstellen",
         "durable_key_required": "Dauerhafte Nachrichten benötigen einen Idempotenzschlüssel.",
         "job_interrupted": "Die Wiedergabe könnte vor der Unterbrechung begonnen haben. Prüfe den Lautsprecher vor erneutem Senden.",
-        "interrupted": "Unterbrochen; die Wiedergabe könnte begonnen haben."
+        "interrupted": "Unterbrochen; die Wiedergabe könnte begonnen haben.",
+        "household_profiles": "Haushaltsprofile",
+        "profile_missing": "Wähle ein eingerichtetes Haushaltsprofil.",
+        "profile_none": "Ausgewählter Raum",
+        "profile_destination": "Profil: {name}"
       }
     },
     "audio_processing": {

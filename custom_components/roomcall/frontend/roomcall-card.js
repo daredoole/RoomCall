@@ -1,5 +1,5 @@
 /* RoomCall push-to-talk card for Home Assistant dashboards. */
-const CARD_VERSION = "0.15.0";
+const CARD_VERSION = "0.16.0";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
 const LAYOUTS = ["default", "compact", "kiosk"];
@@ -506,6 +506,7 @@ class RoomCallCard extends HTMLElement {
     const entries = [{ area_id: "all", name: "Everywhere", icon: "mdi:home-sound-out" }, ...this._rooms];
     for (const room of entries) {
       const chip = this._chip(room.icon, room.name, !this._person && room.area_id === this._target, () => {
+        if (this._communication) this._communication.profileTargetOverride = true;
         this._target = room.area_id;
         this._person = null;
         this._renderRooms();
@@ -517,12 +518,16 @@ class RoomCallCard extends HTMLElement {
     people.replaceChildren(
       ...(this._people || []).map((p) =>
         this._chip("mdi:account", p.name, this._person === p.entity_id, () => {
+          if (this._communication) this._communication.profileTargetOverride = true;
           this._person = this._person === p.entity_id ? null : p.entity_id;
           this._renderRooms();
         }, "small"),
       ),
     );
-    root.querySelector(".destination").textContent = this._strings
+    const profile = this._communication?.currentMode === "type"
+      ? this._communication.capabilities?.profiles?.find(p => p.id === this._communication.profiles.value) : null;
+    root.querySelector(".destination").textContent = profile && !this._communication.profileTargetOverride
+      ? this._t("profile_destination", { name: profile.name }) : this._strings
       ? this._t("destination", { name: this._person
         ? this._people.find(p => p.entity_id === this._person)?.name || this._person
         : this._roomName(this._target) }) : "";

@@ -113,7 +113,8 @@
               "doorbell_entity": "Timbre",
               "doorbell_camera": "Cámara del timbre",
               "doorbell_rooms": "Salas donde suena",
-              "speech_profiles": "Perfiles de voz"
+              "speech_profiles": "Perfiles de voz",
+              "household_profiles": "Perfiles del hogar"
             },
             "data_description": {
               "talk_back": "Cuando alguien habla a una sala desde otra, un satélite de Assist en esa sala (Atom Echo, ESP32-S3, Home Assistant Voice) escucha una respuesta y la sala de origen la oye. Las respuestas se transcriben y se dicen con la voz configurada.",
@@ -458,7 +459,11 @@
         "ios_phrase_dnd": "Ajustar No molestar de ${applicationName}",
         "durable_key_required": "Los mensajes persistentes requieren una clave de idempotencia.",
         "job_interrupted": "La reproducción puede haber empezado antes de la interrupción. Comprueba el altavoz antes de enviar otro mensaje.",
-        "interrupted": "Interrumpido; la reproducción puede haber empezado."
+        "interrupted": "Interrumpido; la reproducción puede haber empezado.",
+        "household_profiles": "Perfiles del hogar",
+        "profile_missing": "Elige un perfil del hogar configurado.",
+        "profile_none": "Habitación seleccionada",
+        "profile_destination": "Perfil: {name}"
       }
     },
     "audio_processing": {

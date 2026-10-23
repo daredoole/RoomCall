@@ -113,7 +113,8 @@
               "doorbell_entity": "Deurbel",
               "doorbell_camera": "Deurbelcamera",
               "doorbell_rooms": "Ruimtes om te laten bellen",
-              "speech_profiles": "Spraakprofielen"
+              "speech_profiles": "Spraakprofielen",
+              "household_profiles": "Huishoudprofielen"
             },
             "data_description": {
               "talk_back": "Als iemand vanuit een andere ruimte tegen een ruimte praat, luistert een Assist-satelliet daar (Atom Echo, ESP32-S3, Home Assistant Voice) naar een antwoord, dat in de ruimte van de beller klinkt. Antwoorden worden uitgeschreven en uitgesproken met de ingestelde stem.",
@@ -458,7 +459,11 @@
         "ios_phrase_dnd": "Niet storen van ${applicationName} instellen",
         "durable_key_required": "Blijvende berichten vereisen een idempotentiesleutel.",
         "job_interrupted": "Afspelen kan voor de onderbreking zijn begonnen. Controleer de luidspreker voordat je opnieuw verzendt.",
-        "interrupted": "Onderbroken; afspelen kan zijn begonnen."
+        "interrupted": "Onderbroken; afspelen kan zijn begonnen.",
+        "household_profiles": "Huishoudprofielen",
+        "profile_missing": "Kies een ingesteld huishoudprofiel.",
+        "profile_none": "Geselecteerde kamer",
+        "profile_destination": "Profiel: {name}"
       }
     },
     "audio_processing": {

@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.16.0 — 2026-10-23
+
+- Named household profiles provide reusable targets, message, volume, language, chime and voice defaults through a dashboard picker and the existing preview/send API.
+
 ## 0.15.0 — 2026-10-23
 
 - Opt-in durable messages persist jobs and idempotency across HA restarts. Only queued, unexpired work resumes; potentially dispatched work is interrupted and never replayed automatically.

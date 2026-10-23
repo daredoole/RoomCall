@@ -283,6 +283,10 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                             "max_volume", default=communication.get("max_volume", 1)
                         ): _volume_slider(),
                         vol.Optional(
+                            "household_profiles",
+                            default=communication.get("household_profiles", {}),
+                        ): selector.ObjectSelector(),
+                        vol.Optional(
                             "speech_profiles", default=communication.get("speech_profiles", {})
                         ): selector.ObjectSelector(),
                         vol.Required(
@@ -335,8 +339,13 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
 
 def validate_communication(values: dict[str, Any]) -> None:
     """Validate freeform mappings before they enter the runtime configuration."""
+    from .profiles import validate as validate_profiles
+
+    if "household_profiles" in values:
+        validate_profiles(values["household_profiles"])
     vol.Schema(
         {
+            vol.Optional("household_profiles"): dict,
             vol.Optional("speech_profiles"): {
                 vol.In(("fast", "balanced", "quality")): vol.Schema(
                     {
