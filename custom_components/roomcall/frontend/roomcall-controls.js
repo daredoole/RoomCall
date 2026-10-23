@@ -47,6 +47,9 @@ export class RoomCallControls {
       .panel-section { display:grid; gap:10px; min-width:0; margin-bottom:12px; padding:14px;
         border:1px solid var(--divider-color); border-radius:14px; }
       .panel-section h3 { margin:0; font-size:0.9375rem; font-weight:600; }
+      .phone-qr { width:min(100%, 240px); justify-self:center; border-radius:12px; overflow:hidden; }
+      .phone-qr svg { display:block; width:100%; height:auto; }
+      .phone-open { justify-content:center; text-decoration:none; }
       .panel-field { display:grid; gap:6px; min-width:0; color:var(--secondary-text-color); font-size:0.8125rem; }
       .panel-note { margin:0; color:var(--secondary-text-color); font-size:0.875rem; overflow-wrap:anywhere; }
       .message-row { display:grid; gap:8px; padding-top:10px; border-top:1px solid var(--divider-color); }
@@ -133,7 +136,7 @@ export class RoomCallControls {
     tabs.setAttribute("role", "tablist");
     const prefix = `roomcall-${crypto.randomUUID()}`;
     this.panels = {};
-    for (const key of ["setup", "shortcuts", "stations", "voicemail"]) {
+    for (const key of ["setup", "shortcuts", "stations", "voicemail", "phone"]) {
       const panel = document.createElement("section");
       panel.setAttribute("role", "tabpanel");
       panel.setAttribute("aria-label", this.t(key));
@@ -148,6 +151,7 @@ export class RoomCallControls {
       tabs.append(button);
     }
     this.settingsTabs = tabs;
+    this.phonePanel();
     tabs.addEventListener("keydown", event => {
       const items = [...tabs.children].filter(button => !button.hidden);
       const index = items.indexOf(event.target);
@@ -223,6 +227,25 @@ export class RoomCallControls {
     const select = document.createElement("select");
     select.setAttribute("aria-label", this.t(key));
     return select;
+  }
+  async phonePanel() {
+    // The RoomCall iPhone app scans this to connect: only this Home Assistant address, never a
+    // password or token. Signing in still happens on Home Assistant's own login page.
+    const server = this.card._hass.auth?.data?.hassUrl || location.origin;
+    const link = `roomcall://connect?server=${encodeURIComponent(server)}`;
+    const version = new URL(import.meta.url).searchParams.get("v") || "";
+    try {
+      const { qrSvg } = await import(`./roomcall-qr.js?v=${version}`);
+      const code = document.createElement("div");
+      code.className = "phone-qr";
+      code.append(qrSvg(link, this.t("phone_qr")));
+      const open = document.createElement("a");
+      open.className = "chip small primary-action phone-open";
+      open.href = link;
+      open.textContent = this.t("phone_open");
+      this.panels.phone.replaceChildren(this.section("phone", this.note(this.t("phone_intro")), code, open,
+        this.note(this.t("phone_hint"))));
+    } catch (error) { this.panels.phone.replaceChildren(this.note(error.message || String(error))); }
   }
   section(key, ...children) {
     const section = document.createElement("section");
