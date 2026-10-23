@@ -389,7 +389,8 @@
         "open_camera": "Abrir la cámara",
         "household_profiles": "Perfiles del hogar",
         "profile_missing": "Elige un perfil del hogar configurado.",
-        "profile_none": "Habitación seleccionada"
+        "profile_none": "Habitación seleccionada",
+        "profile_destination": "Perfil: {name}"
       }
     },
     "audio_processing": {

@@ -95,7 +95,9 @@ export class RoomCallControls {
     this.profiles.hidden = true;
     this.profiles.addEventListener("change", () => {
       const profile = (this.capabilities?.profiles || []).find(p => p.id === this.profiles.value);
+      this.profileTargetOverride = false;
       if (profile) this.input.value = profile.message || "";
+      this.card._renderRooms();
     });
     this.satellites = this.select("satellite");
     const ackLabel = document.createElement("label");
@@ -254,12 +256,14 @@ export class RoomCallControls {
     if (this.dialog.open) this.settingsStatus.textContent = message;
   }
   targets() {
-    if (this.profiles.value && this.currentMode !== "ask") return {profile: this.profiles.value};
+    if (this.profiles.value && this.currentMode !== "ask") return {profile: this.profiles.value,
+      ...(this.profileTargetOverride ? (this.card._person ? {people:[this.card._person]} : {areas:[this.card._target]}) : {})};
     return this.card._person ? { people: [this.card._person] } : { areas: [this.card._target] };
   }
   mode(mode) {
     if (mode !== "talk") this.card._stop({ preventDefault() {} });
     this.currentMode = mode;
+    this.card._renderRooms();
     this.form.hidden = mode === "talk";
     this.profiles.hidden = mode !== "type" || !(this.capabilities?.profiles || []).length;
     this.satellites.hidden = mode !== "ask";

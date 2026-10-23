@@ -300,6 +300,7 @@ def main() -> None:
             card.get_by_role("combobox", name="Household profiles", exact=True).select_option(
                 "dinner"
             )
+            expect(card.locator(".destination")).to_have_text("Profile: Dinner")
             expect(card.get_by_role("textbox", name="Message", exact=True)).to_have_value(
                 "Dinner is ready"
             )
@@ -309,12 +310,16 @@ def main() -> None:
                 page.evaluate("ROOMCALL_HARNESS.requests.filter(r=>r.operation==='send').length")
                 == 0
             )
+            card.locator(".rooms button").filter(has_text="Basement").click()
+            expect(card.locator(".destination")).to_have_text("To: Basement")
+            card.get_by_role("button", name="Preview recipients", exact=True).click()
+            expect(card.locator(".result")).to_contain_text("Basement")
             card.get_by_role("button", name="Send", exact=True).click()
             expect(card.locator(".result")).to_contain_text("audibility unconfirmed")
             sent = page.evaluate(
                 "ROOMCALL_HARNESS.requests.filter(r=>r.operation==='send').at(-1).request"
             )
-            assert sent["profile"] == "dinner" and "areas" not in sent
+            assert sent["profile"] == "dinner" and sent["areas"] == ["basement"]
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             if width == 390:
                 page.screenshot(path=OUT / "ha-card-type.png")

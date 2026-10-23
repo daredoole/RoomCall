@@ -389,7 +389,8 @@
         "open_camera": "Camera openen",
         "household_profiles": "Huishoudprofielen",
         "profile_missing": "Kies een ingesteld huishoudprofiel.",
-        "profile_none": "Geselecteerde kamer"
+        "profile_none": "Geselecteerde kamer",
+        "profile_destination": "Profiel: {name}"
       }
     },
     "audio_processing": {
