@@ -183,7 +183,7 @@ def check_doorbell(browser, errors) -> None:
         assert page.evaluate("window.opened") == "camera.front_door"
         expect(banner).to_be_hidden()
         # A bounce within 10 seconds, or coming back from unavailable, doesn't reopen it.
-        for state in ("off", "on", "unavailable", "on"):
+        for state in ("off", "on", "unavailable", "on", "unknown", "on"):
             page.evaluate(
                 """state => {
               const h = ROOMCALL_HARNESS, card = document.querySelector("roomcall-card");

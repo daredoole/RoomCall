@@ -196,6 +196,8 @@ class RoomCallCard extends HTMLElement {
     const previous = this._doorbellState;
     this._doorbellState = state.state;
     if (["unavailable", "unknown", "off"].includes(state.state) || previous === "unavailable") return;
+    // Like the backend: a binary sensor leaving "unknown" is initializing, not a press.
+    if (previous === "unknown" && bell.entity.startsWith("binary_sensor.")) return;
     // A ring from before a suspended tablet woke up is not a visitor at the door now.
     if (Date.now() - Date.parse(state.last_changed) > 120000) return;
     // Same 10-second cooldown as the backend, so a bounce doesn't reopen a dismissed banner.

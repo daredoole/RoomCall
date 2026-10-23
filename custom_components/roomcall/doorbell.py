@@ -71,6 +71,10 @@ def async_track(hass: HomeAssistant, data: RoomCallData) -> Callable[[], None]:
             return
         if old.state == new.state:  # attribute-only or forced update
             return
+        # A binary sensor leaving "unknown" is (re)initializing; an event or button entity
+        # is "unknown" until its first press, which is real.
+        if old.state == "unknown" and new.domain == "binary_sensor":
+            return
         if rung is not None and monotonic() - rung < COOLDOWN:
             return
         rung = monotonic()

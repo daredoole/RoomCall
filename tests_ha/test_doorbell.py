@@ -178,3 +178,12 @@ async def test_doorbell_appearing_at_startup_does_not_ring(hass: HomeAssistant, 
     hass.states.async_set("binary_sensor.late_doorbell", "on")
     await hass.async_block_till_done()
     assert not phone
+
+
+async def test_binary_sensor_recovering_from_unknown_does_not_ring(hass: HomeAssistant, house):
+    phone = async_mock_service(hass, "notify", "mobile_app_alex_phone")
+    await _setup(hass, house, doorbell_entity="binary_sensor.front_door_visitor")
+    async_mock_service(hass, "media_player", "play_media")
+    await _press(hass, "unknown")
+    await _press(hass, "on")
+    assert not phone
