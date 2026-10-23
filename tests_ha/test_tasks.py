@@ -83,6 +83,11 @@ def _spoken(tts_audio) -> list[str]:
     ]
 
 
+def _hours_ago(hours: int) -> str:
+    """A schedule time that the tests' few hours of simulated time never reach."""
+    return (dt_util.now() - timedelta(hours=hours)).strftime("%H:%M:%S")
+
+
 async def _advance(hass: HomeAssistant, minutes: float) -> None:
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=minutes))
     await hass.async_block_till_done()
@@ -239,7 +244,7 @@ async def test_tasks_from_the_card_api_buttons_and_agents(
         "scheduled",
         {
             "name": "Dishwasher",
-            "time": "20:00:00",
+            "time": _hours_ago(6),
             "message": "Empty the dishwasher",
             "rooms": [house["kitchen"]],
             "task": "  Emptied it  ",
@@ -247,7 +252,7 @@ async def test_tasks_from_the_card_api_buttons_and_agents(
             "priority": "urgent",
         },
     )
-    await _add(hass, entry, "scheduled", {"name": "Plain", "time": "21:00:00", "message": "Hi"})
+    await _add(hass, entry, "scheduled", {"name": "Plain", "time": _hours_ago(5), "message": "Hi"})
     registry = er.async_get(hass)
     button = registry.async_get_entity_id("button", DOMAIN, f"{sid}_complete")
     sensor = registry.async_get_entity_id("sensor", DOMAIN, f"{sid}_task")

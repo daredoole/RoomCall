@@ -62,7 +62,7 @@ async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) ->
     if (
         not data.talk_back
         or record.kind != "talk"
-        or not record.ok
+        or not any(result.ok for result in record.results)
         or origin not in names
         or ALL_ROOMS in targets
         or not hass.services.has_service("assist_satellite", "ask_question")
@@ -75,6 +75,11 @@ async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) ->
     context = Context(user_id=record.owner)
     ears = await satellites(hass, heard - {origin}, context)
     if not ears:
+        return
+    # Don't ask anyone for a reply that could never be delivered to the caller's room.
+    try:
+        await validate_targets(hass, {"areas": [origin]}, context, None)
+    except (CallError, Problem):
         return
     # Ask only once the call has finished playing, so "Reply?" never talks over it, and keep
     # those speakers reserved while listening, so a queued call cannot play over the prompt

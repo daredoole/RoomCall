@@ -178,7 +178,8 @@ async def test_one_satellite_per_room_and_the_callers_permissions_apply(
     tts_audio.reset_mock()
     with patch(
         "custom_components.roomcall.talkback.validate_targets",
-        side_effect=Problem("forbidden"),
+        # Allowed when asked, refused by the time the reply is sent.
+        side_effect=[None, Problem("forbidden")],
     ):
         await talkback.listen(hass, data, _record(basement, origin=kitchen))
     assert len(asked) == 2 and not tts_audio.await_args_list
@@ -278,3 +279,23 @@ async def test_talk_back_waits_for_the_call_to_finish_playing(hass: HomeAssistan
     with patch.object(data.scheduler, "acquire", side_effect=[taken, TimeoutError]):
         await talkback.listen(hass, data, record)
     assert not taken.locked() and not asked
+
+
+async def test_partial_delivery_listens_and_undeliverable_replies_are_not_asked(
+    hass: HomeAssistant, house
+):
+    from homeassistant.helpers import area_registry as ar
+
+    await _setup(hass, house)
+    data = hass.data[DOMAIN]
+    asked = _answers(hass, None)
+    # One speaker failed, the basement played: the basement can still reply.
+    record = _record(house["basement"])
+    record.results.append(Delivery("media_player.kitchen_hub", "Kitchen", False, 10))
+    await talkback.listen(hass, data, record)
+    assert len(asked) == 1
+
+    # A caller room with no RoomCall speaker could never hear the answer: don't ask.
+    office = ar.async_get(hass).async_create("Office")
+    await talkback.listen(hass, data, _record(house["basement"], origin=office.id))
+    assert len(asked) == 1
