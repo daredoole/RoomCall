@@ -75,8 +75,25 @@ Install the signed app, enter the HA address or scan the card's connection QR co
 and sign in. Pick a destination and hold to talk, or use **Message** to type.
 Opening the app, a room control or a connection link never starts the microphone.
 
-The public `/roomcall/ios` endpoint is IndieAuth callback metadata only. It advertises
-`roomcall://auth-callback`; normal HA authentication and caller permissions still apply.
+New sign-ins use the public client ID
+`https://daredoole.github.io/RoomCall/ios-client.html`, which advertises only
+`roomcall://auth-callback`. HA must be able to fetch this small HTTPS page to validate
+the redirect. Credentials, authorization codes and tokens are sent only to your HA
+server; PKCE and state validation still apply. Existing saved credentials retain
+their original client ID for refresh. The local `/roomcall/ios` metadata endpoint
+remains available for older clients.
+
+### Sign-in errors
+
+- **TLS / secure connection failed:** if the server uses a private CA, install and
+  explicitly trust that CA on the iPhone under **General → About → Certificate
+  Trust Settings**. A Safari exception alone is not system-wide trust. The app
+  continues validating certificates.
+- **Invalid redirect URI:** update the iPhone app to **0.18.1 or later**. Earlier
+  builds ask HA to fetch its own local HTTPS callback metadata, which fails when
+  HA does not trust that server certificate. Allow outbound HTTPS from HA to the
+  public metadata URL above. Updating only the HA integration does not replace
+  an already-installed iPhone build.
 
 ## Platform boundaries
 

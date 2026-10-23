@@ -21,12 +21,22 @@ enum NativeFailure: LocalizedError {
     }
 }
 
+enum OAuthClient {
+    // HA fetches this public page to validate our custom-scheme callback. Using
+    // the user's server here fails when HA does not trust its private TLS CA.
+    static let id = "https://daredoole.github.io/RoomCall/ios-client.html"
+    static let redirectURI = "roomcall://auth-callback"
+}
+
 struct Credentials: Codable {
     let server: URL
     var accessToken: String
     let refreshToken: String
     var expiresAt: Date
-    var clientID: String { server.appendingPathComponent("roomcall/ios").absoluteString }
+    var oauthClientID: String? = nil
+    // Credentials saved before the public client ID must refresh with the ID
+    // their tokens were originally issued to, including after an app update.
+    var clientID: String { oauthClientID ?? server.appendingPathComponent("roomcall/ios").absoluteString }
 }
 
 enum SecureStore {
