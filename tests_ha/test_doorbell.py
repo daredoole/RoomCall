@@ -168,3 +168,13 @@ async def test_the_doorbells_own_area_names_the_alert(hass: HomeAssistant, house
     hass.states.async_set("binary_sensor.porch_visitor", "on")
     await hass.async_block_till_done()
     assert phone[0].data["title"] == "Porch"
+
+
+async def test_doorbell_appearing_at_startup_does_not_ring(hass: HomeAssistant, house):
+    phone = async_mock_service(hass, "notify", "mobile_app_alex_phone")
+    await _setup(hass, house, doorbell_entity="binary_sensor.late_doorbell")
+    async_mock_service(hass, "media_player", "play_media")
+    # The doorbell integration loads after RoomCall and restores "on".
+    hass.states.async_set("binary_sensor.late_doorbell", "on")
+    await hass.async_block_till_done()
+    assert not phone
