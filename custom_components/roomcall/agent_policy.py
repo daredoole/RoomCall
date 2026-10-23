@@ -16,6 +16,7 @@ OPERATIONS = [
     "diagnose",
     "preview",
     "send",
+    "speech",
     "ask",
     "status",
     "cancel",
