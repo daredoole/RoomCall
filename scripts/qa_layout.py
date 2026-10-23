@@ -56,6 +56,42 @@ def check_layout(browser) -> None:
         page.close()
 
 
+def check_appearances(browser) -> None:
+    """Glass, Material and HA-theme looks: tokens, theme switching, contrast, no overflow."""
+    cases = [
+        ("glass", "dark", "", "rgb(10, 132, 255)"),
+        ("material", "light", "&color=00a389", None),
+        ("glass", "light", "&color=ffd60a", "rgb(255, 214, 10)"),
+        ("home-assistant", "dark", "", None),
+    ]
+    for appearance, scheme, extra, primary in cases:
+        page = browser.new_page(viewport={"width": 390, "height": 820})
+        open_card(page, "mobile", scheme, f"&appearance={appearance}{extra}")
+        card = page.locator("roomcall-card")
+        assert card.get_attribute("appearance") == appearance
+        assert (card.get_attribute("dark") is not None) == (scheme == "dark")
+        talk = card.locator("button.talk")
+        if primary:
+            assert talk.evaluate("e=>getComputedStyle(e).backgroundColor") == primary
+        if extra.endswith("ffd60a"):
+            # A light colour gets dark text so the button label stays readable.
+            assert talk.evaluate("e=>getComputedStyle(e).color") == "rgb(16, 19, 23)"
+        if appearance == "home-assistant":
+            assert card.evaluate("e=>e.style.getPropertyValue('--primary-color')") == ""
+        for width in (240, 600):
+            card.evaluate("(e,w)=>{e.parentElement.style.width=w+'px'}", width)
+            page.wait_for_timeout(40)
+            assert card.evaluate(
+                "e=>{const c=e.shadowRoot.querySelector('ha-card');"
+                "return c.scrollWidth<=c.clientWidth+1}"
+            ), (appearance, width)
+        # "auto" follows Home Assistant's dark mode as it changes.
+        page.evaluate("""() => {const c=document.querySelector('roomcall-card');
+          c.hass={...c._hass,themes:{darkMode:!c._hass.themes.darkMode}}}""")
+        assert (card.get_attribute("dark") is None) == (scheme == "dark")
+        page.close()
+
+
 def check_large_text(browser) -> None:
     for width in (240, 390, 900):
         page = browser.new_page(viewport={"width": width, "height": 820})

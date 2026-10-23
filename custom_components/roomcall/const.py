@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "roomcall"
-VERSION = "0.18.2"
+VERSION = "0.19.0"
 
 CONF_SPEAKERS = "speakers"
 CONF_VOLUME = "volume"

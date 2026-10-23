@@ -261,7 +261,8 @@ actions:
 **Announcements** are added from the integration's ⋮ menu: *Add scheduled announcement* /
 *Add triggered announcement* ([guide](https://daredoole.github.io/RoomCall/announcements/)).
 Add a **Task to confirm** and **Remind every** to make one stay open until it's done.
-Card options (`room`, `people`, `history`, `layout`, `live`) are set in the visual editor
+Card options (`room`, `people`, `history`, `layout`, `live`, and the look: `appearance` glass /
+material / home-assistant, `theme`, `color`) are set in the visual editor
 ([details](https://daredoole.github.io/RoomCall/home-assistant/#3-add-the-push-to-talk-card)).
 
 ## How it works

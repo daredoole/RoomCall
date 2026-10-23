@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from ha_screenshots import ORIGIN, OUT, open_card
 from playwright.sync_api import expect, sync_playwright
-from qa_layout import check_large_text, check_layout
+from qa_layout import check_appearances, check_large_text, check_layout
 
 
 def check_guided_setup(browser, errors) -> None:
@@ -299,6 +299,7 @@ def main() -> None:
         )
         errors = []
         check_layout(browser)
+        check_appearances(browser)
         check_large_text(browser)
         check_guided_setup(browser, errors)
         check_shortcuts(browser, errors)
