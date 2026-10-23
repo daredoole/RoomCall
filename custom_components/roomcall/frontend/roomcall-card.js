@@ -108,10 +108,8 @@ class RoomCallCard extends HTMLElement {
       this._configured = res.configured !== false;
       this.shadowRoot.querySelector(".talk").disabled = !this._configured;
       this._dndEntity = res.dnd_entity;
-      this._doorbell = res.doorbell || null;
-      // Only presses after the card loaded ring the banner.
-      this._doorbellSeen = this._doorbell && this._hass.states[this._doorbell.entity]?.last_changed;
-      this._doorbellState = this._doorbell && this._hass.states[this._doorbell.entity]?.state;
+      this._doorbellFetched = Date.now();
+      this._setDoorbell(res.doorbell);
       const people = this._config.people;
       this._people = people === false ? [] : Array.isArray(people)
         ? res.people.filter((p) => people.includes(p.entity_id)) : res.people;
@@ -170,7 +168,26 @@ class RoomCallCard extends HTMLElement {
     this._renderHistory();
   }
 
+  _setDoorbell(bell) {
+    if (JSON.stringify(bell || null) === JSON.stringify(this._doorbell || null)) return;
+    this._doorbell = bell || null;
+    // Only presses after the card learned about this doorbell ring the banner.
+    const state = this._doorbell && this._hass.states[this._doorbell.entity];
+    this._doorbellSeen = state?.last_changed;
+    this._doorbellState = state?.state;
+  }
+
+  async _refreshDoorbell() {
+    // Doorbell options can change while a wall tablet stays open; re-read them now and then.
+    if (Date.now() - (this._doorbellFetched || 0) < 60000) return;
+    this._doorbellFetched = Date.now();
+    try {
+      this._setDoorbell((await this._hass.callApi("GET", "roomcall/rooms")).doorbell);
+    } catch { /* keep the current doorbell */ }
+  }
+
   _checkDoorbell() {
+    this._refreshDoorbell();
     const bell = this._doorbell;
     const state = bell && this._hass.states[bell.entity];
     if (!state || state.last_changed === this._doorbellSeen) return;
@@ -179,6 +196,8 @@ class RoomCallCard extends HTMLElement {
     const previous = this._doorbellState;
     this._doorbellState = state.state;
     if (["unavailable", "unknown", "off"].includes(state.state) || previous === "unavailable") return;
+    // A ring from before a suspended tablet woke up is not a visitor at the door now.
+    if (Date.now() - Date.parse(state.last_changed) > 120000) return;
     // Same 10-second cooldown as the backend, so a bounce doesn't reopen a dismissed banner.
     if (Date.now() - (this._doorbellShown || 0) < 10000) return;
     this._doorbellShown = Date.now();

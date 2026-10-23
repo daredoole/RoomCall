@@ -189,7 +189,7 @@
       if (path === "roomcall/history") return { calls: HISTORY };
       return {
         rooms: ROOMS, speakers: 5, dnd: false, dnd_entity: "switch.roomcall_do_not_disturb",
-        doorbell: params.get("doorbell") === "on"
+        doorbell: window.roomcallDoorbell !== undefined ? window.roomcallDoorbell : params.get("doorbell") === "on"
           ? { entity: "binary_sensor.front_door_visitor", camera: "camera.front_door", name: "Front Door" } : null,
         people: [{ entity_id: "person.alex", name: "Alex" }, { entity_id: "person.sam", name: "Sam" }],
       };
