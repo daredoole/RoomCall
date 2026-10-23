@@ -282,6 +282,34 @@ final class RoomCallTests: XCTestCase {
         }
         return data
     }
+
+    func testThemeColoursMatchTheDashboardCard() {
+        let blue = RGB(hex: "#0a84ff")!
+        XCTAssertEqual(blue.hex, "#0A84FF")
+        XCTAssertNil(RGB(hex: "blue"))
+        XCTAssertEqual(RGB(blue.color).hex, "#0A84FF")
+        // Light colours get dark text; saturated ones keep white.
+        XCTAssertEqual(RGB(hex: "#FFD60A")!.onColor.hex, "#101317")
+        XCTAssertEqual(blue.onColor.hex, "#FFFFFF")
+        // HSL round trip.
+        let (h, s, l) = blue.hsl
+        XCTAssertEqual(RGB.fromHSL(h, s, l).hex, blue.hex)
+        XCTAssertEqual(ThemeSettings.presets.map(\.hex).first, ThemeSettings.defaultAccent)
+    }
+
+    func testMaterialTonesComeFromTheSeed() {
+        let teal = RGB(hex: "#00A389")!, purple = RGB(hex: "#7C4DFF")!
+        XCTAssertNotEqual(Tones(seed: teal, dark: false), Tones(seed: purple, dark: false))
+        let dark = Tones(seed: teal, dark: true), light = Tones(seed: teal, dark: false)
+        // Dark mode uses a lighter primary on a darker surface, like Material 3.
+        XCTAssertGreaterThan(dark.primary.hsl.l, 0.65)
+        XCTAssertLessThan(light.primary.hsl.l, 0.45)
+        XCTAssertLessThan(dark.surface.luminance, light.surface.luminance)
+        XCTAssertLessThan(dark.onPrimary.luminance, dark.primary.luminance)
+        XCTAssertEqual(ColorMode.auto.scheme, nil)
+        XCTAssertEqual(ColorMode.dark.scheme, .dark)
+        XCTAssertEqual(AppStyle(rawValue: "material"), .material)
+    }
 }
 
 final class StubProtocol: URLProtocol {

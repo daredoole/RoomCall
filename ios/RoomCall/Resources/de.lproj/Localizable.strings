@@ -6,6 +6,8 @@
 "ios_answer_hint" = "Mit dem Besuch sprechen Sie in der Kameraansicht von Home Assistant, wenn Ihre Kamera Gegensprechen unterstützt.";
 "ios_answer_in_ha" = "In Home Assistant annehmen";
 "ios_answers" = "Antworten";
+"ios_appearance" = "Aussehen";
+"ios_appearance_hint" = "Glas und Material färben App und Widgets in deiner Farbe; Standard-iOS nutzt das Systemdesign.";
 "ios_ask" = "Fragen";
 "ios_ask_hint" = "Der Satellit stellt Ihre Frage laut und hört auf die Antwort.";
 "ios_automation" = "Automation";
@@ -13,8 +15,15 @@
 "ios_camera_permission" = "RoomCall scannt den QR-Code auf Ihrer RoomCall-Karte, um sich zu verbinden.";
 "ios_choose_room" = "Wähle, wo du sprechen möchtest";
 "ios_close" = "Schließen";
+"ios_color_blue" = "Blau";
+"ios_color_coral" = "Koralle";
+"ios_color_mode" = "Hell oder dunkel";
+"ios_color_pink" = "Pink";
+"ios_color_purple" = "Lila";
+"ios_color_teal" = "Petrol";
 "ios_connecting_audio" = "Audio wird verbunden…";
 "ios_connection_failed" = "RoomCall konnte die Verbindung nicht abschließen. Prüfe Home Assistant und versuche es erneut.";
+"ios_custom_color" = "Eigene Farbe";
 "ios_delivery_failed" = "Einige Wiedergabeanfragen sind fehlgeschlagen. Prüfe Home Assistant.";
 "ios_delivery_unknown" = "Die Zustellbestätigung steht noch aus. Einige Lautsprecher spielen die Nachricht möglicherweise bereits ab. Prüfe den Anrufverlauf, bevor du erneut sendest.";
 "ios_dnd" = "Nicht stören";
@@ -38,6 +47,9 @@
 "ios_microphone_denied" = "Erlaube den Mikrofonzugriff in den Einstellungen.";
 "ios_microphone_permission" = "RoomCall sendet deine Stimme an den ausgewählten Raum.";
 "ios_mode" = "Modus";
+"ios_mode_auto" = "Wie iPhone";
+"ios_mode_dark" = "Dunkel";
+"ios_mode_light" = "Hell";
 "ios_my_room" = "Dieses Telefon ist meist in";
 "ios_my_room_hint" = "Antworten und freihändige Antworten kommen in diesen Raum zurück.";
 "ios_network_slow" = "Die Verbindung ist für Live-Audio zu langsam. Die Übertragung wurde beendet.";
@@ -83,6 +95,10 @@
 "ios_sign_in_description" = "Verbinde dich mit Home Assistant. Dein Konto bleibt im sicheren Anmeldebildschirm.";
 "ios_sign_out" = "Abmelden";
 "ios_someone_at" = "Jemand ist an der %@.";
+"ios_style" = "Stil";
+"ios_style_glass" = "Glas";
+"ios_style_material" = "Material";
+"ios_style_system" = "Standard-iOS";
 "ios_tab_history" = "Verlauf";
 "ios_tab_message" = "Nachricht";
 "ios_tab_settings" = "Einstellungen";

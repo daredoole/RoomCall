@@ -511,7 +511,23 @@
         "editor_help_color": "Le bouton pour parler, les pièces sélectionnées et (avec Material) toute la palette viennent de cette couleur.",
         "editor_help_room": "L'emplacement de ce tableau de bord (par exemple une tablette murale). Les réponses à ses appels reviennent ici.",
         "editor_help_rooms": "Laissez vide pour toutes les pièces avec un haut-parleur RoomCall.",
-        "editor_help_live": "Désactivez pour enregistrer d'abord tout le message, puis l'envoyer."
+        "editor_help_live": "Désactivez pour enregistrer d'abord tout le message, puis l'envoyer.",
+        "ios_appearance": "Apparence",
+        "ios_appearance_hint": "Verre et Material colorent l'app et les widgets avec votre couleur ; iOS standard utilise l'apparence du système.",
+        "ios_style": "Style",
+        "ios_style_glass": "Verre",
+        "ios_style_material": "Material",
+        "ios_style_system": "iOS standard",
+        "ios_color_mode": "Clair ou sombre",
+        "ios_mode_auto": "Comme l'iPhone",
+        "ios_mode_light": "Clair",
+        "ios_mode_dark": "Sombre",
+        "ios_custom_color": "Couleur personnalisée",
+        "ios_color_blue": "Bleu",
+        "ios_color_purple": "Violet",
+        "ios_color_teal": "Bleu canard",
+        "ios_color_coral": "Corail",
+        "ios_color_pink": "Rose"
       }
     },
     "audio_processing": {

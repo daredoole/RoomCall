@@ -6,6 +6,8 @@
 "ios_answer_hint" = "Parler au visiteur se fait dans la vue caméra de Home Assistant, si votre caméra prend en charge l'audio bidirectionnel.";
 "ios_answer_in_ha" = "Répondre dans Home Assistant";
 "ios_answers" = "Réponses";
+"ios_appearance" = "Apparence";
+"ios_appearance_hint" = "Verre et Material colorent l'app et les widgets avec votre couleur ; iOS standard utilise l'apparence du système.";
 "ios_ask" = "Demander";
 "ios_ask_hint" = "Le satellite pose votre question à voix haute et écoute la réponse.";
 "ios_automation" = "Automatisation";
@@ -13,8 +15,15 @@
 "ios_camera_permission" = "RoomCall scanne le code QR de votre carte RoomCall pour se connecter.";
 "ios_choose_room" = "Choisissez où parler";
 "ios_close" = "Fermer";
+"ios_color_blue" = "Bleu";
+"ios_color_coral" = "Corail";
+"ios_color_mode" = "Clair ou sombre";
+"ios_color_pink" = "Rose";
+"ios_color_purple" = "Violet";
+"ios_color_teal" = "Bleu canard";
 "ios_connecting_audio" = "Connexion audio…";
 "ios_connection_failed" = "RoomCall n’a pas pu terminer la connexion. Vérifiez Home Assistant et réessayez.";
+"ios_custom_color" = "Couleur personnalisée";
 "ios_delivery_failed" = "Certaines demandes de lecture ont échoué. Consultez Home Assistant.";
 "ios_delivery_unknown" = "La confirmation de diffusion est toujours en attente. Certains haut-parleurs lisent peut-être déjà le message. Consultez l’historique avant de renvoyer.";
 "ios_dnd" = "Ne pas déranger";
@@ -38,6 +47,9 @@
 "ios_microphone_denied" = "Autorisez l’accès au microphone dans Réglages pour parler.";
 "ios_microphone_permission" = "RoomCall envoie votre voix dans la pièce sélectionnée.";
 "ios_mode" = "Mode";
+"ios_mode_auto" = "Comme l'iPhone";
+"ios_mode_dark" = "Sombre";
+"ios_mode_light" = "Clair";
 "ios_my_room" = "Ce téléphone est d'habitude dans";
 "ios_my_room_hint" = "Les réponses et la réponse mains libres reviennent dans cette pièce.";
 "ios_network_slow" = "La connexion est trop lente pour l’audio en direct. La transmission est arrêtée.";
@@ -83,6 +95,10 @@
 "ios_sign_in_description" = "Connectez-vous à Home Assistant. Votre compte reste dans son écran de connexion sécurisé.";
 "ios_sign_out" = "Se déconnecter";
 "ios_someone_at" = "Quelqu'un est à %@.";
+"ios_style" = "Style";
+"ios_style_glass" = "Verre";
+"ios_style_material" = "Material";
+"ios_style_system" = "iOS standard";
 "ios_tab_history" = "Historique";
 "ios_tab_message" = "Message";
 "ios_tab_settings" = "Réglages";

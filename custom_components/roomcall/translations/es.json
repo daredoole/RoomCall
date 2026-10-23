@@ -511,7 +511,23 @@
         "editor_help_color": "El botón de hablar, las habitaciones seleccionadas y (con Material) toda la paleta salen de este color.",
         "editor_help_room": "Dónde está este panel (por ejemplo, una tableta de pared). Las respuestas a sus llamadas vuelven aquí.",
         "editor_help_rooms": "Déjalo vacío para todas las habitaciones con un altavoz de RoomCall.",
-        "editor_help_live": "Desactívalo para grabar primero el mensaje completo y luego enviarlo."
+        "editor_help_live": "Desactívalo para grabar primero el mensaje completo y luego enviarlo.",
+        "ios_appearance": "Apariencia",
+        "ios_appearance_hint": "Cristal y Material colorean la app y los widgets con tu color; iOS estándar usa el aspecto del sistema.",
+        "ios_style": "Estilo",
+        "ios_style_glass": "Cristal",
+        "ios_style_material": "Material",
+        "ios_style_system": "iOS estándar",
+        "ios_color_mode": "Claro u oscuro",
+        "ios_mode_auto": "Igual que el iPhone",
+        "ios_mode_light": "Claro",
+        "ios_mode_dark": "Oscuro",
+        "ios_custom_color": "Color personalizado",
+        "ios_color_blue": "Azul",
+        "ios_color_purple": "Morado",
+        "ios_color_teal": "Verde azulado",
+        "ios_color_coral": "Coral",
+        "ios_color_pink": "Rosa"
       }
     },
     "audio_processing": {

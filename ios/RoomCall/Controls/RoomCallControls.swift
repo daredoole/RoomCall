@@ -54,6 +54,7 @@ struct RoomsWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "com.daredoole.RoomCall.rooms", provider: SnapshotProvider()) { entry in
             RoomsWidgetView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
+                .tint(ThemeSettings.accent)
         }
         .configurationDisplayName("ios_widget_rooms")
         .description("ios_widget_rooms_description")
@@ -82,7 +83,7 @@ struct RoomsWidgetView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .lineLimit(1)
                         }
-                        .tint(.accentColor)
+                        .tint(ThemeSettings.accent)
                     }
                 }
             }
@@ -95,6 +96,7 @@ struct TasksWidget: Widget {
         StaticConfiguration(kind: "com.daredoole.RoomCall.tasks", provider: SnapshotProvider()) { entry in
             TasksWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
+                .tint(ThemeSettings.accent)
                 .widgetURL(URL(string: "roomcall://todo"))
         }
         .configurationDisplayName("ios_widget_tasks")

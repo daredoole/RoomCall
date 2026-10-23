@@ -511,7 +511,23 @@
         "editor_help_color": "The talk button, selected rooms and (with Material) the whole palette come from this colour.",
         "editor_help_room": "Where this dashboard is (for example a wall tablet). Replies to its calls come back here.",
         "editor_help_rooms": "Leave empty for every room with a RoomCall speaker.",
-        "editor_help_live": "Turn off to record the whole message first, then send it."
+        "editor_help_live": "Turn off to record the whole message first, then send it.",
+        "ios_appearance": "Appearance",
+        "ios_appearance_hint": "Glass and Material colour the app and widgets from your colour; Standard iOS uses the system look.",
+        "ios_style": "Style",
+        "ios_style_glass": "Glass",
+        "ios_style_material": "Material",
+        "ios_style_system": "Standard iOS",
+        "ios_color_mode": "Light or dark",
+        "ios_mode_auto": "Follow iPhone",
+        "ios_mode_light": "Light",
+        "ios_mode_dark": "Dark",
+        "ios_custom_color": "Custom colour",
+        "ios_color_blue": "Blue",
+        "ios_color_purple": "Purple",
+        "ios_color_teal": "Teal",
+        "ios_color_coral": "Coral",
+        "ios_color_pink": "Pink"
       }
     },
     "audio_processing": {

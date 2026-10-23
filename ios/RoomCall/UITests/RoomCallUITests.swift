@@ -53,6 +53,21 @@ final class RoomCallUITests: XCTestCase {
         XCTAssertEqual(notice.label, "Message queued; audibility is unconfirmed.")
     }
 
+    /// Settings → Appearance: pick a colour preset; restore the default for later screenshot runs.
+    func testAppearanceColourPreset() {
+        executionTimeAllowance = 120
+        let app = launch(["-RoomCallDemo", "-RoomCallDemoTab", "settings"])
+        let purple = app.buttons["accent-purple"]
+        for _ in 0..<4 where !purple.exists { app.swipeUp() }
+        XCTAssertTrue(purple.waitForExistence(timeout: 30))
+        purple.tap()
+        XCTAssertTrue(purple.isSelected)
+        let blue = app.buttons["accent-blue"]
+        blue.tap()
+        XCTAssertTrue(blue.isSelected)
+        XCTAssertFalse(purple.isSelected)
+    }
+
     // MARK: Documentation screenshots (exported from the result bundle in CI)
 
     func testScreenshotSignIn() {
