@@ -108,7 +108,11 @@
               "voicemail": "Guardar mensajes localmente (opcional)",
               "voicemail_retention": "Retención de mensajes (segundos)",
               "translation_entity": "Proveedor de traducción IA (opcional)",
-              "audio_processing": "Procesamiento de voz grabada"
+              "audio_processing": "Procesamiento de voz grabada",
+              "talk_back": "Respuesta sin manos"
+            },
+            "data_description": {
+              "talk_back": "Cuando alguien habla a una sala desde otra, un satélite de Assist en esa sala (Atom Echo, ESP32-S3, Home Assistant Voice) escucha una respuesta y la sala de origen la oye. Las respuestas se transcriben y se dicen con la voz configurada."
             }
           }
         }
@@ -370,7 +374,9 @@
         "task_announced": "Anunciado {time}",
         "tool_tasks": "Lista las tareas de anuncios pendientes, confirma que una se hizo (complete) o recuérdala más tarde (snooze). Completa una tarea solo cuando una persona diga que la hizo; nunca lo supongas.",
         "station_room": "Sala de este panel",
-        "no_stations": "No hay otras estaciones abiertas. Abre RoomCall en otro panel y activa su estación para llamarla."
+        "no_stations": "No hay otras estaciones abiertas. Abre RoomCall en otro panel y activa su estación para llamarla.",
+        "talk_back_prompt": "¿Respuesta?",
+        "talk_back_reply": "{room} dice: {text}"
       }
     },
     "audio_processing": {

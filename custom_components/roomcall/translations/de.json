@@ -108,7 +108,11 @@
               "voicemail": "Sprachnachrichten lokal speichern (optional)",
               "voicemail_retention": "Aufbewahrung von Nachrichten (Sekunden)",
               "translation_entity": "KI-Übersetzungsanbieter (optional)",
-              "audio_processing": "Verarbeitung aufgenommener Sprache"
+              "audio_processing": "Verarbeitung aufgenommener Sprache",
+              "talk_back": "Freihändig antworten"
+            },
+            "data_description": {
+              "talk_back": "Spricht jemand aus einem anderen Raum in einen Raum, hört ein Assist-Satellit dort (Atom Echo, ESP32-S3, Home Assistant Voice) auf eine Antwort, die im Raum des Anrufers zu hören ist. Antworten werden transkribiert und mit der eingestellten Stimme gesprochen."
             }
           }
         }
@@ -370,7 +374,9 @@
         "task_announced": "Angesagt {time}",
         "tool_tasks": "Offene Aufgaben von Durchsagen auflisten, bestätigen, dass eine erledigt ist (complete), oder später erneut erinnern (snooze). Eine Aufgabe nur abschließen, wenn eine Person sagt, dass sie sie erledigt hat; niemals vermuten.",
         "station_room": "Raum dieses Dashboards",
-        "no_stations": "Keine anderen Stationen geöffnet. Öffne RoomCall auf einem anderen Dashboard und aktiviere dort die Station, um sie anzurufen."
+        "no_stations": "Keine anderen Stationen geöffnet. Öffne RoomCall auf einem anderen Dashboard und aktiviere dort die Station, um sie anzurufen.",
+        "talk_back_prompt": "Antwort?",
+        "talk_back_reply": "{room} sagt: {text}"
       }
     },
     "audio_processing": {

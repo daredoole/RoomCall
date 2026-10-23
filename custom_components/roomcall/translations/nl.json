@@ -108,7 +108,11 @@
               "voicemail": "Voicemail lokaal bewaren (optioneel)",
               "voicemail_retention": "Voicemailbewaartermijn (seconden)",
               "translation_entity": "AI-vertaaldienst (optioneel)",
-              "audio_processing": "Verwerking van opgenomen spraak"
+              "audio_processing": "Verwerking van opgenomen spraak",
+              "talk_back": "Handsfree terugpraten"
+            },
+            "data_description": {
+              "talk_back": "Als iemand vanuit een andere ruimte tegen een ruimte praat, luistert een Assist-satelliet daar (Atom Echo, ESP32-S3, Home Assistant Voice) naar een antwoord, dat in de ruimte van de beller klinkt. Antwoorden worden uitgeschreven en uitgesproken met de ingestelde stem."
             }
           }
         }
@@ -370,7 +374,9 @@
         "task_announced": "Omgeroepen {time}",
         "tool_tasks": "Openstaande taken van omroepberichten tonen, bevestigen dat er een gedaan is (complete) of later opnieuw herinneren (snooze). Rond een taak alleen af als iemand zegt dat die gedaan is; neem het nooit aan.",
         "station_room": "Ruimte van dit dashboard",
-        "no_stations": "Geen andere stations geopend. Open RoomCall op een ander dashboard en schakel daar het station in om het te bellen."
+        "no_stations": "Geen andere stations geopend. Open RoomCall op een ander dashboard en schakel daar het station in om het te bellen.",
+        "talk_back_prompt": "Antwoord?",
+        "talk_back_reply": "{room} zegt: {text}"
       }
     },
     "audio_processing": {

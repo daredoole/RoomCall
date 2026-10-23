@@ -283,6 +283,9 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                             "max_volume", default=communication.get("max_volume", 1)
                         ): _volume_slider(),
                         vol.Required(
+                            "talk_back", default=communication.get("talk_back", False)
+                        ): selector.BooleanSelector(),
+                        vol.Required(
                             "voicemail", default=communication.get("voicemail", False)
                         ): selector.BooleanSelector(),
                         vol.Required(
@@ -343,6 +346,7 @@ def validate_communication(values: dict[str, Any]) -> None:
             ),
             vol.Optional("max_volume"): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional("voicemail"): bool,
+            vol.Optional("talk_back"): bool,
             vol.Optional("voicemail_retention"): vol.All(
                 vol.Coerce(int), vol.Range(min=300, max=604800)
             ),

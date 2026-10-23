@@ -161,6 +161,27 @@ intended for mutually reachable networks. HTTPS and browser microphone permissio
 are still required. A suspended/background browser cannot be treated as a reliably
 available phone. Speakers without an accessible microphone remain playback-only.
 
+## Hands-free talk-back
+
+Speakers like Sonos, HomePod and Nest keep their microphones for their own assistants.
+To answer a call out loud, put an **Assist satellite** in the room (an Atom Echo, an
+ESP32-S3 with an I2S microphone running ESPHome, or Home Assistant Voice) and assign it
+to the same area as the room's speakers. Then turn on **Hands-free talk-back** under
+**Configure → Communication**.
+
+After someone talks to that room from another room's card, the satellite asks
+"Reply?" without a chime and listens. Whatever it hears is transcribed by the
+satellite's Assist pipeline and played in the caller's room as
+"*Basement says: coming up in a minute*". Nothing is sent when nobody answers.
+
+- Works for room-to-room talk calls with a known caller room (`room:` set on the
+  card). Calls to **Everywhere**, typed messages and announcements don't listen.
+- A reply is sent as a message, so it never asks for a reply itself.
+- Home Assistant provides the transcription, not the recording, so the reply plays
+  in your configured text-to-speech voice. Speech processing follows the satellite's
+  pipeline (local or cloud, as you configured it).
+- The satellite must support Assist questions (`assist_satellite.ask_question`).
+
 ## Communication settings
 
 **Settings → Devices & services → RoomCall → Configure → Communication** includes:
@@ -184,6 +205,8 @@ available phone. Speakers without an accessible microphone remain playback-only.
 - **Translation provider:** an explicitly selected `ai_task` entity. A message with
   `translate: true` and a target language uses this provider; an invalid translation
   fails without sending the original. No cloud provider is selected automatically.
+- **Hands-free talk-back:** an Assist satellite in a called room listens for a reply
+  ([details](#hands-free-talk-back)). Off by default.
 - **Speech processing:** optional recorded-audio high-pass filtering, noise reduction,
   normalization and peak limiting using ffmpeg. Live audio keeps its existing
   low-latency encoder. Browsers request echo cancellation/noise suppression for

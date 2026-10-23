@@ -4,6 +4,13 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.12.0 — 2026-10-22
+
+- Hands-free talk-back ([#11](https://github.com/daredoole/RoomCall/issues/11)): with an Assist
+  satellite in a room (Atom Echo, ESP32-S3, Home Assistant Voice), a room-to-room call listens
+  for a spoken reply and plays its transcription in the caller's room. Opt in under
+  Configure → Communication; silent replies send nothing and replies never ask for replies.
+
 ## 0.11.0 — 2026-10-22
 
 - Announcement tasks: give a scheduled or triggered announcement a task to confirm (for example
