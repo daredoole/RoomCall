@@ -101,9 +101,11 @@ from .live import LiveStore
 from .messages import send
 from .onboarding import Setup
 from .policy import QuietHours
+from .profiles import validate as validate_profiles
 from .protocol import SETUP_KEY
 from .scheduler import Scheduler
 from .schema import vol
+from .speech import SpeechCache
 from .stations import Stations
 from .telemetry import Evidence, Metrics
 from .voicemail import Mailbox
@@ -152,6 +154,9 @@ class RoomCallData:
     clips: ClipStore = field(default_factory=ClipStore)
     live: LiveStore = field(default_factory=LiveStore)
     history: History = field(default_factory=History)
+    household_profiles: dict[str, dict[str, Any]] = field(default_factory=dict)
+    speech_cache: SpeechCache = field(default_factory=SpeechCache)
+    speech_profiles: dict[str, dict[str, str]] = field(default_factory=dict)
     chime_cache: dict[str, bytes] = field(default_factory=dict)
     aliases: dict[str, str] = field(default_factory=dict)
     preferences: dict[str, dict[str, Any]] = field(default_factory=dict)
@@ -209,6 +214,8 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         gain_db=float(opts.get(CONF_GAIN_DB, DEFAULT_GAIN_DB)),
         tts_engine=opts.get(CONF_TTS_ENGINE) or None,
         agent_policies=AgentPolicies(communication.get("agent_policies") or {}),
+        household_profiles=validate_profiles(communication.get("household_profiles") or {}),
+        speech_profiles=dict(communication.get("speech_profiles") or {}),
         chime_style=None if style == chimes.OFF else style,
         chime_url=(chime.get(CONF_CHIME_URL) or "").strip() or None,
         stagger_ms=int(delivery.get(CONF_STAGGER_MS, DEFAULT_STAGGER_MS)),
@@ -375,6 +382,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CALL_FINISHED, talk_back))
     entry.async_on_unload(doorbell.async_track(hass, data))
     hass.data[DOMAIN] = data
+    await data.jobs.load()
     data.announcer = Announcer(hass, entry)
     await data.announcer.async_load()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

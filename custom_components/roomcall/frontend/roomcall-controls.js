@@ -21,6 +21,7 @@ export class RoomCallControls {
       .communication .setup-content { display:grid; gap:8px; padding-top:8px }
       .communication .test-row { display:flex; align-items:center; flex-wrap:wrap; gap:6px }
       .communication .result,.communication .settings-result { overflow-wrap:anywhere; white-space:pre-wrap }
+      .communication ol { min-width:0; margin:0; padding-inline-start:24px; overflow-wrap:anywhere; }
       .communication button { min-height:44px; min-width:44px }
       .communication button:disabled { opacity:.5; cursor:not-allowed }
       .communication nav[data-toolbar] { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 44px; gap:4px;
@@ -94,6 +95,14 @@ export class RoomCallControls {
     this.input.maxLength = 4000;
     this.input.required = true;
     this.input.setAttribute("aria-label", this.t("message"));
+    this.profiles = this.select("household_profiles");
+    this.profiles.hidden = true;
+    this.profiles.addEventListener("change", () => {
+      const profile = (this.capabilities?.profiles || []).find(p => p.id === this.profiles.value);
+      this.profileTargetOverride = false;
+      if (profile) this.input.value = profile.message || "";
+      this.card._renderRooms();
+    });
     this.satellites = this.select("satellite");
     const ackLabel = document.createElement("label");
     this.ack = document.createElement("input");
@@ -104,11 +113,14 @@ export class RoomCallControls {
     actions.append(this.button("preview", () => this.preview()), this.button("send", () => {
       if (this.form.reportValidity()) this.send();
     }));
-    this.form.append(this.input, this.satellites, ackLabel, actions);
+    this.form.append(this.profiles, this.input, this.satellites, ackLabel, actions);
     this.form.addEventListener("submit", (event) => { event.preventDefault(); this.send(); });
     this.result = document.createElement("div");
     this.result.className = "result muted";
     this.result.setAttribute("role", "status");
+    this.timeline = document.createElement("ol");
+    this.timeline.setAttribute("aria-label", this.t("delivery_timeline"));
+    this.timeline.hidden = true;
     this.jobActions = document.createElement("nav");
     this.dialog = document.createElement("dialog");
     this.dialog.setAttribute("aria-label", this.t("settings"));
@@ -175,7 +187,7 @@ export class RoomCallControls {
     const icon = document.createElement("ha-icon"); icon.setAttribute("icon", "mdi:tune-variant");
     settings.append(icon);
     this.nav.append(settings);
-    this.root.append(this.nav, this.form, this.result, this.jobActions);
+    this.root.append(this.nav, this.form, this.result, this.timeline, this.jobActions);
     card.shadowRoot.querySelector(".wrap").before(this.root);
     this.settingsRoot = document.createElement("section");
     this.settingsRoot.className = "communication settings-surface";
@@ -271,12 +283,16 @@ export class RoomCallControls {
     if (this.dialog.open) this.settingsStatus.textContent = message;
   }
   targets() {
+    if (this.profiles.value && this.currentMode !== "ask") return {profile: this.profiles.value,
+      ...(this.profileTargetOverride ? (this.card._person ? {people:[this.card._person]} : {areas:[this.card._target]}) : {})};
     return this.card._person ? { people: [this.card._person] } : { areas: [this.card._target] };
   }
   mode(mode) {
     if (mode !== "talk") this.card._stop({ preventDefault() {} });
     this.currentMode = mode;
+    this.card._renderRooms();
     this.form.hidden = mode === "talk";
+    this.profiles.hidden = mode !== "type" || !(this.capabilities?.profiles || []).length;
     this.satellites.hidden = mode !== "ask";
     this.ackLabel.hidden = mode === "ask";
     this.card.shadowRoot.querySelector(".wrap").hidden = mode !== "talk";
@@ -299,8 +315,11 @@ export class RoomCallControls {
     if (this.currentMode === "ask") {
       if (!this.satellites.value) throw new Error(this.t("satellite_unavailable"));
       request.satellites = [this.satellites.value];
-    } else Object.assign(request, this.targets(), { require_ack: this.ack.checked,
-      priority: this.card._urgent ? "urgent" : "normal" });
+    } else {
+      Object.assign(request, this.targets());
+      if (!this.profiles.value || this.ack.checked) request.require_ack = this.ack.checked;
+      if (!this.profiles.value || this.card._urgent) request.priority = this.card._urgent ? "urgent" : "normal";
+    }
     const job = await this.command(this.currentMode === "ask" ? "ask" : "send", request);
     this.watch(job.id);
   }
@@ -310,6 +329,23 @@ export class RoomCallControls {
       const job = await this.command("status", { id });
       this.result.textContent = this.t(job.state, { accepted: job.result?.delivered?.length || 0,
         speakers: Object.keys(job.result?.failed || {}).join(", ") });
+      const steps = [...(job.progress || [])];
+      this.timeline.hidden = !steps.length;
+      this.timeline.replaceChildren(...steps.map(step => {
+        const row = document.createElement("li");
+        row.textContent = `${this.t(`phase_${step.stage}`)} · ${(step.elapsed_ms / 1000).toFixed(1)}s`;
+        return row;
+      }));
+      for (const [endpoint, evidence] of Object.entries(job.result?.evidence || {})) {
+        if (endpoint === "human") continue;
+        const name = this.capabilities?.endpoints.find(e => e.entity_id === endpoint)?.name || endpoint;
+        for (const key of ["audio_fetched_ms", "playback_reported_ms"]) {
+          if (evidence[key] == null) continue;
+          const row = document.createElement("li");
+          row.textContent = `${name}: ${this.t(`phase_${key}`)} · ${(evidence[key] / 1000).toFixed(1)}s`;
+          this.timeline.append(row);
+        }
+      }
       this.jobActions.replaceChildren();
       if (job.state === "queued") this.jobActions.append(this.button("cancel", async () => {
         await this.command("cancel", { id });
@@ -326,6 +362,10 @@ export class RoomCallControls {
     if (this.card._configured === false) return;
     this.capabilities = await this.command("discover");
     if (this.closed) return;
+    const selectedProfile = this.profiles.value;
+    this.profiles.replaceChildren(new Option(this.t("profile_none"), ""), ...(this.capabilities.profiles || []).map(p => new Option(p.name, p.id)));
+    this.profiles.value = selectedProfile;
+    this.profiles.hidden = this.currentMode !== "type" || !(this.capabilities.profiles || []).length;
     this.satellites.replaceChildren(...this.capabilities.satellites.filter((s) => s.can_ask && s.available).map((s) => new Option(s.name, s.entity_id)));
     this.shortcutBuilder.rooms(this.capabilities.rooms || this.capabilities.areas.map(a => ({area_id:a.id,name:a.name})));
     this.setup.replaceChildren();

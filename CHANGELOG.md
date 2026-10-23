@@ -8,6 +8,26 @@ All notable changes are listed here. The format follows
 
 - Optional per-account RoomCall policies restrict destinations, operations, hours, urgency, requested volume and runtime message rate. Add owned-job WebSocket updates that recheck permissions on every event.
 
+## 0.17.0 — 2026-10-23
+
+- Show measured preparation and dispatch stages, with endpoint fetch/playback evidence separate from human acknowledgment. Completion still means requests finished, not audible playback.
+
+## 0.16.0 — 2026-10-23
+
+- Named household profiles provide reusable targets, message, volume, language, chime and voice defaults through a dashboard picker and the existing preview/send API.
+
+## 0.15.0 — 2026-10-23
+
+- Opt-in durable messages persist jobs and idempotency across HA restarts. Only queued, unexpired work resumes; potentially dispatched work is interrupted and never replayed automatically.
+
+## 0.14.0 — 2026-10-23
+
+- Fast, balanced and quality speech profiles select explicit TTS engines and voices.
+- Pre-generate speech without playback using the discoverable speech operation.
+- Reuse composed speech for ten minutes in an owner-scoped cache bounded to 32
+  entries / 16 MiB; concurrent identical requests synthesize once. Administrators
+  can clear it; configuration reload clears all prepared speech.
+
 ## 0.13.0 — 2026-10-23
 
 - Complete the sideloadable native iOS app with task controls, history, questions,

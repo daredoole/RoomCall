@@ -285,6 +285,13 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                         vol.Optional(
                             "agent_policies", default=communication.get("agent_policies", {})
                         ): selector.ObjectSelector(),
+                        vol.Optional(
+                            "household_profiles",
+                            default=communication.get("household_profiles", {}),
+                        ): selector.ObjectSelector(),
+                        vol.Optional(
+                            "speech_profiles", default=communication.get("speech_profiles", {})
+                        ): selector.ObjectSelector(),
                         vol.Required(
                             "talk_back", default=communication.get("talk_back", False)
                         ): selector.BooleanSelector(),
@@ -339,9 +346,22 @@ def validate_communication(values: dict[str, Any]) -> None:
 
     if "agent_policies" in values:
         validate_agent_policies(values["agent_policies"])
+    from .profiles import validate as validate_profiles
+
+    if "household_profiles" in values:
+        validate_profiles(values["household_profiles"])
     vol.Schema(
         {
             vol.Optional("agent_policies"): dict,
+            vol.Optional("household_profiles"): dict,
+            vol.Optional("speech_profiles"): {
+                vol.In(("fast", "balanced", "quality")): vol.Schema(
+                    {
+                        vol.Required("engine"): vol.Match(r"^tts\.[a-z0-9_]+$"),
+                        vol.Required("voice"): vol.All(str, vol.Length(min=1, max=128)),
+                    }
+                )
+            },
             vol.Optional("aliases"): {cv_entity: vol.All(str, vol.Length(min=1, max=80))},
             vol.Optional("preferences"): {
                 cv_person: vol.Schema(
