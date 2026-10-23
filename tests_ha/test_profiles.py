@@ -88,3 +88,31 @@ async def test_options_normalize_single_destinations_before_discovery(hass, setu
         }
     )
     assert configured.household_profiles["dinner"]["defaults"]["areas"] == ["kitchen"]
+
+
+async def test_explicit_speech_profile_overrides_household_voice_once(
+    hass, setup_roomcall, tts_audio
+):
+    from urllib.parse import parse_qs, urlsplit
+
+    data = hass.data["roomcall"]
+    hass.states.async_set("tts.piper", "unknown")
+    data.household_profiles = validate(
+        {
+            "dinner": {
+                "name": "Dinner",
+                "defaults": {"areas": ["kitchen"], "message": "Dinner"},
+                "speech": {"engine": "tts.piper", "voice": "en_US-lessac-high"},
+            }
+        }
+    )
+    data.speech_profiles = {"fast": {"engine": "tts.piper", "voice": "en_US-lessac-medium"}}
+    await request_for(
+        hass,
+        data,
+        {"profile": "dinner", "speech_profile": "fast", "areas": ["kitchen"], "message": "Dinner"},
+        Context(),
+    )
+    query = parse_qs(urlsplit(tts_audio.call_args.args[1]).query)
+    assert query["voice"] == ["en_US-lessac-medium"]
+    assert data.household_profiles["dinner"]["speech"]["voice"] == "en_US-lessac-high"
