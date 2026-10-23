@@ -69,6 +69,8 @@ and WebRTC checks, then `python scripts/doc_assets.py` and `mkdocs build --stric
    `git push origin refs/tags/vX.Y.Z`. The release workflow checks all five versions,
    builds the wheel/sdist and `roomcall.zip`, and attests those artifacts. PyPI
    publishing is opt-in and is not currently enabled.
+   Keep the release title equal to its tag (`vX.Y.Z`); put descriptive text in
+   the release notes so narrow release lists show the complete version.
 4. The unsigned IPA is produced separately by iOS CI. If attaching it, verify its
    version/build, matching native source and checksum; document the source run
    and that it is outside the integration/Python provenance bundle.
