@@ -1,13 +1,13 @@
 {
   "schema": 1,
-  "capture_base_commit": "983ebc91d466225b088bf8440a4d2751acbe75bc",
+  "capture_base_commit": "ad0037e1738b8c780e15844f9859e0ee8c17e3d8",
   "ios_source_commit": "c0ac78f0babb4840a66f447982bdba6d353daa45",
   "ios_run": "https://github.com/daredoole/RoomCall/actions/runs/39994701361",
   "sample_data": true,
   "groups": {
     "home_assistant": {
       "images": {
-        "docs/assets/demo.gif": "95b6f00f6f036840531965664b30d2cc6d1b376a6a7394b3593e38aa106c7af1",
+        "docs/assets/demo.gif": "53b38b8d1b607496ef3b73f538e3919ab3323402ea46e1f60d9e1db1477b475c",
         "docs/assets/ha-card-ask.png": "3e0838fd223f685b09bd9fc3bf946d0d8d6a5c286b18861289cc85ee82384861",
         "docs/assets/ha-card-compact.png": "fb00518617d208bf1f4ab8b27c8e36a4104a309037014a47d612e9b0897dc35c",
         "docs/assets/ha-card-delivered.png": "6cebc0d0309b4090363df5373a96f7bbd88b1eb5103e1b8cf7ecf4912a2cb57f",
@@ -22,7 +22,7 @@
         "docs/assets/ha-card-tasks.png": "bb32529ae395fb4adf652391b781e7116aebdd4a6ccbdda7494b2a9a0dd430da",
         "docs/assets/ha-card-type.png": "f38f0d14fe9a2ce11f1e1943fd742c64bdf9ad7cb6728599419ef307b98779f5",
         "docs/assets/ha-dashboard-desktop.png": "2808552d063f0b546a8a2644e6f4824ca361efe29b619c1b94c84818ccfbb40b",
-        "docs/assets/ha-guided-setup.png": "89d0fc664198da9f274cb13e1a50f160ca974e5de2ec1ecb56b8cec0fff22f95",
+        "docs/assets/ha-guided-setup.png": "e6491e1738ef4aebb39131e13e2f4d805bf96dc8fd3995cb3ecdbbf4f1be8dac",
         "docs/assets/ha-settings-phone.png": "93877bcd40803f6b2f44456fa7f596e3d065998fda7b662a0d5b53a70dd83f0a",
         "docs/assets/ha-settings-shortcuts.png": "1ad4687fb96ded1eb46a108b4d0cf3f064921d22a71e5d5704c9b83407597715",
         "docs/assets/ha-settings-stations.png": "086eaadba7b2d6dbd6d1390d5b4aa73d051259cb7517f15669d98a3532f10911",
@@ -31,10 +31,10 @@
         "docs/assets/ha-siri-shortcuts.png": "bef6e264a01e69c89913a0f9466642d60cc25d80b9c83e7775d442eff14fa37c"
       },
       "inputs": {
-        "custom_components/roomcall/frontend/roomcall-card.js": "a07f491c5da5e1d0d6a1c43e34611c6f00b02e65e8d5a380253179da5fffa9b4",
+        "custom_components/roomcall/frontend/roomcall-card.js": "9c17555d906551f43ca1b5030734c3ed4ed9f61015073d0554136b9f7a867c39",
         "custom_components/roomcall/frontend/roomcall-controls.js": "737dd76007cfaf900d6dad694863a28adb6b5722514f3b433e881e3b806ad1ed",
         "custom_components/roomcall/frontend/roomcall-qr.js": "b8fdb1a738c36b7989ebacad214540ab143065b04f6bf270d3ca29d0d5cadc2d",
-        "custom_components/roomcall/strings.json": "136ac8488fb10a4d28b77b1275e9886eaa56ff887f4dc7bab3eb12d518bb532c",
+        "custom_components/roomcall/strings.json": "644c0156eb8c984746197074ff6da2712e09e8443de059b1fb8306dae321a698",
         "scripts/ha_card_harness.html": "4dd5d3df43bca9a031707e441053917050dc65c90cb393ea569078045bc5e896",
         "scripts/ha_screenshots.py": "f77adc56e65e398a5f71b2ada1d8be8a7cee236c36cfecf5eab46a48940530be",
         "scripts/qa_communication.py": "f1a94db5a09a55f1ec1372ac1a3d5c548ec2e9fe5b2d9331101ecc991afa8358"

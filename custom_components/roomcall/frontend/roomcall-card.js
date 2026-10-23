@@ -1089,74 +1089,8 @@ class RoomCallCard extends HTMLElement {
   }
 }
 
-const EDITOR_SCHEMA = [
-  { name: "title", selector: { text: {} } },
-  {
-    type: "grid",
-    name: "",
-    schema: [
-      { name: "room", selector: { area: {} } },
-      { name: "default_room", selector: { area: {} } },
-    ],
-  },
-  { name: "rooms", selector: { area: { multiple: true } } },
-  {
-    name: "layout",
-    selector: {
-      select: {
-        mode: "dropdown",
-        options: [
-          { value: "default", label: "Standard" },
-          { value: "compact", label: "Compact (one row)" },
-          { value: "kiosk", label: "Kiosk (big button for a wall tablet)" },
-        ],
-      },
-    },
-  },
-  {
-    type: "grid",
-    name: "",
-    schema: [
-      { name: "live", selector: { boolean: {} } },
-      { name: "people", selector: { boolean: {} } },
-    ],
-  },
-  { name: "history", selector: { number: { min: 0, max: 10, mode: "box" } } },
-  {
-    name: "appearance",
-    selector: {
-      select: {
-        mode: "dropdown",
-        options: [
-          { value: "glass", label: "Glass (Apple-like, frosted)" },
-          { value: "material", label: "Material (tonal colours from your colour)" },
-          { value: "home-assistant", label: "Home Assistant theme" },
-        ],
-      },
-    },
-  },
-  {
-    type: "grid",
-    name: "",
-    schema: [
-      {
-        name: "theme",
-        selector: {
-          select: {
-            mode: "dropdown",
-            options: [
-              { value: "auto", label: "Follow Home Assistant" },
-              { value: "light", label: "Light" },
-              { value: "dark", label: "Dark" },
-            ],
-          },
-        },
-      },
-      { name: "color", selector: { color_rgb: {} } },
-    ],
-  },
-];
-const EDITOR_LABELS = {
+// English fallbacks; the translated catalog (editor_*) replaces them once it loads.
+const EDITOR_TEXT = {
   title: "Title",
   room: "This card's room",
   default_room: "Room selected at start",
@@ -1168,14 +1102,58 @@ const EDITOR_LABELS = {
   appearance: "Appearance",
   theme: "Light or dark",
   color: "Button colour",
+  layout_default: "Standard",
+  layout_compact: "Compact (one row)",
+  layout_kiosk: "Kiosk (big button for a wall tablet)",
+  appearance_glass: "Glass (Apple-like, frosted)",
+  appearance_material: "Material (tonal colours from your colour)",
+  appearance_home_assistant: "Home Assistant theme",
+  theme_auto: "Follow Home Assistant",
+  theme_light: "Light",
+  theme_dark: "Dark",
+  help_appearance: "Glass and Material use their own colours; Home Assistant theme keeps your dashboard's theme.",
+  help_color: "The talk button, selected rooms and (with Material) the whole palette come from this colour.",
+  help_room: "Where this dashboard is (for example a wall tablet). Replies to its calls come back here.",
+  help_rooms: "Leave empty for every room with a RoomCall speaker.",
+  help_live: "Turn off to record the whole message first, then send it.",
 };
-const EDITOR_HELP = {
-  appearance: "Glass and Material use their own colours; Home Assistant theme keeps your dashboard's theme.",
-  color: "The talk button, selected rooms and (with Material) the whole palette come from this colour.",
-  room: "Where this dashboard is (for example a wall tablet). Replies to its calls come back here.",
-  rooms: "Leave empty for every room with a RoomCall speaker.",
-  live: "Turn off to record the whole message first, then send it.",
-};
+const select = (t, name, values) => ({
+  name,
+  selector: {
+    select: {
+      mode: "dropdown",
+      options: values.map((value) => ({ value, label: t(`${name}_${value.replace("-", "_")}`) })),
+    },
+  },
+});
+const editorSchema = (t) => [
+  { name: "title", selector: { text: {} } },
+  {
+    type: "grid",
+    name: "",
+    schema: [
+      { name: "room", selector: { area: {} } },
+      { name: "default_room", selector: { area: {} } },
+    ],
+  },
+  { name: "rooms", selector: { area: { multiple: true } } },
+  select(t, "layout", LAYOUTS),
+  {
+    type: "grid",
+    name: "",
+    schema: [
+      { name: "live", selector: { boolean: {} } },
+      { name: "people", selector: { boolean: {} } },
+    ],
+  },
+  { name: "history", selector: { number: { min: 0, max: 10, mode: "box" } } },
+  select(t, "appearance", APPEARANCES),
+  {
+    type: "grid",
+    name: "",
+    schema: [select(t, "theme", THEMES), { name: "color", selector: { color_rgb: {} } }],
+  },
+];
 
 class RoomCallCardEditor extends HTMLElement {
   setConfig(config) {
@@ -1186,13 +1164,28 @@ class RoomCallCardEditor extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     if (this._form) this._form.hass = hass;
+    if (!this._strings && !this._loadingStrings) this._loadStrings();
+  }
+
+  async _loadStrings() {
+    this._loadingStrings = true;
+    try {
+      this._strings = await this._hass.callApi("GET", `roomcall/locale?language=${encodeURIComponent(this._hass.language || "en")}`);
+      if (this._form) this._render();
+    } catch (error) {
+      console.warn("RoomCall editor strings", error);
+    }
+  }
+
+  _text(key) {
+    return this._strings?.[`editor_${key}`] || EDITOR_TEXT[key];
   }
 
   _render() {
     if (!this._form) {
       this._form = document.createElement("ha-form");
-      this._form.computeLabel = (field) => EDITOR_LABELS[field.name] || field.name;
-      this._form.computeHelper = (field) => EDITOR_HELP[field.name];
+      this._form.computeLabel = (field) => this._text(field.name) || field.name;
+      this._form.computeHelper = (field) => this._text(`help_${field.name}`);
       this._form.addEventListener("value-changed", (ev) => {
         const config = { ...ev.detail.value };
         for (const key of ["room", "default_room"]) if (!config[key]) delete config[key];
@@ -1205,7 +1198,7 @@ class RoomCallCardEditor extends HTMLElement {
       this.append(this._form);
     }
     this._form.hass = this._hass;
-    this._form.schema = EDITOR_SCHEMA;
+    this._form.schema = editorSchema((key) => this._text(key));
     this._form.data = this._config;
   }
 }
