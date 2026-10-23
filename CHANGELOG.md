@@ -4,8 +4,16 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.19.0 — 2026-10-23
 
+- New card look: **Glass** (the default) — frosted, Apple-like surfaces, room tiles with
+  icons, an iOS-style Talk / Type / Ask segmented control and a talk orb with depth.
+- New `appearance: material` — a Material 3 tonal palette, filter chips with check marks,
+  filled icons and a gradient orb, all generated from one colour.
+- New card options `appearance` (`glass`, `material`, `home-assistant`), `theme`
+  (`auto`, `light`, `dark`) and `color` (any colour; also in the visual editor). `auto`
+  follows Home Assistant's dark mode; `home-assistant` keeps the dashboard theme as before.
+  Text on light colours switches to dark for contrast.
 - Audit current guides against 0.18.2: correct standalone installation, playback
   evidence/latency, retention, Apple Home pairing, Siri selectors, iOS signing and
   release provenance. Refresh screenshots/demo, preserve complete card captures,

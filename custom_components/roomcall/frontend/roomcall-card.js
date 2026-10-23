@@ -1,8 +1,10 @@
 /* RoomCall push-to-talk card for Home Assistant dashboards. */
-const CARD_VERSION = "0.18.2";
+const CARD_VERSION = "0.19.0";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
 const LAYOUTS = ["default", "compact", "kiosk"];
+const APPEARANCES = ["glass", "material", "home-assistant"];
+const THEMES = ["auto", "light", "dark"];
 const LIVE_RATE = 16000;
 // Turns the microphone into 16 kHz 16-bit PCM frames of 40 ms for live calls.
 const PCM_WORKLET = `
@@ -42,6 +44,106 @@ function timeAgo(iso) {
   return new Date(iso).toLocaleDateString();
 }
 
+/** "#0a84ff" or [10, 132, 255] (the card editor's color picker) → [hue, saturation %]. */
+function seedHsl(color) {
+  const rgb = Array.isArray(color) ? color
+    : [1, 3, 5].map((i) => parseInt(String(color || "#0a84ff").replace("#", "").padEnd(6, "0").slice(i - 1, i + 1), 16));
+  const [r, g, b] = rgb.map((v) => (Number(v) || 0) / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+  let h = 0, s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    h = (max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60;
+  }
+  return [h, s * 100];
+}
+/** Dark text on light seed colours (yellow, mint) so labels on them stay readable. */
+function onSeed(color) {
+  const hex = seedHex(color).replace("#", "").padEnd(6, "0");
+  const [r, g, b] = [0, 2, 4].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? "#101317" : "#ffffff";
+}
+const hsl = (h, s, l, a = 1) => `hsl(${Math.round(h)} ${Math.round(s)}% ${l}% / ${a})`;
+const seedHex = (color) => (Array.isArray(color)
+  ? `#${color.map((v) => Number(v).toString(16).padStart(2, "0")).join("")}` : color || "#0a84ff");
+
+/**
+ * Design tokens for the card. "glass" is frosted, Apple-like surfaces around one accent; "material"
+ * is a Material 3 tonal palette generated from the same seed colour. Home Assistant's own colour
+ * variables are redefined inside the card too, so every control and the Settings panel follow.
+ */
+function themeTokens(appearance, dark, color) {
+  if (appearance === "home-assistant") return {};
+  const [h, s] = seedHsl(color);
+  const seed = seedHex(color);
+  if (appearance === "material") {
+    const th = (h + 60) % 360, sh = (h + 20) % 360;
+    const p = dark ? {
+      primary: hsl(h, Math.min(s, 85), 70), onPrimary: hsl(h, 60, 14), tertiary: hsl(th, 55, 68),
+      secondaryContainer: hsl(sh, 24, 26), onSecondaryContainer: hsl(sh, 40, 90),
+      surface: hsl(h, 14, 8), surfaceHigh: hsl(h, 12, 14), surfaceHighest: hsl(h, 12, 19),
+      onSurface: hsl(h, 12, 92), onSurfaceVariant: hsl(h, 10, 76), outline: hsl(h, 8, 42),
+      success: hsl(140, 45, 70), onSuccess: hsl(140, 60, 12), warning: hsl(36, 90, 66), error: hsl(6, 90, 72),
+    } : {
+      primary: hsl(h, Math.min(s, 80), 42), onPrimary: "#ffffff", tertiary: hsl(th, 60, 50),
+      secondaryContainer: hsl(sh, 55, 88), onSecondaryContainer: hsl(sh, 55, 16),
+      surface: hsl(h, 30, 98), surfaceHigh: hsl(h, 22, 93), surfaceHighest: hsl(h, 20, 89),
+      onSurface: hsl(h, 14, 11), onSurfaceVariant: hsl(h, 10, 32), outline: hsl(h, 8, 62),
+      success: hsl(140, 60, 28), onSuccess: "#ffffff", warning: hsl(32, 90, 38), error: hsl(4, 75, 44),
+    };
+    return {
+      "--rc-bg": p.surface, "--rc-surface": p.surfaceHigh, "--rc-surface-strong": p.surfaceHighest,
+      "--rc-stroke": "transparent", "--rc-outline": p.outline, "--rc-blur": "none", "--rc-shadow": "none",
+      "--rc-selected": p.secondaryContainer, "--rc-on-selected": p.onSecondaryContainer,
+      "--rc-seg-on": p.secondaryContainer, "--rc-on-seg": p.onSecondaryContainer,
+      "--rc-orb": `radial-gradient(circle at 34% 28%, rgba(255,255,255,0.35), rgba(255,255,255,0) 48%), linear-gradient(135deg, ${p.primary}, ${p.tertiary})`,
+      "--rc-orb-glow": hsl(h, 70, 50, dark ? 0.35 : 0.28), "--rc-glow-a": p.primary, "--rc-glow-b": p.tertiary,
+      "--rc-glow-opacity": dark ? "16%" : "12%", "--rc-radius": "28px", "--rc-chip-radius": "12px",
+      "--rc-success": p.success, "--rc-on-success": p.onSuccess,
+      "--rc-font": "'Google Sans', 'Roboto Flex', Roboto, system-ui, sans-serif",
+      "--primary-color": p.primary, "--text-primary-color": p.onPrimary, "--primary-text-color": p.onSurface,
+      "--secondary-text-color": p.onSurfaceVariant, "--divider-color": p.outline, "--card-background-color": p.surfaceHigh,
+      "--success-color": p.success, "--warning-color": p.warning, "--error-color": p.error,
+    };
+  }
+  const t = dark ? {
+    bg: "rgba(10,12,18,0.74)", surface: "rgba(255,255,255,0.08)", strong: "rgba(255,255,255,0.14)", stroke: "rgba(255,255,255,0.14)",
+    text: "#f5f7fa", sub: "#aab3c2", dialog: "rgba(22,25,33,0.92)", segOn: "rgba(255,255,255,0.20)", onSeg: "#ffffff",
+    shadow: "inset 0 1px 0 rgba(255,255,255,0.10)", success: "#1f7a3a", warning: "#ff9f0a", error: "#ff453a",
+  } : {
+    bg: "rgba(255,255,255,0.66)", surface: "rgba(255,255,255,0.62)", strong: "rgba(255,255,255,0.9)", stroke: "rgba(255,255,255,0.95)",
+    text: "#101317", sub: "#4f5866", dialog: "rgba(248,249,252,0.94)", segOn: "#ffffff", onSeg: "#101317",
+    shadow: "0 12px 34px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.9)", success: "#1f7a3a", warning: "#b45309", error: "#d92d20",
+  };
+  return {
+    "--rc-bg": t.bg, "--rc-surface": t.surface, "--rc-surface-strong": t.strong, "--rc-stroke": t.stroke,
+    "--rc-outline": t.stroke, "--rc-blur": "blur(30px) saturate(170%)", "--rc-shadow": t.shadow,
+    "--rc-selected": seed, "--rc-on-selected": onSeed(color), "--rc-seg-on": t.segOn, "--rc-on-seg": t.onSeg,
+    "--rc-orb": `radial-gradient(circle at 34% 28%, rgba(255,255,255,0.38), rgba(255,255,255,0) 46%), ${seed}`,
+    "--rc-orb-glow": hsl(h, Math.max(s, 60), 50, dark ? 0.5 : 0.32), "--rc-glow-a": seed, "--rc-glow-b": "#5e5ce6",
+    "--rc-glow-opacity": dark ? "24%" : "16%", "--rc-radius": "28px", "--rc-chip-radius": "18px",
+    "--rc-success": t.success, "--rc-on-success": "#ffffff",
+    "--rc-font": "-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif",
+    "--primary-color": seed, "--text-primary-color": onSeed(color), "--primary-text-color": t.text,
+    "--secondary-text-color": t.sub, "--divider-color": t.stroke, "--card-background-color": t.dialog,
+    "--success-color": t.success, "--warning-color": t.warning, "--error-color": t.error,
+  };
+}
+
+/** Outline icons for glass (SF Symbols-like), filled ones for Material. */
+const ICONS = {
+  glass: { talk: "mdi:microphone-outline", urgent: "mdi:alert-outline", dnd: "mdi:moon-waning-crescent",
+    task: "mdi:clipboard-text-clock-outline", done: "mdi:check", later: "mdi:alarm-snooze", door: "mdi:doorbell-video" },
+  material: { talk: "mdi:microphone", urgent: "mdi:alert", dnd: "mdi:minus-circle", task: "mdi:clipboard-text-clock",
+    done: "mdi:check", later: "mdi:snooze", door: "mdi:doorbell-video" },
+  "home-assistant": { talk: "mdi:microphone", urgent: "mdi:alert", dnd: "mdi:bell-sleep", task: "mdi:clipboard-alert-outline",
+    done: "mdi:check", later: "mdi:alarm-snooze", door: "mdi:doorbell-video" },
+};
+
 class RoomCallCard extends HTMLElement {
   static getStubConfig() {
     return { title: "Intercom" };
@@ -57,12 +159,20 @@ class RoomCallCard extends HTMLElement {
     if (config.layout && !LAYOUTS.includes(config.layout)) {
       throw new Error(`layout must be one of: ${LAYOUTS.join(", ")}`);
     }
+    if (config.appearance && !APPEARANCES.includes(config.appearance)) {
+      throw new Error(`appearance must be one of: ${APPEARANCES.join(", ")}`);
+    }
+    if (config.theme && !THEMES.includes(config.theme)) {
+      throw new Error(`theme must be one of: ${THEMES.join(", ")}`);
+    }
     this._config = {
       title: "Intercom",
       layout: "default",
       history: 3,
       people: true,
       live: true,
+      appearance: "glass",
+      theme: "auto",
       ...config,
     };
     const fromUrl = new URLSearchParams(window.location.search).get("roomcall");
@@ -71,13 +181,35 @@ class RoomCallCard extends HTMLElement {
     this._person = null;
     this._urgent = false;
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
+    this._themeKey = null;
     this._render();
+    this._applyTheme();
     if (this._hass) this._load();
+  }
+
+  /** Applies the appearance's tokens; "auto" follows Home Assistant's dark mode. */
+  _applyTheme() {
+    const { appearance, theme, color } = this._config;
+    const dark = theme === "dark" || (theme === "auto" && Boolean(this._hass?.themes?.darkMode));
+    const key = JSON.stringify([appearance, dark, color]);
+    if (key === this._themeKey) return;
+    this._themeKey = key;
+    for (const name of this._themeVars || []) this.style.removeProperty(name);
+    const tokens = themeTokens(appearance, dark, color);
+    for (const [name, value] of Object.entries(tokens)) this.style.setProperty(name, value);
+    this._themeVars = Object.keys(tokens);
+    this.setAttribute("appearance", appearance);
+    this.toggleAttribute("dark", dark);
+    this._icons = ICONS[appearance] || ICONS.glass;
+    this.shadowRoot?.querySelector(".talk ha-icon")?.setAttribute("icon", this._icons.talk);
+    if (this._hass && this._rooms) this._renderToggles();
+    if (this._tasks) this._renderTasks();
   }
 
   set hass(hass) {
     const first = !this._hass;
     this._hass = hass;
+    this._applyTheme();
     if (first) this._load();
     else {
       this._renderToggles();
@@ -284,7 +416,7 @@ class RoomCallCard extends HTMLElement {
     const rows = open.map((task) => {
       const row = document.createElement("div");
       row.className = "task";
-      row.innerHTML = `<ha-icon icon="mdi:clipboard-alert-outline"></ha-icon>
+      row.innerHTML = `<ha-icon icon="${this._icons.task}"></ha-icon>
         <div class="what"><div class="name"></div><div class="muted when"></div></div>`;
       row.querySelector(".name").textContent = task.name;
       row.querySelector(".when").textContent = this._t("task_announced", { time: timeAgo(task.opened) });
@@ -307,7 +439,7 @@ class RoomCallCard extends HTMLElement {
       later.className = "later";
       later.title = this._t("remind_later");
       later.setAttribute("aria-label", `${this._t("remind_later")}: ${task.name}`);
-      later.innerHTML = `<ha-icon icon="mdi:alarm-snooze"></ha-icon>`;
+      later.innerHTML = `<ha-icon icon="${this._icons.later}"></ha-icon>`;
       run(later, { action: "snooze", id: task.id });
       const actions = document.createElement("div");
       actions.className = "task-actions";
@@ -430,6 +562,99 @@ class RoomCallCard extends HTMLElement {
         }
         @media (prefers-reduced-motion:reduce) { button.talk { transition:none; } }
         button:focus-visible { outline:2px solid var(--primary-color); outline-offset:3px; }
+        /* ---- Glass and Material appearances (design A; tokens from themeTokens) ---- */
+        :host([appearance="glass"]), :host([appearance="material"]) { color: var(--primary-text-color); }
+        :host([appearance="glass"]) ha-card, :host([appearance="material"]) ha-card {
+          background:
+            radial-gradient(60% 45% at 0% 100%, color-mix(in srgb, var(--rc-glow-a) var(--rc-glow-opacity), transparent), transparent),
+            radial-gradient(50% 40% at 100% 0%, color-mix(in srgb, var(--rc-glow-b) var(--rc-glow-opacity), transparent), transparent),
+            var(--rc-bg);
+          color: var(--primary-text-color);
+          font-family: var(--rc-font); border-radius: var(--rc-radius); border: 1px solid var(--rc-stroke);
+          box-shadow: var(--rc-shadow); backdrop-filter: var(--rc-blur); -webkit-backdrop-filter: var(--rc-blur);
+          padding: 20px; gap: 16px; }
+        :host([appearance="glass"]) .title, :host([appearance="material"]) .title {
+          font-size: 1.75rem; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; }
+        :host([appearance="material"]) .title { font-weight: 500; letter-spacing: 0; }
+        :host([appearance="glass"]) .recipients-title, :host([appearance="material"]) .recipients-title {
+          font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; }
+        :host([appearance="material"]) .recipients-title { text-transform: none; letter-spacing: 0; font-size: 0.875rem; font-weight: 500; }
+
+        /* Rooms: tiles on glass, filter chips on Material. */
+        :host([appearance="glass"]:not([layout="compact"])) .chips.rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+        :host([appearance="glass"]:not([layout="compact"])) .chips.rooms .chip {
+          flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 8px; min-height: 68px;
+          padding: 10px 12px; border-radius: var(--rc-chip-radius); text-align: start; font-weight: 600; }
+        :host([appearance="glass"]) .chip, :host([appearance="material"]) .chip {
+          background: var(--rc-surface); color: var(--primary-text-color); border: 1px solid var(--rc-stroke);
+          backdrop-filter: var(--rc-blur); -webkit-backdrop-filter: var(--rc-blur); font-weight: 600; }
+        :host([appearance="glass"]) .chip[aria-pressed="true"], :host([appearance="material"]) .chip[aria-pressed="true"] {
+          background: var(--rc-selected); color: var(--rc-on-selected); border-color: transparent; }
+        :host([appearance="material"]) .chip { border-radius: var(--rc-chip-radius); border-color: var(--rc-outline);
+          background: transparent; min-height: 40px; padding: 6px 14px; }
+        :host([appearance="material"]) .chip[aria-pressed="true"]::before { content: "✓"; font-weight: 700; }
+        :host([appearance="glass"]) .toggles .chip { border-radius: 999px; }
+        :host([appearance="glass"]) .chip.urgent:not([aria-pressed="true"]) { color: var(--warning-color); }
+        :host([appearance="glass"]) .chip.urgent[aria-pressed="true"], :host([appearance="material"]) .chip.urgent[aria-pressed="true"] {
+          background: var(--error-color); color: #fff; }
+        :host([appearance="glass"]) .chip.dnd[aria-pressed="true"], :host([appearance="material"]) .chip.dnd[aria-pressed="true"] {
+          background: #5e5ce6; color: #fff; }
+
+        /* The talk orb: depth and a specular highlight; Material adds a primary→tertiary gradient. */
+        :host([appearance="glass"]) button.talk, :host([appearance="material"]) button.talk {
+          width: min(100%, 184px); background: var(--rc-orb); color: var(--text-primary-color); border: 1px solid rgba(255,255,255,0.3);
+          box-shadow: 0 18px 50px var(--rc-orb-glow), inset 0 2px 0 rgba(255,255,255,0.45), inset 0 -12px 30px rgba(0,0,0,0.18);
+          transition: transform 0.18s cubic-bezier(.2,.8,.2,1), box-shadow 0.2s; }
+        :host([appearance="glass"]) button.talk.urgent, :host([appearance="material"]) button.talk.urgent { background: var(--error-color); color: #fff; }
+        :host([appearance="glass"]) button.talk.live, :host([appearance="material"]) button.talk.live {
+          background: radial-gradient(circle at 34% 28%, rgba(255,255,255,0.32), rgba(255,255,255,0) 46%), #d92d20; color: #fff; transform: scale(0.96);
+          box-shadow: 0 0 0 calc(var(--level, 0) * 34px + 12px) rgba(217,45,32,0.18), 0 18px 50px rgba(217,45,32,0.45); }
+        :host([appearance="glass"]) .destination, :host([appearance="material"]) .destination { font-size: 1.0625rem; }
+
+        /* Panels: needs attention, tasks, doorbell, history. */
+        :host([appearance="glass"]) .doorbell, :host([appearance="glass"]) .task, :host([appearance="glass"]) .history,
+        :host([appearance="material"]) .doorbell, :host([appearance="material"]) .task, :host([appearance="material"]) .history {
+          background: var(--rc-surface); border: 1px solid var(--rc-stroke); border-radius: 22px; padding: 12px 14px;
+          backdrop-filter: var(--rc-blur); -webkit-backdrop-filter: var(--rc-blur); box-shadow: var(--rc-shadow); }
+        :host([appearance="glass"]) .task > ha-icon, :host([appearance="material"]) .task > ha-icon { color: var(--warning-color); }
+        :host([appearance="glass"]) .chip.done, :host([appearance="material"]) .chip.done {
+          background: var(--rc-success); color: var(--rc-on-success); border-color: transparent; border-radius: 999px; }
+        :host([appearance="glass"]) .history .call, :host([appearance="material"]) .history .call {
+          background: transparent; border-radius: 0; padding: 8px 0; }
+        :host([appearance="glass"]) .history .call + .call, :host([appearance="material"]) .history .call + .call {
+          border-top: 1px solid var(--rc-stroke); }
+        :host([appearance="material"]) .history .call + .call { border-top-color: var(--rc-surface-strong); }
+
+        /* Talk / Type / Ask: an iOS segmented control on glass, a Material segmented button. */
+        :host([appearance="glass"]) .communication nav[data-toolbar], :host([appearance="material"]) .communication nav[data-toolbar] {
+          background: var(--rc-surface); border: 1px solid var(--rc-stroke); border-radius: 14px; padding: 3px; }
+        :host([appearance="glass"]) .communication nav[data-toolbar] button[aria-pressed=true],
+        :host([appearance="material"]) .communication nav[data-toolbar] button[aria-pressed=true] {
+          background: var(--rc-seg-on); color: var(--rc-on-seg); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+        :host([appearance="glass"]) .communication nav[data-toolbar] button:not([aria-pressed=true]),
+        :host([appearance="material"]) .communication nav[data-toolbar] button:not([aria-pressed=true]) {
+          background: transparent; border-color: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+        :host([appearance="glass"]) .communication nav[data-toolbar] button,
+        :host([appearance="material"]) .communication nav[data-toolbar] button { border-color: transparent; }
+        :host([appearance="material"]) .communication nav[data-toolbar] { border: 1px solid var(--rc-outline); border-radius: 22px; background: transparent; }
+        /* Material: the check mark takes the selected chip's icon slot. */
+        :host([appearance="material"]) .chip[aria-pressed="true"] ha-icon { display: none; }
+        :host([appearance="material"]) .communication nav[data-toolbar] button { border-radius: 18px; }
+        :host([appearance="glass"]) .communication dialog, :host([appearance="material"]) .communication dialog {
+          border-radius: 28px; border: 1px solid var(--rc-stroke); backdrop-filter: var(--rc-blur); -webkit-backdrop-filter: var(--rc-blur);
+          font-family: var(--rc-font); }
+        :host([appearance="glass"]) .communication .chip, :host([appearance="material"]) .communication .chip { border-radius: 14px; }
+        :host([appearance][layout="compact"]) ha-card { padding: 12px; gap: 10px; }
+        :host([appearance="glass"]) .chips.rooms .chip, :host([appearance]) .communication nav[data-toolbar] button {
+          overflow-wrap: normal; word-break: normal; hyphens: auto; }
+        :host([appearance]) .communication nav[data-toolbar] button { padding: 6px; }
+        :host([appearance="glass"][layout="kiosk"]) .chips.rooms { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+        :host([appearance][layout="kiosk"]) ha-card { padding: 24px; gap: 18px; }
+        :host([appearance][layout="compact"]) button.talk { width: 64px; }
+        :host([appearance][layout="kiosk"]) button.talk { width: min(100%, 340px); }
+        @media (prefers-reduced-transparency: reduce) {
+          :host([appearance="glass"]) ha-card { background: var(--card-background-color); backdrop-filter: none; }
+        }
       </style>
       <ha-card>
         <div class="head">
@@ -539,13 +764,13 @@ class RoomCallCard extends HTMLElement {
     const dndState = this._dndEntity && this._hass.states[this._dndEntity];
     const dndOn = dndState?.state === "on";
     const chips = [
-      this._chip("mdi:alert", "Urgent", this._urgent, () => {
+      this._chip(this._icons.urgent, "Urgent", this._urgent, () => {
         this._urgent = !this._urgent;
         this._renderToggles();
       }, "small urgent"),
     ];
     if (dndState) {
-      const dnd = this._chip("mdi:bell-sleep", dndOn ? "DND on" : "", dndOn, () =>
+      const dnd = this._chip(this._icons.dnd, dndOn ? "DND on" : "", dndOn, () =>
         this._hass.callService("switch", "toggle", { entity_id: this._dndEntity }), "small dnd");
       dnd.title = "Do Not Disturb: only urgent calls play";
       chips.push(dnd);
@@ -864,7 +1089,44 @@ class RoomCallCard extends HTMLElement {
   }
 }
 
-const EDITOR_SCHEMA = [
+// English fallbacks; the translated catalog (editor_*) replaces them once it loads.
+const EDITOR_TEXT = {
+  title: "Title",
+  room: "This card's room",
+  default_room: "Room selected at start",
+  rooms: "Only show these rooms",
+  layout: "Layout",
+  live: "Live calls (play while you talk)",
+  people: "Show people buttons",
+  history: "Recent calls to show",
+  appearance: "Appearance",
+  theme: "Light or dark",
+  color: "Button colour",
+  layout_default: "Standard",
+  layout_compact: "Compact (one row)",
+  layout_kiosk: "Kiosk (big button for a wall tablet)",
+  appearance_glass: "Glass (Apple-like, frosted)",
+  appearance_material: "Material (tonal colours from your colour)",
+  appearance_home_assistant: "Home Assistant theme",
+  theme_auto: "Follow Home Assistant",
+  theme_light: "Light",
+  theme_dark: "Dark",
+  help_appearance: "Glass and Material use their own colours; Home Assistant theme keeps your dashboard's theme.",
+  help_color: "The talk button, selected rooms and (with Material) the whole palette come from this colour.",
+  help_room: "Where this dashboard is (for example a wall tablet). Replies to its calls come back here.",
+  help_rooms: "Leave empty for every room with a RoomCall speaker.",
+  help_live: "Turn off to record the whole message first, then send it.",
+};
+const select = (t, name, values) => ({
+  name,
+  selector: {
+    select: {
+      mode: "dropdown",
+      options: values.map((value) => ({ value, label: t(`${name}_${value.replace("-", "_")}`) })),
+    },
+  },
+});
+const editorSchema = (t) => [
   { name: "title", selector: { text: {} } },
   {
     type: "grid",
@@ -875,19 +1137,7 @@ const EDITOR_SCHEMA = [
     ],
   },
   { name: "rooms", selector: { area: { multiple: true } } },
-  {
-    name: "layout",
-    selector: {
-      select: {
-        mode: "dropdown",
-        options: [
-          { value: "default", label: "Standard" },
-          { value: "compact", label: "Compact (one row)" },
-          { value: "kiosk", label: "Kiosk (big button for a wall tablet)" },
-        ],
-      },
-    },
-  },
+  select(t, "layout", LAYOUTS),
   {
     type: "grid",
     name: "",
@@ -897,39 +1147,45 @@ const EDITOR_SCHEMA = [
     ],
   },
   { name: "history", selector: { number: { min: 0, max: 10, mode: "box" } } },
+  select(t, "appearance", APPEARANCES),
+  {
+    type: "grid",
+    name: "",
+    schema: [select(t, "theme", THEMES), { name: "color", selector: { color_rgb: {} } }],
+  },
 ];
-const EDITOR_LABELS = {
-  title: "Title",
-  room: "This card's room",
-  default_room: "Room selected at start",
-  rooms: "Only show these rooms",
-  layout: "Layout",
-  live: "Live calls (play while you talk)",
-  people: "Show people buttons",
-  history: "Recent calls to show",
-};
-const EDITOR_HELP = {
-  room: "Where this dashboard is (for example a wall tablet). Replies to its calls come back here.",
-  rooms: "Leave empty for every room with a RoomCall speaker.",
-  live: "Turn off to record the whole message first, then send it.",
-};
 
 class RoomCallCardEditor extends HTMLElement {
   setConfig(config) {
-    this._config = { live: true, people: true, history: 3, layout: "default", ...config };
+    this._config = { live: true, people: true, history: 3, layout: "default", appearance: "glass", theme: "auto", ...config };
     this._render();
   }
 
   set hass(hass) {
     this._hass = hass;
     if (this._form) this._form.hass = hass;
+    if (!this._strings && !this._loadingStrings) this._loadStrings();
+  }
+
+  async _loadStrings() {
+    this._loadingStrings = true;
+    try {
+      this._strings = await this._hass.callApi("GET", `roomcall/locale?language=${encodeURIComponent(this._hass.language || "en")}`);
+      if (this._form) this._render();
+    } catch (error) {
+      console.warn("RoomCall editor strings", error);
+    }
+  }
+
+  _text(key) {
+    return this._strings?.[`editor_${key}`] || EDITOR_TEXT[key];
   }
 
   _render() {
     if (!this._form) {
       this._form = document.createElement("ha-form");
-      this._form.computeLabel = (field) => EDITOR_LABELS[field.name] || field.name;
-      this._form.computeHelper = (field) => EDITOR_HELP[field.name];
+      this._form.computeLabel = (field) => this._text(field.name) || field.name;
+      this._form.computeHelper = (field) => this._text(`help_${field.name}`);
       this._form.addEventListener("value-changed", (ev) => {
         const config = { ...ev.detail.value };
         for (const key of ["room", "default_room"]) if (!config[key]) delete config[key];
@@ -942,7 +1198,7 @@ class RoomCallCardEditor extends HTMLElement {
       this.append(this._form);
     }
     this._form.hass = this._hass;
-    this._form.schema = EDITOR_SCHEMA;
+    this._form.schema = editorSchema((key) => this._text(key));
     this._form.data = this._config;
   }
 }

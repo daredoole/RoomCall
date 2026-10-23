@@ -90,6 +90,9 @@ rooms: [kitchen, living_room]  # limit the room buttons
 people: true                   # person buttons (true, false, or a list of person entities)
 history: 3                     # recent calls to show (0 to hide)
 layout: default                # default, compact or kiosk
+appearance: glass              # glass (Apple-like), material, or home-assistant (your dashboard theme)
+theme: auto                    # auto (follows Home Assistant), light or dark
+color: "#0a84ff"               # talk button colour; Material builds its whole palette from it
 live: true                     # stream while you talk (false: record, then send)
 ```
 
