@@ -26,39 +26,73 @@ final class RoomCallUITests: XCTestCase {
         add(screenshot)
     }
 
-    // Real simulator captures for the README and docs (exported from the result bundle in CI).
+    /// Real flows against the in-app demo household: confirm a task, send a message, pick targets.
+    func testTasksMessagesAndTargets() {
+        executionTimeAllowance = 120
+        let app = launch(["-RoomCallDemo"])
+        // The open laundry task is on the Talk screen; confirming it with its own words clears it.
+        let done = app.buttons["done-laundry"]
+        XCTAssertTrue(done.waitForExistence(timeout: 30))
+        done.tap()
+        XCTAssertTrue(app.staticTexts["Marked done."].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["done-laundry"].waitForExistence(timeout: 3))
+        // Pick a room, then type a message to it.
+        app.buttons["Kitchen"].tap()
+        XCTAssertTrue(app.staticTexts["To: Kitchen"].exists)
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        let field = app.textFields["message-text"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("Dinner is ready")
+        app.buttons["Send"].tap()
+        XCTAssertTrue(app.staticTexts["Message queued; audibility is unconfirmed."].waitForExistence(timeout: 10))
+    }
+
+    // MARK: Documentation screenshots (exported from the result bundle in CI)
+
     func testScreenshotSignIn() {
         executionTimeAllowance = 120
         for appearance in ["light", "dark"] {
             let app = launch(["-RoomCallDemoAppearance", appearance])
             let field = app.textFields["server-url"]
             XCTAssertTrue(field.waitForExistence(timeout: 30))
-            field.tap()
-            field.typeText("https://homeassistant.local:8123\n")
             keep("ios-sign-in-\(appearance)")
             app.terminate()
         }
     }
 
-    func testScreenshotRooms() {
+    func testScreenshotTabsLight() { tabs("light") }
+    func testScreenshotTabsDark() { tabs("dark") }
+
+    func testScreenshotTalkingAndDoorbell() {
         executionTimeAllowance = 120
         for appearance in ["light", "dark"] {
-            let app = launch(["-RoomCallDemo", "-RoomCallDemoRoom", "kitchen", "-RoomCallDemoAppearance", appearance])
-            XCTAssertTrue(app.buttons["Kitchen"].waitForExistence(timeout: 30))
-            keep("ios-rooms-\(appearance)")
-            app.terminate()
+            let talking = launch(["-RoomCallDemo", "-RoomCallDemoRoom", "kitchen", "-RoomCallDemoTalking",
+                                  "-RoomCallDemoAppearance", appearance])
+            XCTAssertTrue(talking.descendants(matching: .any)["talk-button"].waitForExistence(timeout: 30))
+            sleep(1)
+            keep("ios-talking-\(appearance)")
+            talking.terminate()
+        }
+        for appearance in ["light", "dark"] {
+            let door = launch(["-RoomCallDemo", "-RoomCallDemoDoorbell", "-RoomCallDemoAppearance", appearance])
+            XCTAssertTrue(door.staticTexts["Someone is at the Front Door."].waitForExistence(timeout: 30))
+            sleep(2)  // the snapshot loads
+            keep("ios-doorbell-\(appearance)")
+            door.terminate()
         }
     }
 
-    func testScreenshotTalking() {
+    private func tabs(_ appearance: String) {
         executionTimeAllowance = 120
-        for appearance in ["light", "dark"] {
-            let app = launch(["-RoomCallDemo", "-RoomCallDemoRoom", "kitchen", "-RoomCallDemoJoined",
-                              "-RoomCallDemoTalking", "-RoomCallDemoAppearance", appearance])
-            XCTAssertTrue(app.staticTexts["ptt-status"].waitForExistence(timeout: 30))
-            sleep(2)
-            keep("ios-talking-\(appearance)")
-            app.terminate()
+        let app = launch(["-RoomCallDemo", "-RoomCallDemoRoom", "kitchen", "-RoomCallDemoAppearance", appearance])
+        XCTAssertTrue(app.buttons["Kitchen"].waitForExistence(timeout: 30))
+        sleep(1)
+        keep("ios-rooms-\(appearance)")
+        for (index, name) in ["message", "tasks", "history", "settings"].enumerated() {
+            app.tabBars.buttons.element(boundBy: index + 1).tap()
+            sleep(1)
+            keep("ios-\(name)-\(appearance)")
         }
     }
 

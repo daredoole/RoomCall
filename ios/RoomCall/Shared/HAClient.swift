@@ -38,6 +38,14 @@ actor HAClient {
         return result
     }
     private func request(_ path: String, payload: [String: Any]?) async throws -> [String: Any] {
+        guard let result = try JSONSerialization.jsonObject(with: try await raw(path, payload: payload))
+                as? [String: Any] else {
+            throw NativeFailure.protocolError
+        }
+        return result
+    }
+    /// The authenticated response body: audio clips, camera snapshots or JSON to decode.
+    func raw(_ path: String, payload: Any? = nil) async throws -> Data {
         let (server, token) = try await authorization()
         var request = URLRequest(url: server.appendingPathComponent(path))
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -48,10 +56,10 @@ actor HAClient {
         }
         let (data, response) = try await session.data(for: request)
         try Self.check(response)
-        guard let result = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw NativeFailure.protocolError
-        }
-        return result
+        return data
+    }
+    func decode<T: Decodable>(_ type: T.Type, _ path: String) async throws -> T {
+        try JSONDecoder().decode(type, from: try await raw(path))
     }
     static func token(server: URL, values: [String: String], session: URLSession = .shared) async throws -> [String: Any] {
         var request = URLRequest(url: server.appendingPathComponent("auth/token"))
@@ -96,7 +104,7 @@ actor LiveConnection {
         let hello = try decode(await read(task))
         guard supportsPKCE(hello) else { throw NativeFailure.unsupportedServer }
     }
-    func open(client: HAClient, room: Room) async throws {
+    func open(client: HAClient, target: Target, urgent: Bool = false, from: String? = nil) async throws {
         let (server, token) = try await client.authorization()
         let task = session.webSocketTask(with: Self.websocketURL(server))
         socket = task
@@ -107,7 +115,15 @@ actor LiveConnection {
             try await send(["type": "auth", "access_token": token])
             let authenticated = try Self.decode(await Self.read(task))
             guard authenticated["type"] as? String == "auth_ok" else { throw NativeFailure.unauthorized }
-            try await send(["id": 1, "type": "roomcall/live", "target": room.id, "from": "RoomCall iOS"])
+            var request: [String: Any] = ["id": 1, "type": "roomcall/live",
+                                          "priority": urgent ? "urgent" : "normal"]
+            switch target {
+            case .room(let room): request["target"] = room.id
+            case .person(let person): request["person"] = person.entity_id
+            }
+            // The caller's room lets replies, history and hands-free talk-back find their way back.
+            if let from { request["from"] = from }
+            try await send(request)
             for _ in 0..<8 {
                 let message = try Self.decode(await Self.read(task))
                 if message["success"] as? Bool == false {
