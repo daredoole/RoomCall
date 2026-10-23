@@ -32,12 +32,12 @@ targets:
           NSAllowsLocalNetworking: true
         CFBundleURLTypes:
           - CFBundleURLSchemes: [roomcall]
-        UIBackgroundModes: [audio, push-to-talk]
+        UIBackgroundModes: [audio]
+        NSSupportsLiveActivities: true
+        NSCameraUsageDescription: RoomCall scans the QR code on your RoomCall card to connect.
     entitlements:
       path: RoomCall.entitlements
       properties:
-        com.apple.developer.push-to-talk: true
-        aps-environment: development
         com.apple.security.application-groups: [group.com.daredoole.RoomCall]
     dependencies:
       - target: RoomCallControls
