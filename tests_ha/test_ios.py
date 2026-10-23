@@ -43,3 +43,32 @@ def test_native_labels_and_format_arguments_keep_their_meaning():
                 assert re.findall(r"%(?:@|d|s)", value) == re.findall(
                     r"%(?:@|d|s)", translated[key]
                 ), (path.name, key)
+
+
+async def test_public_ios_client_validates_when_private_server_ca_is_untrusted(
+    hass, aioclient_mock
+):
+    """Exercise HA's actual redirect validator, including the failing private-CA route."""
+    from pathlib import Path
+    from unittest.mock import patch
+
+    import aiohttp
+    from homeassistant.components.auth.indieauth import verify_redirect_uri
+
+    client_id = "https://daredoole.github.io/RoomCall/ios-client.html"
+    callback = "roomcall://auth-callback"
+    private_id = "https://ha.example.test/roomcall/ios"
+    def read_metadata():
+        return (Path(__file__).resolve().parents[1] / "docs/ios-client.html").read_text()
+
+    body = await hass.async_add_executor_job(read_metadata)
+    assert len(body.encode()) < 10240  # HA reads only the start of client metadata.
+    aioclient_mock.get(private_id, exc=aiohttp.ClientSSLError(None, OSError("untrusted CA")))
+    aioclient_mock.get(client_id, text=body)
+    with patch(
+        "homeassistant.components.auth.indieauth.aiohttp.ClientSession",
+        side_effect=lambda: aioclient_mock.create_session(hass.loop),
+    ):
+        assert not await verify_redirect_uri(hass, private_id, callback)
+        assert await verify_redirect_uri(hass, client_id, callback)
+        assert not await verify_redirect_uri(hass, client_id, "roomcall://unexpected-callback")

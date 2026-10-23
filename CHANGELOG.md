@@ -4,6 +4,16 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.18.1 — 2026-10-23
+
+- Fix native iOS sign-in behind a private certificate authority: advertise the
+  RoomCall callback on the public HTTPS project site so HA can validate it.
+  Login, tokens and PKCE stay with the selected HA server. Existing credentials
+  retain their original client identity for refresh after updating the app.
+- Stamp the iOS app and extension with the release version and build number.
+- Add real HA redirect-validation and native OAuth/refresh regression tests;
+  document certificate trust and the metadata network requirement.
+
 ## 0.18.0 — 2026-10-23
 
 This release includes the changes developed in 0.13.0–0.17.0 below; those versions

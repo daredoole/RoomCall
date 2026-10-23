@@ -26,20 +26,23 @@ final class OAuthLogin: NSObject, ASWebAuthenticationPresentationContextProvidin
         }
         return code
     }
+    static func authorizationURL(server: URL, state: String, challenge: String) -> URL {
+        var parts = URLComponents(url: server.appendingPathComponent("auth/authorize"), resolvingAgainstBaseURL: false)!
+        parts.queryItems = [URLQueryItem(name: "client_id", value: OAuthClient.id),
+            URLQueryItem(name: "redirect_uri", value: OAuthClient.redirectURI),
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "state", value: state),
+            URLQueryItem(name: "code_challenge", value: challenge),
+            URLQueryItem(name: "code_challenge_method", value: "S256")]
+        return parts.url!
+    }
     func signIn(server: URL) async throws -> Credentials {
         try await LiveConnection.checkVersion(server)
         let state = UUID().uuidString
         let verifier = UUID().uuidString + UUID().uuidString
-        let clientID = server.appendingPathComponent("roomcall/ios").absoluteString
-        var parts = URLComponents(url: server.appendingPathComponent("auth/authorize"), resolvingAgainstBaseURL: false)!
-        parts.queryItems = [URLQueryItem(name: "client_id", value: clientID),
-            URLQueryItem(name: "redirect_uri", value: "roomcall://auth-callback"),
-            URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "state", value: state),
-            URLQueryItem(name: "code_challenge", value: Self.challenge(verifier)),
-            URLQueryItem(name: "code_challenge_method", value: "S256")]
+        let authorize = Self.authorizationURL(server: server, state: state, challenge: Self.challenge(verifier))
         let callback: URL = try await withCheckedThrowingContinuation { continuation in
-            let browser = ASWebAuthenticationSession(url: parts.url!, callbackURLScheme: "roomcall") { url, error in
+            let browser = ASWebAuthenticationSession(url: authorize, callbackURLScheme: "roomcall") { url, error in
                 if let error { continuation.resume(throwing: error) }
                 else if let url { continuation.resume(returning: url) }
                 else { continuation.resume(throwing: NativeFailure.invalidCallback) }
@@ -51,12 +54,12 @@ final class OAuthLogin: NSObject, ASWebAuthenticationPresentationContextProvidin
         defer { browser = nil }
         let code = try Self.code(from: callback, state: state)
         let result = try await HAClient.token(server: server, values: ["grant_type": "authorization_code",
-            "code": code, "client_id": clientID, "code_verifier": verifier])
+            "code": code, "client_id": OAuthClient.id, "code_verifier": verifier])
         guard let access = result["access_token"] as? String,
               let refresh = result["refresh_token"] as? String,
               let seconds = result["expires_in"] as? Double else { throw NativeFailure.protocolError }
         let credentials = Credentials(server: server, accessToken: access,
-            refreshToken: refresh, expiresAt: Date().addingTimeInterval(seconds))
+            refreshToken: refresh, expiresAt: Date().addingTimeInterval(seconds), oauthClientID: OAuthClient.id)
         try SecureStore.save(credentials)
         return credentials
     }

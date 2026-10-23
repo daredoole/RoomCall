@@ -24,6 +24,49 @@ final class RoomCallTests: XCTestCase {
             XCTAssertThrowsError(try OAuthLogin.code(from: URL(string: value)!, state: "expected"))
         }
     }
+    @MainActor
+    func testPublicOAuthClientKeepsAuthorizationOnSelectedServer() throws {
+        let server = URL(string: "https://ha.example.test/ha")!
+        let url = OAuthLogin.authorizationURL(server: server, state: "state", challenge: "challenge")
+        XCTAssertEqual(url.host, server.host)
+        XCTAssertEqual(url.path, "/ha/auth/authorize")
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)!.queryItems!
+        let values = Dictionary(uniqueKeysWithValues: items.map { ($0.name, $0.value ?? "") })
+        XCTAssertEqual(values["client_id"], "https://daredoole.github.io/RoomCall/ios-client.html")
+        XCTAssertEqual(values["redirect_uri"], "roomcall://auth-callback")
+        XCTAssertEqual(values["code_challenge_method"], "S256")
+        XCTAssertEqual(values["code_challenge"], "challenge")
+        XCTAssertEqual(values["state"], "state")
+    }
+    func testCredentialClientIdentitySurvivesUpgradeAndRefresh() async throws {
+        let server = URL(string: "https://ha.example.test")!
+        let old = Credentials(server: server, accessToken: "old", refreshToken: "old-refresh", expiresAt: .distantPast)
+        // The original encoding omits this optional key entirely.
+        let legacy = try JSONDecoder().decode(Credentials.self, from: JSONEncoder().encode(old))
+        XCTAssertNil(legacy.oauthClientID)
+        XCTAssertEqual(legacy.clientID, "https://ha.example.test/roomcall/ios")
+        let modern = Credentials(server: server, accessToken: "new", refreshToken: "new-refresh",
+                                 expiresAt: .distantPast, oauthClientID: OAuthClient.id)
+        for credentials in [legacy, modern] {
+            let account = "test-client-" + UUID().uuidString
+            defer { try? SecureStore.delete(account: account) }
+            try SecureStore.save(credentials, account: account)
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [StubProtocol.self]
+            StubProtocol.handler = { request in
+                XCTAssertEqual(request.url?.host, server.host)
+                XCTAssertEqual(request.url?.path, "/auth/token")
+                let body = request.httpBody ?? request.httpBodyStream.map(Self.read) ?? Data()
+                let parts = URLComponents(string: "?" + String(decoding: body, as: UTF8.self))!
+                XCTAssertEqual(parts.queryItems?.first { $0.name == "client_id" }?.value, credentials.clientID)
+                return (200, Data(#"{"access_token":"renewed","expires_in":3600}"#.utf8))
+            }
+            let client = HAClient(credentials, session: URLSession(configuration: config), keychainAccount: account)
+            let (_, token) = try await client.authorization()
+            XCTAssertEqual(token, "renewed")
+            XCTAssertEqual(try SecureStore.load(account: account)?.clientID, credentials.clientID)
+        }
+    }
     func testNativePCMConversionUsesServerFormat() throws {
         let input = AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1)!
         let converter = try AudioCapture.converter(from: input)
