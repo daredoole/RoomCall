@@ -109,10 +109,16 @@
               "voicemail_retention": "Voicemail retention (seconds)",
               "translation_entity": "Translation AI task provider (optional)",
               "audio_processing": "Recorded speech processing",
-              "talk_back": "Hands-free talk-back"
+              "talk_back": "Hands-free talk-back",
+              "doorbell_entity": "Doorbell",
+              "doorbell_camera": "Doorbell camera",
+              "doorbell_rooms": "Rooms to ring"
             },
             "data_description": {
-              "talk_back": "After someone talks to a room from another room, an Assist satellite in that room (Atom Echo, ESP32-S3, Home Assistant Voice) listens for a reply and the caller's room hears it. Replies are transcribed, then spoken in your voice of choice."
+              "talk_back": "After someone talks to a room from another room, an Assist satellite in that room (Atom Echo, ESP32-S3, Home Assistant Voice) listens for a reply and the caller's room hears it. Replies are transcribed, then spoken in your voice of choice.",
+              "doorbell_entity": "The doorbell button or event. When it rings, RoomCall says who is at the door, notifies phones with an Answer button, and shows a banner on RoomCall cards.",
+              "doorbell_camera": "Answer opens this camera's live view, where two-way talk works when the camera supports it.",
+              "doorbell_rooms": "Leave empty to ring everywhere."
             }
           }
         }
@@ -376,7 +382,10 @@
         "station_room": "This dashboard's room",
         "no_stations": "No other stations are open. Open RoomCall on another dashboard and enable its station to call it.",
         "talk_back_prompt": "Reply?",
-        "talk_back_reply": "{room} says: {text}"
+        "talk_back_reply": "{room} says: {text}",
+        "doorbell_message": "Someone is at the {name}.",
+        "answer_door": "Answer",
+        "open_camera": "Open the camera"
       }
     },
     "audio_processing": {

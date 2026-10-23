@@ -81,6 +81,7 @@ class RoomCallCard extends HTMLElement {
     if (first) this._load();
     else {
       this._renderToggles();
+      this._checkDoorbell();
       // Task sensors change when a task opens, is added, or someone confirms it elsewhere.
       const signature = this._taskStates(hass);
       if (this._taskSignature !== undefined && signature !== this._taskSignature) this._loadTasks();
@@ -107,6 +108,8 @@ class RoomCallCard extends HTMLElement {
       this._configured = res.configured !== false;
       this.shadowRoot.querySelector(".talk").disabled = !this._configured;
       this._dndEntity = res.dnd_entity;
+      this._doorbellFetched = Date.now();
+      this._setDoorbell(res.doorbell);
       const people = this._config.people;
       this._people = people === false ? [] : Array.isArray(people)
         ? res.people.filter((p) => people.includes(p.entity_id)) : res.people;
@@ -131,6 +134,8 @@ class RoomCallCard extends HTMLElement {
   }
 
   disconnectedCallback() {
+    clearTimeout(this._doorbellRetry);
+    this._doorbellRetry = null;
     window.removeEventListener("blur", this._windowBlur);
     this._communication?.close();
     this._communication = null;
@@ -163,6 +168,86 @@ class RoomCallCard extends HTMLElement {
       this._history = [];
     }
     this._renderHistory();
+  }
+
+  _setDoorbell(bell) {
+    if (JSON.stringify(bell || null) === JSON.stringify(this._doorbell || null)) return;
+    this._doorbell = bell || null;
+    // Only presses after the card learned about this doorbell ring the banner.
+    const state = this._doorbell && this._hass.states[this._doorbell.entity];
+    this._doorbellSeen = state?.last_changed;
+    this._doorbellState = state?.state;
+  }
+
+  async _refreshDoorbell() {
+    // Doorbell options can change while a wall tablet stays open; re-read them at most once a
+    // minute, and when it's too soon, try again once the minute is up.
+    const wait = 60000 - (Date.now() - (this._doorbellFetched || 0));
+    if (wait > 0) {
+      this._doorbellRetry ||= setTimeout(() => {
+        this._doorbellRetry = null;
+        this._refreshDoorbell();
+      }, wait);
+      return;
+    }
+    this._doorbellFetched = Date.now();
+    try {
+      this._setDoorbell((await this._hass.callApi("GET", "roomcall/rooms")).doorbell);
+    } catch { /* keep the current doorbell */ }
+  }
+
+  _checkDoorbell() {
+    this._refreshDoorbell();
+    const bell = this._doorbell;
+    const state = bell && this._hass.states[bell.entity];
+    if (!state || state.last_changed === this._doorbellSeen) return;
+    this._doorbellSeen = state.last_changed;
+    // Like the backend: coming back from unavailable is not a press.
+    const previous = this._doorbellState;
+    this._doorbellState = state.state;
+    if (["unavailable", "unknown", "off"].includes(state.state) || previous === "unavailable") return;
+    // Like the backend: a binary sensor leaving "unknown" is initializing, not a press.
+    if (previous === "unknown" && bell.entity.startsWith("binary_sensor.")) return;
+    // A ring from before a suspended tablet woke up is not a visitor at the door now.
+    if (Date.now() - Date.parse(state.last_changed) > 120000) return;
+    // Same 10-second cooldown as the backend, so a bounce doesn't reopen a dismissed banner.
+    if (Date.now() - (this._doorbellShown || 0) < 10000) return;
+    this._doorbellShown = Date.now();
+    const box = this.shadowRoot.querySelector(".doorbell");
+    const camera = bell.camera && this._hass.states[bell.camera];
+    box.replaceChildren();
+    if (camera?.attributes?.entity_picture) {
+      const img = document.createElement("img");
+      img.alt = "";
+      img.src = camera.attributes.entity_picture;
+      box.append(img);
+    }
+    const text = document.createElement("div");
+    text.className = "what";
+    text.textContent = this._t("doorbell_message", { name: bell.name });
+    box.append(text);
+    const actions = document.createElement("div");
+    actions.className = "task-actions";
+    if (bell.camera) {
+      const answer = this._chip("mdi:doorbell-video", this._t("answer_door"), false, () => {
+        this.dispatchEvent(new CustomEvent("hass-more-info", { detail: { entityId: bell.camera }, bubbles: true, composed: true }));
+        box.hidden = true;
+      }, "done");
+      answer.removeAttribute("aria-pressed");
+      answer.setAttribute("aria-label", this._t("answer_door"));
+      actions.append(answer);
+    }
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "later";
+    close.setAttribute("aria-label", this._t("close"));
+    close.innerHTML = `<ha-icon icon="mdi:close"></ha-icon>`;
+    close.addEventListener("click", () => { box.hidden = true; });
+    actions.append(close);
+    box.append(actions);
+    box.hidden = false;
+    clearTimeout(this._doorbellTimer);
+    this._doorbellTimer = setTimeout(() => { box.hidden = true; }, 120000);
   }
 
   async _task(request = {}) {
@@ -299,6 +384,13 @@ class RoomCallCard extends HTMLElement {
         .call .text { color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .call button { border: 0; background: none; color: var(--primary-color); cursor: pointer; padding: 4px; min-width:44px; min-height:44px; }
         .call ha-icon { --mdc-icon-size: 20px; }
+        .doorbell { display:flex; flex-wrap:wrap; gap:10px 12px; align-items:center; padding:10px 12px; border-radius:12px;
+          background: color-mix(in srgb, var(--primary-color) 16%, transparent); }
+        .doorbell[hidden] { display:none; }
+        .doorbell img { width:96px; aspect-ratio:16/9; object-fit:cover; border-radius:8px; }
+        .doorbell .what { flex:1 1 140px; min-width:0; font-weight:600; overflow-wrap:anywhere; }
+        .doorbell button.later { border:0; background:none; color:var(--secondary-text-color); cursor:pointer;
+          min-width:44px; min-height:44px; border-radius:50%; }
         .tasks { display:grid; gap:8px; }
         .tasks[hidden] { display:none; }
         .task { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:10px 12px; border-radius:12px;
@@ -348,6 +440,7 @@ class RoomCallCard extends HTMLElement {
           <ha-icon icon="mdi:reply"></ha-icon><span class="reply-text"></span>
           <button class="chip small" type="button">Cancel</button>
         </div>
+        <div class="doorbell" role="alert" hidden></div>
         <div class="tasks" role="region" aria-live="polite" hidden></div>
         <div class="workspace">
         <div class="recipients">

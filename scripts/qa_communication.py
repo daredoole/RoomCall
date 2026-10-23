@@ -150,6 +150,94 @@ def check_task_added_later(browser, errors) -> None:
     context.close()
 
 
+def check_doorbell(browser, errors) -> None:
+    """A press shows the banner; Answer opens the camera's live view; no ring at load."""
+    for width in (240, 390, 900):
+        context = browser.new_context(viewport={"width": width, "height": 844})
+        page = context.new_page()
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        open_card(page, "mobile" if width < 600 else "desktop", "dark", "&doorbell=on")
+        card = page.locator("roomcall-card")
+        banner = card.locator(".doorbell")
+        expect(banner).to_be_hidden()
+        page.evaluate("""() => {
+          const h = ROOMCALL_HARNESS, card = document.querySelector("roomcall-card");
+          window.opened = null;
+          card.addEventListener("hass-more-info", (e) => { window.opened = e.detail.entityId; });
+          h.hass.states["binary_sensor.front_door_visitor"] = {
+            state: "on", last_changed: new Date().toISOString(), attributes: {} };
+          card.hass = {...h.hass};
+        }""")
+        expect(banner).to_be_visible()
+        expect(banner).to_contain_text("Someone is at the Front Door.")
+        assert card.evaluate(
+            "e=>{const c=e.shadowRoot.querySelector('ha-card');return c.scrollWidth<=c.clientWidth}"
+        )
+        answer = banner.get_by_role("button", name="Answer", exact=True)
+        bounds = answer.bounding_box()
+        assert bounds and bounds["height"] >= 44, bounds
+        if width == 390:
+            page.wait_for_timeout(300)
+            card.screenshot(path=OUT / "ha-card-doorbell.png")
+        answer.click()
+        assert page.evaluate("window.opened") == "camera.front_door"
+        expect(banner).to_be_hidden()
+        # A bounce within 10 seconds, or coming back from unavailable, doesn't reopen it.
+        for state in ("off", "on", "unavailable", "on", "unknown", "on"):
+            page.evaluate(
+                """state => {
+              const h = ROOMCALL_HARNESS, card = document.querySelector("roomcall-card");
+              h.hass.states["binary_sensor.front_door_visitor"] = {
+                state, last_changed: new Date(Date.now() + 1000).toISOString(), attributes: {} };
+              card.hass = {...h.hass};
+            }""",
+                state,
+            )
+            page.wait_for_timeout(50)
+        expect(banner).to_be_hidden()
+        context.close()
+
+
+def check_doorbell_changes(browser, errors) -> None:
+    """An open dashboard picks up a newly configured doorbell; stale rings don't show."""
+    context = browser.new_context(viewport={"width": 390, "height": 844})
+    page = context.new_page()
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    open_card(page, "mobile", "dark")
+    card = page.locator("roomcall-card")
+    banner = card.locator(".doorbell")
+    page.evaluate("""() => {
+      const h = ROOMCALL_HARNESS, card = document.querySelector("roomcall-card");
+      window.roomcallDoorbell = {entity: "binary_sensor.porch", camera: null, name: "Porch"};
+      h.hass.states["binary_sensor.porch"] = {state: "off", last_changed: new Date().toISOString(),
+        attributes: {}};
+      // Just fetched: the throttled refresh must still happen once the minute is up.
+      card._doorbellFetched = Date.now() - 59800;
+      card.hass = {...h.hass};
+    }""")
+    page.wait_for_function("document.querySelector('roomcall-card')._doorbell?.name === 'Porch'")
+    # A ring from an hour ago, seen when a suspended tablet wakes, is ignored.
+    page.evaluate("""() => {
+      const h = ROOMCALL_HARNESS, card = document.querySelector("roomcall-card");
+      h.hass.states["binary_sensor.porch"] = {state: "on", attributes: {},
+        last_changed: new Date(Date.now() - 3600000).toISOString()};
+      card.hass = {...h.hass};
+    }""")
+    page.wait_for_timeout(50)
+    expect(banner).to_be_hidden()
+    page.evaluate("""() => {
+      const h = ROOMCALL_HARNESS, card = document.querySelector("roomcall-card");
+      h.hass.states["binary_sensor.porch"] = {state: "off", attributes: {},
+        last_changed: new Date().toISOString()};
+      card.hass = {...h.hass};
+      h.hass.states["binary_sensor.porch"] = {state: "on", attributes: {},
+        last_changed: new Date(Date.now() + 1).toISOString()};
+      card.hass = {...h.hass};
+    }""")
+    expect(banner).to_contain_text("Someone is at the Porch.")
+    context.close()
+
+
 def check_tasks(browser, errors) -> None:
     """An open task is confirmed with its own words; there is no dismiss button."""
     for width in (240, 390, 900):
@@ -198,6 +286,8 @@ def main() -> None:
         check_shortcuts(browser, errors)
         check_tasks(browser, errors)
         check_task_added_later(browser, errors)
+        check_doorbell(browser, errors)
+        check_doorbell_changes(browser, errors)
         for width, height in [(390, 844), (1280, 900)]:
             context = browser.new_context(viewport={"width": width, "height": height})
             context.grant_permissions(["microphone"], origin=ORIGIN)

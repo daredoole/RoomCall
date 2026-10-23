@@ -28,7 +28,7 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from . import chimes, frontend, intents, localization, repairs, talkback, ws
+from . import chimes, doorbell, frontend, intents, localization, repairs, talkback, ws
 from .announcements import Announcer
 from .calls import CallError
 from .communication import SCHEMAS, execute, task_permitted
@@ -163,6 +163,9 @@ class RoomCallData:
     translation_entity: str | None = None
     audio_processing: str = "off"
     talk_back: bool = False
+    doorbell_entity: str | None = None
+    doorbell_camera: str | None = None
+    doorbell_rooms: list[str] = field(default_factory=list)
     metrics: Metrics = field(default_factory=Metrics)
     evidence: Evidence = field(init=False)
     scheduler: Scheduler | None = None
@@ -231,6 +234,9 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         translation_entity=communication.get("translation_entity"),
         audio_processing=communication.get("audio_processing", "off"),
         talk_back=bool(communication.get("talk_back", False)),
+        doorbell_entity=communication.get("doorbell_entity") or None,
+        doorbell_camera=communication.get("doorbell_camera") or None,
+        doorbell_rooms=list(communication.get("doorbell_rooms") or []),
     )
 
 
@@ -364,6 +370,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CALL_FINISHED, talk_back))
+    entry.async_on_unload(doorbell.async_track(hass, data))
     hass.data[DOMAIN] = data
     data.announcer = Announcer(hass, entry)
     await data.announcer.async_load()

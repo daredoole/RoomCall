@@ -193,7 +193,7 @@ async def test_open_tasks_survive_a_reload_and_keep_reminding(
     await hass.async_block_till_done()
     played.clear()
     other = await _add(
-        hass, entry, "scheduled", {"name": "Bins", "time": "19:00:00", "message": "Bins"}
+        hass, entry, "scheduled", {"name": "Bins", "time": _hours_ago(6), "message": "Bins"}
     )
     # A deleted announcement, or one that is no longer a task, is forgotten and its
     # pinned notification cleared, so it cannot come back later.

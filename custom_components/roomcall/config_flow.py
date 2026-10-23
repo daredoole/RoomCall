@@ -285,6 +285,21 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                         vol.Required(
                             "talk_back", default=communication.get("talk_back", False)
                         ): selector.BooleanSelector(),
+                        vol.Optional(
+                            "doorbell_entity",
+                            description=_suggest(communication.get("doorbell_entity")),
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(
+                                domain=["binary_sensor", "event", "button"]
+                            )
+                        ),
+                        vol.Optional(
+                            "doorbell_camera",
+                            description=_suggest(communication.get("doorbell_camera")),
+                        ): selector.EntitySelector(selector.EntitySelectorConfig(domain="camera")),
+                        vol.Optional(
+                            "doorbell_rooms", default=communication.get("doorbell_rooms", [])
+                        ): selector.AreaSelector(selector.AreaSelectorConfig(multiple=True)),
                         vol.Required(
                             "voicemail", default=communication.get("voicemail", False)
                         ): selector.BooleanSelector(),
@@ -347,6 +362,11 @@ def validate_communication(values: dict[str, Any]) -> None:
             vol.Optional("max_volume"): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional("voicemail"): bool,
             vol.Optional("talk_back"): bool,
+            vol.Optional("doorbell_entity"): vol.Match(
+                r"^(binary_sensor|event|button)\.[a-z0-9_]+$"
+            ),
+            vol.Optional("doorbell_camera"): vol.Match(r"^camera\.[a-z0-9_]+$"),
+            vol.Optional("doorbell_rooms"): [str],
             vol.Optional("voicemail_retention"): vol.All(
                 vol.Coerce(int), vol.Range(min=300, max=604800)
             ),

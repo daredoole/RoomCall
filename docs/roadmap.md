@@ -84,6 +84,6 @@ Details: [Announcements](announcements.md#tasks-confirm-it-was-actually-done).
 - [x] **Hands-free talk-back** from rooms with only a Sonos: an Assist satellite in the room
       (Atom Echo, ESP32-S3, Home Assistant Voice) listens after each call and the reply is spoken
       in the caller's room ([#11](https://github.com/daredoole/RoomCall/issues/11))
-- [ ] **Native doorbell audio bridge**: script control adapters exist; bridging camera/SIP audio into room stations remains separate hardware work ([#21](https://github.com/daredoole/RoomCall/issues/21))
+- [x] **Answer the door from any room or the watch**: rooms ring, phones and cards get the snapshot and an Answer button that opens the camera's live view, with two-way talk where the camera supports it ([#21](https://github.com/daredoole/RoomCall/issues/21))
 - [ ] Listed in the default HACS store — submitted, in review ([#25](https://github.com/daredoole/RoomCall/issues/25))
 - [ ] Per-room chimes
