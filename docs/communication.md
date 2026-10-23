@@ -291,3 +291,23 @@ cells, and real browser WebRTC with test microphones. CI requires 100% statement
 coverage for both Python packages on every supported Python/HA test job, without
 source omissions. This does not measure JavaScript statement coverage. Physical speaker and
 doorbell behavior must still be checked on the chosen hardware.
+
+## Durable message jobs
+
+Send `durable: true` with an explicit `idempotency_key` to persist a message through
+Home Assistant reloads/restarts. Ordinary messages remain memory-only. Durable text,
+targets, results and responses are stored locally using HA storage and may be in HA
+backups. This is an explicit retention choice; no recorded audio is journaled.
+
+Queued, unexpired messages resume with current HA permissions, exposure, presence,
+DND and quiet-hours checks. A job that had entered dispatch or was awaiting an
+acknowledgment becomes `interrupted` after a crash and is never replayed automatically.
+`job_interrupted` means playback might have happened: inspect the destination before
+sending a new message. This provides conservative duplicate avoidance, not exactly-once
+or proof of audibility. Expiry uses the original wall-clock deadline.
+
+Completed/expired/interrupted job results retain their original owner and idempotency
+identity across restart, bounded to 128 retained jobs and up to 24 hours. Old terminal
+jobs may be evicted when that bound is reached; keys are valid only while retained.
+Repeating an unchanged key returns the original job; changing its fields conflicts.
+Satellite questions do not opt into durable replay.

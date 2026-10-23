@@ -385,7 +385,9 @@
         "talk_back_reply": "{room} dit : {text}",
         "doorbell_message": "Quelqu'un est à {name}.",
         "answer_door": "Répondre",
-        "open_camera": "Ouvrir la caméra"
+        "open_camera": "Ouvrir la caméra",
+        "durable_key_required": "Les messages persistants nécessitent une clé d’idempotence.",
+        "job_interrupted": "La lecture a pu démarrer avant l’interruption. Vérifiez le haut-parleur avant un nouvel envoi."
       }
     },
     "audio_processing": {

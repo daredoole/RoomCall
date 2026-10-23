@@ -30,6 +30,7 @@ TARGETS = {
     vol.Optional("volume"): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
 }
 MESSAGE = {
+    vol.Optional("durable", default=False): cv.boolean,
     **TARGETS,
     vol.Optional("message"): vol.All(cv.string, vol.Length(min=1, max=4000)),
     vol.Optional("media_url"): vol.All(cv.string, vol.Length(min=1, max=2048)),
@@ -307,7 +308,10 @@ async def _execute(hass, operation, values, context, *, assistant=None):
                 raise Problem("content_required")
             if values.get("voicemail") and not data.voicemail_enabled:
                 raise Problem("voicemail_disabled")
-            return {"ok": True, **data.jobs.submit(values, context, assistant).summary()}
+            job = data.jobs.submit(values, context, assistant)
+            if values.get("durable"):
+                await data.jobs.save()
+            return {"ok": True, **job.summary()}
         if operation == "ask":
             known = {
                 e["entity_id"]

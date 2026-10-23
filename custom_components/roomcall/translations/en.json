@@ -385,7 +385,9 @@
         "talk_back_reply": "{room} says: {text}",
         "doorbell_message": "Someone is at the {name}.",
         "answer_door": "Answer",
-        "open_camera": "Open the camera"
+        "open_camera": "Open the camera",
+        "durable_key_required": "Durable messages require an idempotency key.",
+        "job_interrupted": "Playback may have started before interruption. Check the speaker before sending a new message."
       }
     },
     "audio_processing": {

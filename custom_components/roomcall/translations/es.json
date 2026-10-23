@@ -385,7 +385,9 @@
         "talk_back_reply": "{room} dice: {text}",
         "doorbell_message": "Hay alguien en {name}.",
         "answer_door": "Contestar",
-        "open_camera": "Abrir la cámara"
+        "open_camera": "Abrir la cámara",
+        "durable_key_required": "Los mensajes persistentes requieren una clave de idempotencia.",
+        "job_interrupted": "La reproducción puede haber empezado antes de la interrupción. Comprueba el altavoz antes de enviar otro mensaje."
       }
     },
     "audio_processing": {
