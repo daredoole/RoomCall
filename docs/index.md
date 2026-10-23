@@ -30,7 +30,13 @@ talk, and your voice plays in the room you picked — on Sonos, AirPlay and Goog
 - **One Settings panel on the card** — guided setup and sound tests, Siri Shortcuts, room
   stations and voicemail ([tour](home-assistant.md#settings-panel)).
 - **[Siri](siri-shortcuts.md)** — "Hey Siri, run RoomCall Basement", or one shortcut with a
-  live room picker. A [native iOS prototype](native-ios.md) adds Push to Talk.
+  live room picker. The [native iOS app](native-ios.md) adds in-app talk, typed messages and tasks.
+- **Reusable household profiles and prepared speech** — select saved destinations,
+  message defaults and explicit voices; prepare/cache repeated speech without playback.
+- **Durable jobs and delivery timeline** — opt into restart-safe queued messages and
+  inspect preparation, dispatch, device evidence and explicit acknowledgment separately.
+- **Scoped agent accounts** — restrict RoomCall operations, rooms, hours, urgency,
+  requested volume and message rate; subscribe to owned-job updates.
 - **Reply** from a phone notification, straight back to the caller's room.
 - **Do Not Disturb, quiet hours and urgent calls.**
 - **Call history** with replay and speech-to-text transcripts.

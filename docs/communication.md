@@ -1,6 +1,6 @@
 # Messages, questions and room stations
 
-RoomCall 0.8 adds a shared communication API for the dashboard, automations and AI
+RoomCall provides a shared communication API for the dashboard, automations and AI
 agents. Existing `roomcall.broadcast` automations continue to work.
 
 ## Everyday use
@@ -81,6 +81,8 @@ and `media_url`.
 | `doctor` | Administrator: inspect setup failures or propose a verified physical alternate route. |
 | `discover` | Empty. Returns rooms, endpoints, people, satellites, stations, adapters and capabilities. |
 | `diagnose` | Empty. Adds policy state and local metrics. |
+| `policy` | Empty. Reports the caller’s RoomCall account restrictions. |
+| `speech` | `action: prepare` plus message/targets and optional `speech_profile`; no playback. Administrator-only `action: clear` invalidates prepared audio. |
 | `preview` | Targets, optional `priority` and `volume`. Does not synthesize or play audio. |
 | `send` | Targets and `message` or `media_url`; optional options below. Returns a job ID. |
 | `ask` | `satellites`, `message`, optional HA `answers`, `expires_in`, `idempotency_key`. |
@@ -106,7 +108,7 @@ Content-Type: application/json
 ### Jobs and lifecycle
 
 Jobs can be `queued`, `running`, `completed`, `partial`, `failed`, `expired`,
-`cancelled`, `waiting_ack`, `acknowledged`, or `answered`. **Completed means the
+`cancelled`, `waiting_ack`, `acknowledged`, `answered`, or `interrupted`. **Completed means the
 playback requests finished**, not that the audio finished or was heard. Check the
 result's evidence and responses.
 
@@ -128,8 +130,9 @@ RoomCall never promotes a blocked message to urgent automatically.
 The runtime holds at most 128 jobs. Idempotency keys belong to the calling user
 and retained job: reuse the same key and fields to retrieve the original job;
 different fields return `idempotency_conflict`. Completed jobs are evicted oldest
-first when the bound is reached. Jobs and keys are in memory; reload/restart
-cancels pending work and does not replay it automatically.
+first when the bound is reached. Ordinary jobs and keys are in memory; reload/restart
+cancels their pending work. Explicit `durable: true` messages use the
+[durable lifecycle](#durable-message-jobs) below; satellite questions remain in memory.
 
 Playback to the same physical endpoint is serialized until its playback/restoration
 lease finishes. Unrelated rooms can proceed independently. Players without useful
@@ -398,13 +401,28 @@ Configure Communication → Speech profiles with `fast`, `balanced` and/or `qual
 objects, each containing an `engine` (such as `tts.piper`) and explicit `voice`
 (such as `en_US-lessac-medium`). These are labels you assign, not speed guarantees.
 Send `speech_profile: fast` with a message to select that voice without changing
-Piper's global default. The same option is available to agents through send.
+Piper's global default. An explicit speech profile overrides a household profile's
+engine and voice; the household chime still applies. The same option is available to agents through send.
 
-Use operation `speech`, request `{action: prepare, areas: [basement], message: "Dinner",
-speech_profile: fast}` to pre-generate without playing. Targets and caller permissions
+Use operation `speech` to pre-generate without playing:
+
+```yaml
+action: roomcall.communicate
+data:
+  operation: speech
+  request:
+    action: prepare
+    areas: [basement]
+    message: Dinner
+    speech_profile: fast
+response_variable: preparation
+```
+
+Send the same content, destination and speech profile afterward using `operation: send`. Targets and caller permissions
 are checked first. Reusing the same message, language, voice and chime avoids both
 speech generation and audio composition; translated text is part of that identity.
 The cache is memory-only, owner-scoped, limited to ten minutes and 32 entries / 16 MiB.
-Configuration reloads clear it; changes to the explicit engine, voice or chime use another key. After changing a provider's default voice or replacing a custom chime
-file in place, an administrator must call `speech` with `{action: clear}` or reload
+Configuration reloads clear it; changes to the explicit engine, voice or chime
+use another key. After changing a provider's default voice or replacing a custom
+chime file in place, an administrator must call `speech` with `{action: clear}` or reload
 RoomCall. Cached audio is never proof of playback or audibility.

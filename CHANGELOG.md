@@ -6,6 +6,19 @@ All notable changes are listed here. The format follows
 
 ## 0.18.0 — 2026-10-23
 
+This release includes the changes developed in 0.13.0–0.17.0 below; those versions
+were not published as GitHub releases.
+
+- Refresh the README, human and agent guides, roadmap and native app screenshots.
+  Replace obsolete system Push to Talk/prototype setup with current in-app controls,
+  unsigned IPA signing instructions and explicit foreground/background limits.
+- Reconcile household and speech profile voice selection; an explicit speech profile
+  overrides the household voice once. Cached audio does not report fresh synthesis.
+- Remove the generated coverage database from tracked files and ignore test reports;
+  use an example hostname in tests. Historical author identities and old filesystem
+  paths remain in Git history; this release does not rewrite it.
+- Check all five package/integration/card versions against the release tag and use
+  bounded, pinned audio dependencies for documentation deployment.
 - Optional per-account RoomCall policies restrict destinations, operations, hours, urgency, requested volume and runtime message rate. Add owned-job WebSocket updates that recheck permissions on every event.
 
 ## 0.17.0 — 2026-10-23

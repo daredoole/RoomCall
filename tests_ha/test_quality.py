@@ -74,13 +74,13 @@ async def test_speaker_that_comes_back_quickly_is_not_reported(hass: HomeAssista
 
 
 async def test_https_internal_url_raises_a_repair(hass: HomeAssistant, house):
-    await async_process_ha_core_config(hass, {"internal_url": "https://ha.home.arpa"})
+    await async_process_ha_core_config(hass, {"internal_url": "https://ha.example.test"})
     entry = MockConfigEntry(domain=DOMAIN, data={"speakers": ["media_player.kitchen_hub"]})
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     issue = ir.async_get(hass).async_get_issue(DOMAIN, "https_internal_url")
     assert issue is not None
-    assert issue.translation_placeholders["url"] == "https://ha.home.arpa"
+    assert issue.translation_placeholders["url"] == "https://ha.example.test"
 
 
 async def test_room_notify_entity_speaks_in_that_room(
