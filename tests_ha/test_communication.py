@@ -438,7 +438,7 @@ async def test_current_ha_discovers_tools_through_its_real_assist_platform(hass,
     )
     offered = await get_platform_tools(hass, context, "assist")
     tools = [tool for tool in offered.tools if tool.name.startswith("roomcall__")]
-    assert len(tools) == 17
+    assert len(tools) == 18
     for tool in tools:
         schema = probatio.to_openapi(tool.parameters, custom_serializer=llm.selector_serializer)
         assert "properties" in schema  # Exactly the schema path used by current HA MCP.

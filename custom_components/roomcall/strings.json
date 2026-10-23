@@ -112,7 +112,8 @@
               "talk_back": "Hands-free talk-back",
               "doorbell_entity": "Doorbell",
               "doorbell_camera": "Doorbell camera",
-              "doorbell_rooms": "Rooms to ring"
+              "doorbell_rooms": "Rooms to ring",
+              "agent_policies": "Agent account policies"
             },
             "data_description": {
               "talk_back": "After someone talks to a room from another room, an Assist satellite in that room (Atom Echo, ESP32-S3, Home Assistant Voice) listens for a reply and the caller's room hears it. Replies are transcribed, then spoken in your voice of choice.",
@@ -385,7 +386,10 @@
         "talk_back_reply": "{room} says: {text}",
         "doorbell_message": "Someone is at the {name}.",
         "answer_door": "Answer",
-        "open_camera": "Open the camera"
+        "open_camera": "Open the camera",
+        "agent_policy_denied": "This RoomCall account policy does not allow that operation, destination, time, urgency or volume.",
+        "agent_rate_limited": "The account has reached its RoomCall message rate limit.",
+        "tool_policy": "Inspect this account’s RoomCall permissions and limits."
       }
     },
     "audio_processing": {

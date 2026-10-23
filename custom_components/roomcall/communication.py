@@ -45,6 +45,7 @@ MESSAGE = {
 }
 SCHEMAS = {
     "catalog": vol.Schema({}),
+    "policy": vol.Schema({}),
     "setup": vol.Schema(
         {
             vol.Required("action"): vol.In(
@@ -143,6 +144,9 @@ async def permitted(
     *,
     control: bool = True,
 ) -> bool:
+    data = hass.data.get(DOMAIN)
+    if data and not data.agent_policies.entity(hass, context.user_id, entity_id):
+        return False
     if assistant and not async_should_expose(hass, assistant, entity_id):
         return False
     if context.user_id:
@@ -171,6 +175,7 @@ async def validate_targets(
         kind="message",
         priority=values.get("priority", "normal"),
         volume=values.get("volume"),
+        caller_user_id=context.user_id,
     )
     prepared = prepare_call(hass, data, request)
     for entity_id in [*prepared.routing.entity_ids, *values.get("people", [])]:
@@ -242,6 +247,9 @@ async def _execute(hass, operation, values, context, *, assistant=None):
         if operation not in SCHEMAS:
             raise Problem("invalid_request")
         values = SCHEMAS[operation](values)
+        configured = hass.data.get(DOMAIN)
+        if configured:
+            configured.agent_policies.authorize(context.user_id, operation)
         if operation == "catalog":
             from .protocol import catalog
 
@@ -264,6 +272,8 @@ async def _execute(hass, operation, values, context, *, assistant=None):
         data = hass.data.get(DOMAIN)
         if data is None:
             raise Problem("not_ready", retryable=True)
+        if operation == "policy":
+            return {"ok": True, **data.agent_policies.summary(context.user_id)}
         if operation == "tasks":
             return await _tasks(hass, data, values, context, assistant)
         if operation in ("discover", "diagnose"):
@@ -279,7 +289,7 @@ async def _execute(hass, operation, values, context, *, assistant=None):
                     for item in result[key]
                     if await permitted(hass, item["entity_id"], context, assistant, control=False)
                 ]
-            if assistant:
+            if assistant or context.user_id in data.agent_policies.grants:
                 allowed_areas = {e["area_id"] for e in result["endpoints"]}
                 result["rooms"] = [r for r in result["rooms"] if r["area_id"] in allowed_areas]
                 result["areas"] = [a for a in result["areas"] if a["id"] in allowed_areas]
@@ -322,7 +332,7 @@ async def _execute(hass, operation, values, context, *, assistant=None):
             return {"ok": True, **data.jobs.submit(values, context, assistant).summary()}
         if operation in ("status", "cancel", "acknowledge"):
             job = await data.jobs.get(values["id"], context, recipient=operation == "acknowledge")
-            if assistant:
+            if assistant or context.user_id in data.agent_policies.grants:
                 entities = [*job.values.get("people", []), *job.values.get("satellites", [])]
                 if job.record:
                     entities.extend(result.entity_id for result in job.record.results)

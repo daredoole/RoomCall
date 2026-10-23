@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.18.0 — 2026-10-23
+
+- Optional per-account RoomCall policies restrict destinations, operations, hours, urgency, requested volume and runtime message rate. Add owned-job WebSocket updates that recheck permissions on every event.
+
 ## 0.12.0 — 2026-10-22
 
 - Hands-free talk-back ([#11](https://github.com/daredoole/RoomCall/issues/11)): with an Assist

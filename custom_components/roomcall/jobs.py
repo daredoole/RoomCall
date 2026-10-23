@@ -83,6 +83,7 @@ class Jobs:
             assistant=assistant,
         )
         self.items[job.id] = job
+        self.hass.bus.async_fire("roomcall_job_updated", {"id": job.id})
         if key[1]:
             self.keys[key] = (job.id, fingerprint)
         job.task = self.hass.async_create_background_task(self._run(job), f"roomcall job {job.id}")
@@ -113,6 +114,7 @@ class Jobs:
         job.state = "cancelled"
         if job.task:
             job.task.cancel()
+        self.hass.bus.async_fire("roomcall_job_updated", {"id": job.id})
         self.data.metrics.counters["jobs_cancelled"] += 1
         return job
 
@@ -135,6 +137,7 @@ class Jobs:
             self.data.metrics.counters["acknowledgments"] += 1
         job.state = "acknowledged"
         job.acknowledged.set()
+        self.hass.bus.async_fire("roomcall_job_updated", {"id": job.id})
         if job.record:
             job.record.requires_ack = False
             job.record.evidence.setdefault("human", {})["acknowledged"] = True
@@ -143,6 +146,7 @@ class Jobs:
     async def _run(self, job: Job) -> None:
         def dispatched() -> None:
             job.state = "running"
+            self.hass.bus.async_fire("roomcall_job_updated", {"id": job.id})
 
         try:
             async with asyncio.timeout_at(job.deadline):
@@ -219,9 +223,15 @@ class Jobs:
         finally:
             if job.record and job.state != "waiting_ack":
                 job.record.requires_ack = False
+            self.hass.bus.async_fire("roomcall_job_updated", {"id": job.id})
             self.data.metrics.counters[f"jobs_{job.state}"] += 1
 
     async def _ask(self, job: Job) -> None:
+        self.data.agent_policies.playback(
+            self.hass, job.owner, job.values["satellites"], "normal", None
+        )
+        self.data.agent_policies.consume(job.owner)
+
         async def ask(entity_id: str) -> None:
             lock = await self.data.scheduler.acquire(entity_id, job.deadline)
             try:

@@ -141,6 +141,8 @@ async def send(
     on_dispatch: Callable[[], None] | None = None,
     notify: bool = True,
 ) -> CallRecord:
+    data.agent_policies.authorize(context.user_id, "send")
+    data.agent_policies.consume(context.user_id)
     request = await request_for(hass, data, values, context)
     request.call_id, request.deadline, request.on_dispatch = call_id, deadline, on_dispatch
     request.notify = notify

@@ -62,8 +62,16 @@ def async_get_tools(
         {DOMAIN, SETUP_KEY} & hass.data.keys()
     ):
         return None
+    owner = llm_context.context.user_id if llm_context.context else None
+    data = hass.data.get(DOMAIN)
+    grant = data.agent_policies.grants.get(owner) if data else None
+    operations = SCHEMAS if grant is None else {"catalog", "policy", *grant["operations"]}
     return LLMTools(
-        tools=[CommunicationTool(hass, name, llm_context.language) for name in SCHEMAS],
+        tools=[
+            CommunicationTool(hass, name, llm_context.language)
+            for name in SCHEMAS
+            if name in operations
+        ],
         prompt=text(hass, "agent_prompt", llm_context.language),
     )
 

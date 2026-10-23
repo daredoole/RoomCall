@@ -32,6 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @callback
 def async_register(hass: HomeAssistant) -> None:
+    websocket_api.async_register_command(hass, ws_job_events)
     websocket_api.async_register_command(hass, ws_live)
     websocket_api.async_register_command(hass, ws_station)
     websocket_api.async_register_command(hass, ws_session)
@@ -228,3 +229,29 @@ async def ws_live(
     connection.send_message(
         websocket_api.event_message(msg_id, {"type": "ready", "handler_id": handler_id})
     )
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "roomcall/job_events", vol.Required("job_id"): str}
+)
+@websocket_api.async_response
+async def ws_job_events(hass, connection, msg):
+    """Subscribe to one owned job; recheck current permissions on every update."""
+    from .communication import execute
+
+    context = connection.context(msg)
+    snapshot = await execute(hass, "status", {"id": msg["job_id"]}, context)
+    if not snapshot["ok"]:
+        error = snapshot["error"]
+        connection.send_error(msg["id"], error["code"], error["message"])
+        return
+
+    async def changed(event):
+        if event.data.get("id") != msg["job_id"]:
+            return
+        result = await execute(hass, "status", {"id": msg["job_id"]}, context)
+        if msg["id"] in connection.subscriptions:
+            connection.send_message(websocket_api.event_message(msg["id"], result))
+
+    connection.subscriptions[msg["id"]] = hass.bus.async_listen("roomcall_job_updated", changed)
+    connection.send_result(msg["id"], snapshot)

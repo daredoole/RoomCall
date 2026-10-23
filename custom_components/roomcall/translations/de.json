@@ -112,7 +112,8 @@
               "talk_back": "Freihändig antworten",
               "doorbell_entity": "Türklingel",
               "doorbell_camera": "Türklingel-Kamera",
-              "doorbell_rooms": "Räume zum Klingeln"
+              "doorbell_rooms": "Räume zum Klingeln",
+              "agent_policies": "Richtlinien für Agentenkonten"
             },
             "data_description": {
               "talk_back": "Spricht jemand aus einem anderen Raum in einen Raum, hört ein Assist-Satellit dort (Atom Echo, ESP32-S3, Home Assistant Voice) auf eine Antwort, die im Raum des Anrufers zu hören ist. Antworten werden transkribiert und mit der eingestellten Stimme gesprochen.",
@@ -385,7 +386,10 @@
         "talk_back_reply": "{room} sagt: {text}",
         "doorbell_message": "Jemand ist an der {name}.",
         "answer_door": "Annehmen",
-        "open_camera": "Kamera öffnen"
+        "open_camera": "Kamera öffnen",
+        "agent_policy_denied": "Diese Kontorichtlinie erlaubt den Vorgang, das Ziel, die Zeit, Dringlichkeit oder Lautstärke nicht.",
+        "agent_rate_limited": "Das Konto hat sein RoomCall-Nachrichtenlimit erreicht.",
+        "tool_policy": "RoomCall-Rechte und Grenzen dieses Kontos anzeigen."
       }
     },
     "audio_processing": {

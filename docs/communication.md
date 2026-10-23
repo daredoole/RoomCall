@@ -291,3 +291,41 @@ cells, and real browser WebRTC with test microphones. CI requires 100% statement
 coverage for both Python packages on every supported Python/HA test job, without
 source omissions. This does not measure JavaScript statement coverage. Physical speaker and
 doorbell behavior must still be checked on the chosen hardware.
+
+## Agent account permissions and job subscriptions
+
+Use a dedicated non-administrator HA account with appropriate HA entity permissions.
+Under Communication → Agent account policies, map its HA user ID to restrictions:
+
+```yaml
+agent_policies:
+  HA_USER_ID:
+    areas: [kitchen, basement]
+    entities: []
+    operations: [discover, preview, send, status, policy]
+    start: "08:00"
+    end: "21:00"
+    urgent: false
+    max_volume: 0.4
+    per_minute: 10
+```
+
+These are additional RoomCall limits, not HA-wide token scopes: the account's other
+HA services remain governed by HA. Accounts without a policy retain existing behavior.
+`entities` grants exact IDs; `areas` grants RoomCall entities assigned to those areas.
+Policies are checked on discovery/preview and again before playback, including queued
+work. Requested volume is capped, unsupported device volume behavior is unchanged.
+Hours use HA's local timezone and may cross midnight; equal start/end means all day.
+The rate window is per account per runtime and resets on integration reload/restart.
+Retries using an existing job key do not dispatch again or consume another playback.
+
+`policy` reports the caller's own limits for agent discovery. `catalog` remains
+available to explain operations; previews do not play audio or consume message rate.
+RoomCall setup and administration operations are unavailable to scoped accounts.
+Do not give an agent an administrator account that can remove its own restrictions.
+
+Authenticated clients can subscribe via WebSocket `{id: 1, type: "roomcall/job_events",
+job_id: "JOB_ID"}`. The result contains the initial status; subsequent events contain
+status updates. Ownership and current permissions are checked on every update.
+Use HA's `unsubscribe_events` to remove the subscription. No global message feed or
+unauthenticated callback is exposed.
