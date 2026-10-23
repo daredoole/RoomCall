@@ -135,6 +135,11 @@ async def listen(hass: HomeAssistant, data: RoomCallData, record: CallRecord) ->
             await validate_targets(hass, values, context, None)
         except (CallError, Problem):
             continue
-        data.metrics.counters["talk_back_replies"] += 1
         # Sent as a message, not a talk call, so a reply never triggers another reply.
-        await send(hass, data, values, context)
+        try:
+            reply_record = await send(hass, data, values, context)
+        except (CallError, Problem):
+            continue
+        # Counts accepted playback requests; whether anyone heard it stays unknown.
+        if any(result.ok for result in reply_record.results):
+            data.metrics.counters["talk_back_replies"] += 1

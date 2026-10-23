@@ -299,3 +299,19 @@ async def test_partial_delivery_listens_and_undeliverable_replies_are_not_asked(
     office = ar.async_get(hass).async_create("Office")
     await talkback.listen(hass, data, _record(house["basement"], origin=office.id))
     assert len(asked) == 1
+
+
+async def test_replies_count_only_when_delivery_is_accepted(hass: HomeAssistant, house):
+    await _setup(hass, house)
+    data = hass.data[DOMAIN]
+    _answers(hass, "Coming")
+    failed = CallRecord(
+        target="kitchen",
+        kind="message",
+        results=[Delivery("media_player.kitchen_sonos", "K", False, 1)],
+    )
+    with patch("custom_components.roomcall.messages.send", return_value=failed):
+        await talkback.listen(hass, data, _record(house["basement"]))
+    with patch("custom_components.roomcall.messages.send", side_effect=Problem("tts_unavailable")):
+        await talkback.listen(hass, data, _record(house["basement"]))
+    assert data.metrics.counters["talk_back_replies"] == 0
