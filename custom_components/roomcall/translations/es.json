@@ -8,11 +8,13 @@
           "speakers": "Altavoces",
           "volume": "Volumen de los avisos",
           "gain_db": "Ganancia del micrófono (dB)",
-          "tts_engine": "Motor de texto a voz para mensajes"
+          "tts_engine": "Motor de texto a voz para mensajes",
+          "speech_rate": "Velocidad de habla"
         },
         "data_description": {
           "volume": "Déjalo vacío para mantener el volumen actual de cada altavoz. Compatible con Sonos.",
-          "gain_db": "Súbela si las grabaciones del teléfono suenan bajas."
+          "gain_db": "Súbela si las grabaciones del teléfono suenan bajas.",
+          "speech_rate": "1 es el ritmo normal de la voz. Bájalo si los mensajes escritos y los anuncios suenan demasiado rápido; 0,85 es un poco más lento. El tono no cambia."
         }
       }
     },
@@ -31,11 +33,13 @@
           "speakers": "Altavoces",
           "volume": "Volumen de los avisos",
           "gain_db": "Ganancia del micrófono (dB)",
-          "tts_engine": "Motor de texto a voz para mensajes"
+          "tts_engine": "Motor de texto a voz para mensajes",
+          "speech_rate": "Velocidad de habla"
         },
         "data_description": {
           "volume": "Déjalo vacío para mantener el volumen actual de cada altavoz. Compatible con Sonos.",
-          "gain_db": "Súbela si las grabaciones del teléfono suenan bajas."
+          "gain_db": "Súbela si las grabaciones del teléfono suenan bajas.",
+          "speech_rate": "1 es el ritmo normal de la voz. Bájalo si los mensajes escritos y los anuncios suenan demasiado rápido; 0,85 es un poco más lento. El tono no cambia."
         },
         "sections": {
           "chime_options": {
@@ -527,7 +531,8 @@
         "ios_color_purple": "Morado",
         "ios_color_teal": "Verde azulado",
         "ios_color_coral": "Coral",
-        "ios_color_pink": "Rosa"
+        "ios_color_pink": "Rosa",
+        "setup_speech_rate": "Velocidad de habla"
       }
     },
     "audio_processing": {

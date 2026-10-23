@@ -15,6 +15,10 @@ All notable changes are listed here. The format follows
   any colour). The home-screen widgets use the chosen colour; light colours get dark text.
 - Appearance strings in all five languages; Swift unit tests for the colour and tonal maths and a UI
   test for the colour presets.
+- New **Speaking speed** option (0.5–1.5, default 1) under Configure and in the card's Settings →
+  Setup. Typed messages, announcements and reminders are re-timed with ffmpeg `atempo`, so it works
+  with any text-to-speech engine and keeps the voice's pitch; the chime is unchanged. Real-ffmpeg
+  tests cover the stretched voice, the cache key and speech without a chime.
 
 ## 0.19.0 — 2026-10-23
 

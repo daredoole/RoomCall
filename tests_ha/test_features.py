@@ -367,6 +367,7 @@ async def test_options_flow_sections(hass: HomeAssistant, house):
         {
             "speakers": SPEAKERS,
             "gain_db": 0,
+            "speech_rate": 0.85,
             "chime_options": {"style": "rising"},
             "delivery": {"stagger_ms": 300, "retry": True, "urgent_volume": 0.9},
             "quiet_hours": {"start": "22:00:00", "end": "07:00:00"},
@@ -377,6 +378,7 @@ async def test_options_flow_sections(hass: HomeAssistant, house):
     await hass.async_block_till_done()
     data = hass.data[DOMAIN]
     assert data.chime_style == "rising"
+    assert data.speech_rate == 0.85
     assert data.stagger_ms == 300
     assert data.urgent_volume == 0.9
     assert data.quiet.start == time(22)

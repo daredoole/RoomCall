@@ -8,11 +8,13 @@
           "speakers": "Speakers",
           "volume": "Volume van aankondigingen",
           "gain_db": "Microfoonversterking (dB)",
-          "tts_engine": "Tekst-naar-spraak voor berichten"
+          "tts_engine": "Tekst-naar-spraak voor berichten",
+          "speech_rate": "Spreeksnelheid"
         },
         "data_description": {
           "volume": "Leeg laten om het huidige volume van elke speaker te houden. Ondersteund door Sonos.",
-          "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken."
+          "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken.",
+          "speech_rate": "1 is het normale tempo van de stem. Verlaag dit als getypte berichten en aankondigingen te snel klinken; 0,85 is iets langzamer. De toonhoogte blijft gelijk."
         }
       }
     },
@@ -31,11 +33,13 @@
           "speakers": "Speakers",
           "volume": "Volume van aankondigingen",
           "gain_db": "Microfoonversterking (dB)",
-          "tts_engine": "Tekst-naar-spraak voor berichten"
+          "tts_engine": "Tekst-naar-spraak voor berichten",
+          "speech_rate": "Spreeksnelheid"
         },
         "data_description": {
           "volume": "Leeg laten om het huidige volume van elke speaker te houden. Ondersteund door Sonos.",
-          "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken."
+          "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken.",
+          "speech_rate": "1 is het normale tempo van de stem. Verlaag dit als getypte berichten en aankondigingen te snel klinken; 0,85 is iets langzamer. De toonhoogte blijft gelijk."
         },
         "sections": {
           "chime_options": {
@@ -527,7 +531,8 @@
         "ios_color_purple": "Paars",
         "ios_color_teal": "Petrol",
         "ios_color_coral": "Koraal",
-        "ios_color_pink": "Roze"
+        "ios_color_pink": "Roze",
+        "setup_speech_rate": "Spreeksnelheid"
       }
     },
     "audio_processing": {

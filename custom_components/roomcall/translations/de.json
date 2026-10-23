@@ -8,11 +8,13 @@
           "speakers": "Lautsprecher",
           "volume": "Lautstärke der Durchsagen",
           "gain_db": "Mikrofonverstärkung (dB)",
-          "tts_engine": "Text-zu-Sprache für Nachrichten"
+          "tts_engine": "Text-zu-Sprache für Nachrichten",
+          "speech_rate": "Sprechgeschwindigkeit"
         },
         "data_description": {
           "volume": "Leer lassen, um die aktuelle Lautstärke jedes Lautsprechers zu behalten. Von Sonos unterstützt.",
-          "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen."
+          "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen.",
+          "speech_rate": "1 ist das normale Tempo der Stimme. Verringere den Wert, wenn getippte Nachrichten und Durchsagen zu schnell klingen; 0,85 ist etwas langsamer. Die Tonhöhe bleibt gleich."
         }
       }
     },
@@ -31,11 +33,13 @@
           "speakers": "Lautsprecher",
           "volume": "Lautstärke der Durchsagen",
           "gain_db": "Mikrofonverstärkung (dB)",
-          "tts_engine": "Text-zu-Sprache für Nachrichten"
+          "tts_engine": "Text-zu-Sprache für Nachrichten",
+          "speech_rate": "Sprechgeschwindigkeit"
         },
         "data_description": {
           "volume": "Leer lassen, um die aktuelle Lautstärke jedes Lautsprechers zu behalten. Von Sonos unterstützt.",
-          "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen."
+          "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen.",
+          "speech_rate": "1 ist das normale Tempo der Stimme. Verringere den Wert, wenn getippte Nachrichten und Durchsagen zu schnell klingen; 0,85 ist etwas langsamer. Die Tonhöhe bleibt gleich."
         },
         "sections": {
           "chime_options": {
@@ -527,7 +531,8 @@
         "ios_color_purple": "Lila",
         "ios_color_teal": "Petrol",
         "ios_color_coral": "Koralle",
-        "ios_color_pink": "Pink"
+        "ios_color_pink": "Pink",
+        "setup_speech_rate": "Sprechgeschwindigkeit"
       }
     },
     "audio_processing": {

@@ -8,11 +8,13 @@
           "speakers": "Speakers",
           "volume": "Announcement volume",
           "gain_db": "Microphone boost (dB)",
-          "tts_engine": "Text-to-speech engine for messages"
+          "tts_engine": "Text-to-speech engine for messages",
+          "speech_rate": "Speaking speed"
         },
         "data_description": {
           "volume": "Leave empty to keep each speaker's current volume. Supported by Sonos.",
-          "gain_db": "Raise this if phone recordings sound quiet."
+          "gain_db": "Raise this if phone recordings sound quiet.",
+          "speech_rate": "1 is the voice's normal pace. Lower it if typed messages and announcements sound too fast; 0.85 is a little slower. Pitch stays the same."
         }
       }
     },
@@ -31,11 +33,13 @@
           "speakers": "Speakers",
           "volume": "Announcement volume",
           "gain_db": "Microphone boost (dB)",
-          "tts_engine": "Text-to-speech engine for messages"
+          "tts_engine": "Text-to-speech engine for messages",
+          "speech_rate": "Speaking speed"
         },
         "data_description": {
           "volume": "Leave empty to keep each speaker's current volume. Supported by Sonos.",
-          "gain_db": "Raise this if phone recordings sound quiet."
+          "gain_db": "Raise this if phone recordings sound quiet.",
+          "speech_rate": "1 is the voice's normal pace. Lower it if typed messages and announcements sound too fast; 0.85 is a little slower. Pitch stays the same."
         },
         "sections": {
           "chime_options": {
@@ -527,7 +531,8 @@
         "ios_color_purple": "Purple",
         "ios_color_teal": "Teal",
         "ios_color_coral": "Coral",
-        "ios_color_pink": "Pink"
+        "ios_color_pink": "Pink",
+        "setup_speech_rate": "Speaking speed"
       }
     },
     "audio_processing": {

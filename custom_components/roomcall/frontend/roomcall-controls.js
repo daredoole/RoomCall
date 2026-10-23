@@ -489,6 +489,9 @@ class SetupWizard {
       step: "0.05",
     });
     this.volume.setAttribute("aria-label", this.t("setup_volume"));
+    this.rate = document.createElement("input");
+    Object.assign(this.rate, { type: "number", min: "0.5", max: "1.5", step: "0.05", placeholder: "1" });
+    this.rate.setAttribute("aria-label", this.t("setup_speech_rate"));
     this.mediaOnly = document.createElement("input");
     this.mediaOnly.type = "checkbox";
     const mediaLabel = document.createElement("label");
@@ -502,9 +505,13 @@ class SetupWizard {
     const volumeLabel = document.createElement("label");
     volumeLabel.textContent = this.t("setup_volume");
     volumeLabel.append(this.volume);
+    const rateLabel = document.createElement("label");
+    rateLabel.textContent = this.t("setup_speech_rate");
+    rateLabel.append(this.rate);
     this.form.append(
       this.speakers,
       engineLabel,
+      rateLabel,
       volumeLabel,
       mediaLabel,
       this.button("create_plan", () => this.plan()),
@@ -578,6 +585,7 @@ class SetupWizard {
     this.engine.value =
       discovery.settings.tts_engine || discovery.recommended.tts_engine || "";
     this.volume.value = discovery.settings.volume ?? "";
+    this.rate.value = discovery.settings.speech_rate ?? "";
     this.status.textContent = this.t("setup_scan_count", {
       count: discovery.endpoints.length,
     });
@@ -607,6 +615,7 @@ class SetupWizard {
       tts_engine: this.engine.value || null,
     };
     if (this.volume.value !== "") settings.volume = Number(this.volume.value);
+    if (this.rate.value !== "") settings.speech_rate = Number(this.rate.value);
     const result = await this.request("plan", {
       settings,
       media_only: this.mediaOnly.checked,
@@ -625,6 +634,7 @@ class SetupWizard {
       input.checked = plan.settings.speakers.includes(input.value);
     this.engine.value = plan.settings.tts_engine || "";
     this.volume.value = plan.settings.volume ?? "";
+    this.rate.value = plan.settings.speech_rate ?? "";
     this.mediaOnly.checked = plan.media_only;
     const title = document.createElement("strong");
     title.textContent = this.t("setup_review");
@@ -637,6 +647,7 @@ class SetupWizard {
       this.t("plan_state", { state: this.t(`setup_${plan.state}`) }),
       `${this.t("setup_speakers")}: ${names.join(", ")}`,
       `${this.t("setup_tts")}: ${this.discovery.tts_engines.find((e) => e.entity_id === plan.settings.tts_engine)?.name || this.t("media_only")}`,
+      `${this.t("setup_speech_rate")}: ${plan.settings.speech_rate ?? 1}×`,
       `${this.t("setup_volume")}: ${plan.settings.volume ?? this.t("setup_keep_volume")}`,
       ...plan.questions.map((q) => q.message),
     ]) {

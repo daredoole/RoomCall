@@ -8,11 +8,13 @@
           "speakers": "Enceintes",
           "volume": "Volume des annonces",
           "gain_db": "Gain du micro (dB)",
-          "tts_engine": "Synthèse vocale pour les messages"
+          "tts_engine": "Synthèse vocale pour les messages",
+          "speech_rate": "Vitesse de parole"
         },
         "data_description": {
           "volume": "Laissez vide pour garder le volume actuel de chaque enceinte. Pris en charge par Sonos.",
-          "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles."
+          "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles.",
+          "speech_rate": "1 est le rythme normal de la voix. Baissez-la si les messages tapés et les annonces semblent trop rapides ; 0,85 est un peu plus lent. La hauteur de la voix reste la même."
         }
       }
     },
@@ -31,11 +33,13 @@
           "speakers": "Enceintes",
           "volume": "Volume des annonces",
           "gain_db": "Gain du micro (dB)",
-          "tts_engine": "Synthèse vocale pour les messages"
+          "tts_engine": "Synthèse vocale pour les messages",
+          "speech_rate": "Vitesse de parole"
         },
         "data_description": {
           "volume": "Laissez vide pour garder le volume actuel de chaque enceinte. Pris en charge par Sonos.",
-          "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles."
+          "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles.",
+          "speech_rate": "1 est le rythme normal de la voix. Baissez-la si les messages tapés et les annonces semblent trop rapides ; 0,85 est un peu plus lent. La hauteur de la voix reste la même."
         },
         "sections": {
           "chime_options": {
@@ -527,7 +531,8 @@
         "ios_color_purple": "Violet",
         "ios_color_teal": "Bleu canard",
         "ios_color_coral": "Corail",
-        "ios_color_pink": "Rose"
+        "ios_color_pink": "Rose",
+        "setup_speech_rate": "Vitesse de parole"
       }
     },
     "audio_processing": {
