@@ -211,7 +211,8 @@ def check_doorbell_changes(browser, errors) -> None:
       window.roomcallDoorbell = {entity: "binary_sensor.porch", camera: null, name: "Porch"};
       h.hass.states["binary_sensor.porch"] = {state: "off", last_changed: new Date().toISOString(),
         attributes: {}};
-      card._doorbellFetched = 0;
+      // Just fetched: the throttled refresh must still happen once the minute is up.
+      card._doorbellFetched = Date.now() - 59800;
       card.hass = {...h.hass};
     }""")
     page.wait_for_function("document.querySelector('roomcall-card')._doorbell?.name === 'Porch'")

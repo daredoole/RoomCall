@@ -134,6 +134,8 @@ class RoomCallCard extends HTMLElement {
   }
 
   disconnectedCallback() {
+    clearTimeout(this._doorbellRetry);
+    this._doorbellRetry = null;
     window.removeEventListener("blur", this._windowBlur);
     this._communication?.close();
     this._communication = null;
@@ -178,8 +180,16 @@ class RoomCallCard extends HTMLElement {
   }
 
   async _refreshDoorbell() {
-    // Doorbell options can change while a wall tablet stays open; re-read them now and then.
-    if (Date.now() - (this._doorbellFetched || 0) < 60000) return;
+    // Doorbell options can change while a wall tablet stays open; re-read them at most once a
+    // minute, and when it's too soon, try again once the minute is up.
+    const wait = 60000 - (Date.now() - (this._doorbellFetched || 0));
+    if (wait > 0) {
+      this._doorbellRetry ||= setTimeout(() => {
+        this._doorbellRetry = null;
+        this._refreshDoorbell();
+      }, wait);
+      return;
+    }
     this._doorbellFetched = Date.now();
     try {
       this._setDoorbell((await this._hass.callApi("GET", "roomcall/rooms")).doorbell);
