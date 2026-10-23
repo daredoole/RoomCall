@@ -28,7 +28,7 @@ anonymous automation context cannot administer setup.
 
 ## Discover the contract
 
-Call `roomcall__catalog` with `{}`. It returns API version `1.0`, all 16 operations,
+Call `roomcall__catalog` with `{}`. It returns API version `1.0`, all available operations,
 their input schemas and common response envelope, administration/read-only flags,
 and the bootstrap recipe. HA's MCP bridge controls which native tool metadata it
 forwards; RoomCall exposes response schemas inside this catalog, without assuming

@@ -1,5 +1,9 @@
 # How it works
 
+This page describes the **standalone server**. The Home Assistant integration also
+supports [live streaming, message jobs and optional retention](communication.md).
+Its [playback pipeline](home-assistant.md#how-playback-works) is different.
+
 ```mermaid
 sequenceDiagram
     participant Phone as Phone (browser)
@@ -18,7 +22,7 @@ sequenceDiagram
 1. **Discovery** browses mDNS for `_sonos._tcp`, `_raop._tcp`, `_airplay._tcp` and
    `_googlecast._tcp`, then keeps one entry per device, preferring native Sonos control.
 2. **Recording** happens in the browser with echo cancellation and noise suppression.
-3. **Conversion** turns the recording into mono 128 kbps MP3 that every speaker accepts.
+3. **Conversion** uses ffmpeg to prepare mono 128 kbps MP3; device support still needs testing.
 4. **Fan-out** sends the clip URL to every target speaker in parallel. Each backend:
     - **Sonos** — snapshots the current queue/volume, plays the clip, restores with a fade.
     - **AirPlay** — streams the clip with pyatv.
@@ -27,18 +31,18 @@ sequenceDiagram
 
 ## Latency
 
-RoomCall is half-duplex push-to-talk: the delay is measured from when you **release** the button.
+The standalone browser records first and uploads after you **release** the button.
+Delay includes upload, conversion and the chosen backend's startup/buffering.
+There is no hardware latency benchmark or fixed timing guarantee. A successful
+backend result does not establish audibility, and the Sonos backend can await
+playback/restoration before returning its result.
 
-| Speaker | Typical delay | Why |
-|---|---|---|
-| Sonos | 1–1.5 s | Speaker downloads the clip and starts its player |
-| Cast | 1–2 s | Receiver app launch on first play |
-| AirPlay | ~2 s | AirPlay's fixed playback buffer |
-
-Live, streaming audio while you are still talking is on the [roadmap](roadmap.md); it lowers the
-perceived delay but cannot beat each protocol's own buffer.
+Live streaming is implemented in the Home Assistant integration, not in this
+standalone API. Different devices and routes can start at different times.
 
 ## Privacy
 
-Recordings never leave your network. Nothing is written to disk; clips are dropped after two
-minutes. Set a `token` if anything untrusted can reach the server.
+The standalone server holds clips in memory and stops serving them after two
+minutes (or earlier through bounded-store eviction). Delivery goes to the speaker
+addresses you configure/discover; transport and network exposure are your deployment's
+responsibility. Set a `token` and use HTTPS if untrusted clients can reach the server.

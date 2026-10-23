@@ -1,5 +1,9 @@
 # HTTP API
 
+This is the **standalone server** API. For the Home Assistant integration, use
+the authenticated [communication API](communication.md#actions-and-api) or
+[`roomcall.broadcast`](home-assistant.md#roomcallbroadcast-action).
+
 All `/api/*` endpoints require `X-RoomCall-Token` when a `token` is configured.
 
 | Method | Path | Description |
@@ -33,9 +37,15 @@ curl -X POST -H "Content-Type: audio/mpeg" --data-binary @hello.mp3 \
 | Status | Meaning |
 |---|---|
 | `200` | Every speaker accepted the clip |
-| `207` | Some speakers failed — see `results` |
+| `207` | At least one speaker failed (possibly all) — see `results` |
+| `400` | Empty recording |
+| `401` | Missing/invalid configured API token |
 | `404` | No speaker matches `target` |
+| `413` | Upload exceeds the 10 MiB limit |
 | `422` | The audio could not be converted |
+
+Results report backend completion/errors, not proof of acoustic playback. This
+API does not expose HA's message jobs or independent playback evidence.
 
 ## CLI
 

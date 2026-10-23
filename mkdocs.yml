@@ -45,6 +45,7 @@ nav:
   - How it works: how-it-works.md
   - HTTP API: api.md
   - Troubleshooting: troubleshooting.md
+  - Screenshots and validation: screenshots.md
   - Roadmap: roadmap.md
 
 markdown_extensions:

@@ -6,6 +6,9 @@ rooms are Home Assistant areas.
 
 ![RoomCall card on a desktop dashboard](assets/ha-dashboard-desktop.png)
 
+Screenshots render the real card with sample data and simulated devices in a test
+harness. See [capture sources and validation limits](screenshots.md).
+
 ## Before you start
 
 - **Home Assistant 2025.6** or newer, with [HACS](https://hacs.xyz/docs/use/) installed.
@@ -14,6 +17,9 @@ rooms are Home Assistant areas.
 - **A reachable internal URL.** Speakers download each clip from Home Assistant. Check
   *Settings → System → Network → Local network* is an address your speakers can reach
   (for example `http://192.168.1.10:8123`).
+
+2025.6 is the declared integration minimum; CI exercises HA 2026.2.3 and 2026.10.2.
+The [native app](native-ios.md) requires HA 2026.10 or later for PKCE sign-in.
 
 ## 1. Install
 
@@ -65,8 +71,9 @@ Pick your speakers. Everything else is under **Configure** on the integration:
     announce-capable native entities and skips Music Assistant mirrors by default.
 
 !!! info "Rooms come from areas"
-    Each speaker's room is its entity area, or its device area. Speakers without an area only
-    play when you talk to **Everywhere** — assign them in *Settings → Areas*.
+    Each speaker's room is its entity area, or its device area. Speakers without
+    an area remain available through **Everywhere** or an explicit speaker ID,
+    but have no room button — assign them in *Settings → Areas*.
 
 ## 3. Add the push-to-talk card
 
@@ -89,13 +96,15 @@ live: true                     # stream while you talk (false: record, then send
 <div class="grid" markdown>
 ![Pick a room or a person](assets/ha-card-mobile.png){ width="240" }
 ![Hold to talk](assets/ha-card-talking.png){ width="240" }
-![Delivered](assets/ha-card-delivered.png){ width="240" }
+![Playback requests accepted; audibility unconfirmed](assets/ha-card-delivered.png){ width="240" }
 </div>
 
-Hold the button and talk. With **live calls** (the default) the speakers start playing about a
-second after you press, while you are still talking, and stop when you let go. Turn it off with
-`live: false` to record the whole message first and then send it. Either way the card reports
-which speakers played it. If your microphone records silence (wrong input
+Hold the button and talk. With **live calls** (the default), audio streams while
+you hold the button. Speaker startup, buffering and queues determine when playback
+begins and ends; release ends capture, not necessarily speaker playback. Set
+`live: false` to record the whole message first and then send it. The card reports
+playback-request acceptance and separate device evidence, not whether anyone heard it.
+If your microphone records silence (wrong input
 selected), the card says so instead of sending an empty clip.
 
 - **Urgent** (top right) plays the next call at the urgent volume and ignores Do Not Disturb
@@ -112,7 +121,9 @@ selected), the card says so instead of sending an empty clip.
 ![Reply mode](assets/ha-card-reply.png){ width="240" }
 </div>
 
-`compact` fits a single row of a dashboard. `kiosk` is a big button for a wall tablet.
+`compact` reduces the talk control's size while retaining destination and messaging
+controls. It still needs space for wrapped room buttons. `kiosk` provides a big
+button for a wall tablet.
 
 ### Settings panel
 
@@ -162,9 +173,11 @@ tablet's card gets `room: kitchen`).
 
 ## AV receivers and TV boxes
 
-Speakers that support *announce* (Sonos, Google/Nest, HomePod) mix the call over your music.
-Others — AV receivers through HEOS, Android TV / Google TV boxes such as onn through Cast — have
-to stop what they're doing to play the call. RoomCall puts them back afterwards:
+RoomCall requests `announce: true` only when a player advertises support. Mixing,
+ducking and interruption behavior depend on the integration and device. Other
+routes — such as HEOS receivers or TV boxes through Cast — may interrupt the
+current source. With restoration enabled, RoomCall attempts to restore supported
+state after the playback lease:
 
 | Before the call | After the call |
 |---|---|
@@ -225,8 +238,9 @@ data:
   media_url: http://homeassistant.local:8123/local/chime.mp3
 ```
 
-With [Chime TTS](https://github.com/nimroddolev/chime_tts) installed, messages get the same chime
-as push-to-talk. The action returns which speakers played the message, so scripts can react:
+RoomCall prepares its configured chime and speech together; Chime TTS is not required.
+With the chime off, it uses HA's direct TTS route. The action returns per-speaker
+request results, so scripts can react to failures:
 
 ```yaml
 - action: roomcall.broadcast
@@ -235,7 +249,7 @@ as push-to-talk. The action returns which speakers played the message, so script
 - if: "{{ not call.ok }}"
   then:
     - action: notify.mobile_app_phone
-      data: { message: "Basement speaker missed the laundry call" }
+      data: { message: "Basement playback request failed; check RoomCall history" }
 ```
 
 Siri, Apple Watch and CarPlay can call this too — see [Siri and Shortcuts](siri-shortcuts.md).
@@ -267,13 +281,19 @@ Assist intent, every action and field, and how announcements are created through
 **Live calls** (the default) stream from the card over Home Assistant's WebSocket: ffmpeg encodes
 the audio to MP3 as it arrives (chime first) and speakers play one growing URL, so they start
 while you are still talking. **Recorded calls** (`live: false`, typed messages and automations)
-are converted to MP3 in one go and kept in memory for two minutes behind an unguessable URL.
+are prepared before dispatch. RoomCall-hosted recording/chime clips use an
+unguessable URL available for up to two minutes; external URLs and direct TTS
+have their own provider lifetimes.
 Either way each speaker gets `media_player.play_media`, a short moment apart. Speakers that support it get `announce: true`,
 so Sonos lowers the music instead of stopping it.
 
 Uploads, history and replays require a signed-in Home Assistant user. Clip and chime URLs are
 unauthenticated because speakers cannot sign in, which is why clips are random and short-lived.
-The last 20 calls are kept in memory for 24 hours for replay; they are not written to disk.
+History holds at most 20 records in memory. Available recording audio expires after
+24 hours (or earlier through eviction/reload); record metadata can remain until
+eviction/reload. The sensor exposes the last 10 records. Optional voicemail and
+durable jobs explicitly persist their own data in HA storage; prepared speech
+uses a separate bounded in-memory cache. See [retention settings](communication.md).
 
 !!! warning "Keep the internal URL on plain http"
     Speakers download clips from Home Assistant's internal URL. If you put Home Assistant behind

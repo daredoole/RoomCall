@@ -56,6 +56,17 @@ not required. The optional [Apple Home camera bridge](apple-home.md) is a separa
 There is no App Store or TestFlight distribution configured. Find the simulator
 and unsigned-device artifacts in successful [iOS workflow runs](https://github.com/daredoole/RoomCall/actions/workflows/ios.yml).
 Artifact downloads require GitHub access and expire according to GitHub's retention policy.
+The [0.18.2 release](https://github.com/daredoole/RoomCall/releases/tag/v0.18.2) also
+attaches **RoomCall-0.18.2-unsigned.ipa** (build 3) and a source/checksum record.
+It is a separate CI artifact, outside the integration/Python provenance bundle.
+
+Publishing an unsigned IPA does not require a paid Apple membership. Free Xcode
+Personal Team provisioning expires after seven days and limits capabilities;
+signing-tool support for this app's extension/app group must be checked. TestFlight
+and App Store distribution require the publisher's paid Developer Program
+membership; testers do not need paid developer accounts. See
+[Apple's account limits](https://developer.apple.com/help/account/basics/about-your-developer-account)
+and [distribution options](https://developer.apple.com/programs/).
 
 Use a trusted HTTPS HA address. Local networking is permitted, but certificate
 validation is not bypassed and App Transport Security is not globally disabled.
@@ -129,6 +140,8 @@ separately exercises narrow/fixed-height layouts, keyboard access and WebRTC cle
 
 These are actual simulator captures from debug-only demo mode, with sample rooms
 and no server credentials. They illustrate the interface, not real speaker delivery.
+Their source run, hashes and refresh instructions are in the
+[screenshot record](screenshots.md).
 Frame exported CI captures with:
 
 ```bash

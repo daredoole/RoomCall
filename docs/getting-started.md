@@ -9,23 +9,28 @@
 
 ## Install
 
+The standalone package is currently distributed as a wheel in GitHub releases,
+not on PyPI. These commands install release **0.18.2** with its speaker extras:
+
 === "pipx"
 
     ```bash
-    pipx install "roomcall[all]"
+    pipx install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.18.2/roomcall-0.18.2-py3-none-any.whl"
     ```
 
 === "uv"
 
     ```bash
-    uv tool install "roomcall[all]"
+    uv tool install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.18.2/roomcall-0.18.2-py3-none-any.whl"
     ```
 
 === "Only some speaker types"
 
     ```bash
-    pipx install "roomcall[sonos,cast]"   # extras: sonos, airplay, cast
+    pipx install "roomcall[sonos,cast] @ https://github.com/daredoole/RoomCall/releases/download/v0.18.2/roomcall-0.18.2-py3-none-any.whl"
     ```
+
+    Available extras: `sonos`, `airplay`, `cast` and `all`.
 
 Install ffmpeg from your package manager (`sudo dnf install ffmpeg`, `sudo apt install ffmpeg`).
 
@@ -56,7 +61,7 @@ wrong interface.
 
 Browsers block the microphone on plain `http://` LAN addresses. Pick one:
 
-- **Reverse proxy (recommended):** add RoomCall to Caddy/Nginx/Traefik with a local certificate and
+- **Reverse proxy (recommended):** add RoomCall to Caddy/Nginx/Traefik with a certificate trusted by the phone and
   open `https://roomcall.home.arpa`.
 - **Home Assistant:** use the [HTTP API](api.md) from automations instead of the browser mic.
 - **Testing:** open `http://localhost:8765` on the machine running RoomCall.

@@ -14,14 +14,18 @@ button; what you say plays in that room with the chime first, exactly like a cal
 1. **Settings → Devices & services → RoomCall → Configure → Apple Home** → turn on
    *Add rooms to Apple Home*.
 2. A notification shows a pairing code. In the **Home** app: **+** → **Add Accessory** →
-   **More options…** → **RoomCall**, and enter the code.
-3. Assign each room camera to the matching room in Apple Home.
+   **More options…** → choose a room's **Intercom** accessory and enter the code.
+3. Repeat for each room camera and assign it to the matching Apple Home room.
+   Rooms are separate accessories, using consecutive ports from the configured
+   HomeKit port (default 21099), rather than cameras behind one bridge.
 
 ## Talk to a room
 
-Open the room's camera tile and tap the **microphone**, then talk. The room starts hearing you
-(chime first) as soon as you start speaking, and the call ends when you pause or turn the
-microphone off, so you can keep it on for a back-and-forth.
+Open the room's camera tile and tap the **microphone**, then talk. Voice activity
+starts a live phrase stream, with the configured chime. Pausing or turning the
+microphone off ends that phrase; buffering and active queues can delay actual
+playback. Keeping the microphone on can send subsequent phrases; a speaker's own
+microphone is not a return-audio channel.
 
 - **Apple Watch:** open the Home app → the camera → tap the microphone.
 - **Control Center:** add the Home controls and pin the room camera.
@@ -41,15 +45,20 @@ sequenceDiagram
     R->>S: each phrase plays as a call (chime, announce, restore)
 ```
 
-The camera "video" is a picture of the room name — RoomCall has no camera, it only uses the
-camera tile for its talk button. Nothing leaves your network.
+The camera "video" is a generated room-name picture, not footage of the room.
+RoomCall uses the camera tile for its talk button. The HomeKit connection and HA
+speaker route handle this audio; remote Home access and optional notifications or
+speech processing follow your Apple Home/HA configuration.
 
 ## Troubleshooting
 
 - **RoomCall doesn't appear when adding an accessory.** HomeKit uses mDNS (Bonjour). The iPhone
   and Home Assistant must be on the same network, or mDNS must be reflected between VLANs.
-- **Port in use.** Change *HomeKit port* (default 21099) if another bridge uses it.
+- **Port in use.** Choose an unused consecutive port range starting at *HomeKit port*
+  (default 21099), with one port per room.
 - **Nothing plays.** Open the camera, tap the microphone, say a full sentence and pause. Check
   `sensor.roomcall_last_call` for the call and its delivery.
-- **Start over.** Remove RoomCall from the Home app, turn the option off and on again, and pair
-  with the new code.
+- **Start over.** Toggling the option preserves pairing state and the code; it is
+  not a factory reset. Remove/re-add the affected room accessory in Apple Home
+  using the displayed code. If pairing still fails, collect diagnostics before
+  changing stored pairing state.

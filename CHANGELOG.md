@@ -4,6 +4,13 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- Audit current guides against 0.18.2: correct standalone installation, playback
+  evidence/latency, retention, Apple Home pairing, Siri selectors, iOS signing and
+  release provenance. Refresh screenshots/demo, preserve complete card captures,
+  and verify reviewed assets plus their interface inputs in docs CI.
+
 ## 0.18.2 — 2026-10-23
 
 - Native live calls finish on HA’s playback-request acceptance receipt instead of

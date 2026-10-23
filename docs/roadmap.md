@@ -33,7 +33,7 @@ Track progress and vote on the [GitHub issues](https://github.com/daredoole/Room
 
 - [x] Visual card editor, notify entity per room, blueprints, Repairs, diagnostics
 - [x] Spanish, German, French and Dutch
-- [x] Brand icon shipped with the integration; signed releases; OpenSSF Scorecard
+- [x] Brand icon shipped with the integration; signed build provenance for integration/Python release artifacts; OpenSSF Scorecard
 
 ## v0.7 — Announcements and AI ✅
 
@@ -93,9 +93,9 @@ Details and limitations: [Communication](communication.md), [Native iOS app](nat
 
 ## Further hardware work
 
-- [x] **Hands-free talk-back** from rooms with only a Sonos: an Assist satellite in the room
-      (Atom Echo, ESP32-S3, Home Assistant Voice) listens after each call and the reply is spoken
+- [x] **Hands-free talk-back** with an additional Assist satellite in a Sonos room:
+      compatible satellite hardware listens after eligible room-to-room calls and the reply is spoken
       in the caller's room ([#11](https://github.com/daredoole/RoomCall/issues/11))
 - [x] **Answer the door from any room or the watch**: rooms ring, phones and cards get the snapshot and an Answer button that opens the camera's live view, with two-way talk where the camera supports it ([#21](https://github.com/daredoole/RoomCall/issues/21))
-- [ ] Listed in the default HACS store — submitted, in review ([#25](https://github.com/daredoole/RoomCall/issues/25))
+- [ ] Listed in the default HACS store — submission still open at audit time ([hacs/default#12345](https://github.com/hacs/default/pull/12345)); custom-repository installation remains documented
 - [ ] Per-room chimes
