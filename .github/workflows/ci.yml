@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -109,7 +113,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
       - run: uv venv && uv pip install playwright
-      - run: uv run playwright install --with-deps chromium
+      - name: Install Chromium
+        timeout-minutes: 5
+        run: uv run playwright install chromium
+      - name: Ensure Chromium runtime dependencies
+        timeout-minutes: 5
+        run: |
+          if ! uv run python -c "from playwright.sync_api import sync_playwright; p=sync_playwright().start(); b=p.chromium.launch(); b.close(); p.stop()"; then
+            uv run playwright install-deps chromium
+          fi
       - run: uv run python scripts/qa_communication.py
 
   docs:
