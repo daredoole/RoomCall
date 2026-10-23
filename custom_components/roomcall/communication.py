@@ -29,7 +29,9 @@ TARGETS = {
     vol.Optional("priority", default="normal"): vol.In(("normal", "urgent")),
     vol.Optional("volume"): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
 }
+SPEECH_PROFILE = vol.In(("fast", "balanced", "quality"))
 MESSAGE = {
+    vol.Optional("speech_profile"): SPEECH_PROFILE,
     **TARGETS,
     vol.Optional("message"): vol.All(cv.string, vol.Length(min=1, max=4000)),
     vol.Optional("media_url"): vol.All(cv.string, vol.Length(min=1, max=2048)),
@@ -83,6 +85,9 @@ SCHEMAS = {
     "diagnose": vol.Schema(TARGETS),
     "preview": vol.Schema(TARGETS),
     "send": vol.Schema(MESSAGE),
+    "speech": vol.Schema(
+        {**MESSAGE, vol.Optional("action", default="prepare"): vol.In(("prepare", "clear"))}
+    ),
     "ask": vol.Schema(
         {
             vol.Required("satellites"): vol.All(cv.entity_ids, vol.Length(min=1, max=16)),
@@ -264,12 +269,27 @@ async def _execute(hass, operation, values, context, *, assistant=None):
         data = hass.data.get(DOMAIN)
         if data is None:
             raise Problem("not_ready", retryable=True)
+        if operation == "speech":
+            if values.pop("action") == "clear":
+                from .onboarding import require_admin
+
+                await require_admin(hass, context)
+                data.speech_cache.clear()
+                return {"ok": True}
+            await validate_targets(hass, values, context, assistant)
+            if not values.get("message") or values.get("media_url"):
+                raise Problem("content_required")
+            from .messages import request_for
+
+            request = await request_for(hass, data, {**values, "_prepare": True}, context)
+            return {"ok": True, "prepared": True, "bytes": len(request.audio), "audible": None}
         if operation == "tasks":
             return await _tasks(hass, data, values, context, assistant)
         if operation in ("discover", "diagnose"):
             from .shortcuts import room_choices
 
             result = discover(hass, data)
+            result["speech_profiles"] = sorted(data.speech_profiles)
             result["shortcut_choices"] = await room_choices(
                 hass, data, context, assistant=assistant
             )

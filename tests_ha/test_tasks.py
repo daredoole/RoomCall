@@ -141,8 +141,9 @@ async def test_laundry_stays_open_until_someone_takes_the_clothes_out(
     alex.clear()
     tts_audio.reset_mock()
     await _advance(hass, 10)
-    # The reminder replays what the dryer said when the task opened.
-    assert _spoken(tts_audio) == ["The Dryer is done."] and len(played) == 2
+    # A reminder reuses prepared speech while still dispatching to both speakers.
+    assert not _spoken(tts_audio) and len(played) == 2
+    assert hass.data[DOMAIN].metrics.counters["speech_cache_hits"] == 1
     assert len(alex) == 1 and hass.states.get(sensor).state == "open"
 
     # "Remind me later" clears the notification and waits 30 minutes.
