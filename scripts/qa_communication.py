@@ -238,6 +238,24 @@ def check_doorbell_changes(browser, errors) -> None:
     context.close()
 
 
+def check_phone_tab(browser, errors) -> None:
+    """Settings → iPhone app shows a scannable connect code and a matching link."""
+    context = browser.new_context(viewport={"width": 390, "height": 844})
+    page = context.new_page()
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    open_card(page, "mobile", "dark")
+    card = page.locator("roomcall-card")
+    card.get_by_role("button", name="Settings", exact=True).click()
+    dialog = card.get_by_role("dialog", name="Settings", exact=True)
+    dialog.get_by_role("tab", name="iPhone app", exact=True).click()
+    qr = dialog.get_by_role("img", name="QR code to connect the RoomCall iPhone app", exact=True)
+    expect(qr).to_be_visible()
+    link = dialog.get_by_role("link", name="Open in the RoomCall app", exact=True)
+    assert link.get_attribute("href") == "roomcall://connect?server=http%3A%2F%2Flocalhost%3A8123"
+    assert dialog.evaluate("e=>e.scrollWidth<=e.clientWidth")
+    context.close()
+
+
 def check_tasks(browser, errors) -> None:
     """An open task is confirmed with its own words; there is no dismiss button."""
     for width in (240, 390, 900):
@@ -288,6 +306,7 @@ def main() -> None:
         check_task_added_later(browser, errors)
         check_doorbell(browser, errors)
         check_doorbell_changes(browser, errors)
+        check_phone_tab(browser, errors)
         for width, height in [(390, 844), (1280, 900)]:
             context = browser.new_context(viewport={"width": width, "height": height})
             context.grant_permissions(["microphone"], origin=ORIGIN)

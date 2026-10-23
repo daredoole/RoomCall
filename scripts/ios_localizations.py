@@ -23,10 +23,13 @@ def main() -> None:
             "InfoPlist.strings": {
                 "NSMicrophoneUsageDescription": values["ios_microphone_permission"],
                 "NSLocalNetworkUsageDescription": values["ios_local_network_permission"],
+                "NSCameraUsageDescription": values["ios_camera_permission"],
             },
             "AppShortcuts.strings": {
                 "Open ${applicationName}": values["ios_phrase_open"],
                 "Announce with ${applicationName}": values["ios_phrase_announce"],
+                "Mark a ${applicationName} task done": values["ios_phrase_done"],
+                "Set ${applicationName} Do Not Disturb": values["ios_phrase_dnd"],
             },
         }
         for filename, strings in outputs.items():
