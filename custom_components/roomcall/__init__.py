@@ -376,6 +376,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CALL_FINISHED, talk_back))
     entry.async_on_unload(doorbell.async_track(hass, data))
     hass.data[DOMAIN] = data
+    await data.jobs.load()
     data.announcer = Announcer(hass, entry)
     await data.announcer.async_load()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

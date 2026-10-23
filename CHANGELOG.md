@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.15.0 — 2026-10-23
+
+- Opt-in durable messages persist jobs and idempotency across HA restarts. Only queued, unexpired work resumes; potentially dispatched work is interrupted and never replayed automatically.
+
 ## 0.14.0 — 2026-10-23
 
 - Fast, balanced and quality speech profiles select explicit TTS engines and voices.

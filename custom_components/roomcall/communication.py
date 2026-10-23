@@ -31,6 +31,7 @@ TARGETS = {
 }
 SPEECH_PROFILE = vol.In(("fast", "balanced", "quality"))
 MESSAGE = {
+    vol.Optional("durable", default=False): cv.boolean,
     vol.Optional("speech_profile"): SPEECH_PROFILE,
     **TARGETS,
     vol.Optional("message"): vol.All(cv.string, vol.Length(min=1, max=4000)),
@@ -327,7 +328,10 @@ async def _execute(hass, operation, values, context, *, assistant=None):
                 raise Problem("content_required")
             if values.get("voicemail") and not data.voicemail_enabled:
                 raise Problem("voicemail_disabled")
-            return {"ok": True, **data.jobs.submit(values, context, assistant).summary()}
+            job = data.jobs.submit(values, context, assistant)
+            if values.get("durable"):
+                await data.jobs.save()
+            return {"ok": True, **job.summary()}
         if operation == "ask":
             known = {
                 e["entity_id"]

@@ -455,7 +455,10 @@
         "ios_widget_tasks_description": "Openstaande taken van omroepberichten.",
         "ios_camera_permission": "RoomCall scant de QR-code op je RoomCall-kaart om te verbinden.",
         "ios_phrase_done": "Een ${applicationName}-taak als gedaan markeren",
-        "ios_phrase_dnd": "Niet storen van ${applicationName} instellen"
+        "ios_phrase_dnd": "Niet storen van ${applicationName} instellen",
+        "durable_key_required": "Blijvende berichten vereisen een idempotentiesleutel.",
+        "job_interrupted": "Afspelen kan voor de onderbreking zijn begonnen. Controleer de luidspreker voordat je opnieuw verzendt.",
+        "interrupted": "Onderbroken; afspelen kan zijn begonnen."
       }
     },
     "audio_processing": {

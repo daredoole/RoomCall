@@ -455,7 +455,10 @@
         "ios_widget_tasks_description": "Announcement tasks waiting to be done.",
         "ios_camera_permission": "RoomCall scans the QR code on your RoomCall card to connect.",
         "ios_phrase_done": "Mark a ${applicationName} task done",
-        "ios_phrase_dnd": "Set ${applicationName} Do Not Disturb"
+        "ios_phrase_dnd": "Set ${applicationName} Do Not Disturb",
+        "durable_key_required": "Durable messages require an idempotency key.",
+        "job_interrupted": "Playback may have started before interruption. Check the speaker before sending a new message.",
+        "interrupted": "Interrupted; playback may have started."
       }
     },
     "audio_processing": {

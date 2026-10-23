@@ -455,7 +455,10 @@
         "ios_widget_tasks_description": "Tareas de anuncios por hacer.",
         "ios_camera_permission": "RoomCall escanea el código QR de tu tarjeta de RoomCall para conectarse.",
         "ios_phrase_done": "Marcar como hecha una tarea de ${applicationName}",
-        "ios_phrase_dnd": "Ajustar No molestar de ${applicationName}"
+        "ios_phrase_dnd": "Ajustar No molestar de ${applicationName}",
+        "durable_key_required": "Los mensajes persistentes requieren una clave de idempotencia.",
+        "job_interrupted": "La reproducción puede haber empezado antes de la interrupción. Comprueba el altavoz antes de enviar otro mensaje.",
+        "interrupted": "Interrumpido; la reproducción puede haber empezado."
       }
     },
     "audio_processing": {

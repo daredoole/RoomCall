@@ -455,7 +455,10 @@
         "ios_widget_tasks_description": "Tâches d'annonces en attente.",
         "ios_camera_permission": "RoomCall scanne le code QR de votre carte RoomCall pour se connecter.",
         "ios_phrase_done": "Marquer une tâche ${applicationName} comme faite",
-        "ios_phrase_dnd": "Régler Ne pas déranger de ${applicationName}"
+        "ios_phrase_dnd": "Régler Ne pas déranger de ${applicationName}",
+        "durable_key_required": "Les messages persistants nécessitent une clé d’idempotence.",
+        "job_interrupted": "La lecture a pu démarrer avant l’interruption. Vérifiez le haut-parleur avant un nouvel envoi.",
+        "interrupted": "Interrompu ; la lecture a pu commencer."
       }
     },
     "audio_processing": {
