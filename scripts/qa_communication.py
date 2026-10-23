@@ -24,9 +24,18 @@ def check_guided_setup(browser, errors) -> None:
         speakers = wizard.locator('fieldset input[type="checkbox"]')
         for index in range(1, speakers.count()):
             speakers.nth(index).uncheck()
-        wizard.get_by_role("spinbutton").fill("0.3")
+        wizard.get_by_role("spinbutton", name="Announcement volume").fill("0.3")
+        wizard.get_by_role("spinbutton", name="Speaking speed").fill("0.85")
         wizard.get_by_role("button", name="Review setup plan", exact=True).click()
         expect(wizard.locator(".setup-review")).to_contain_text("0.3")
+        expect(wizard.locator(".setup-review")).to_contain_text("Speaking speed: 0.85\u00d7")
+        assert (
+            page.evaluate(
+                "ROOMCALL_HARNESS.requests.findLast(r=>r.request?.action==='plan')"
+                ".request.settings.speech_rate"
+            )
+            == 0.85
+        )
         assert (
             page.evaluate("ROOMCALL_HARNESS.requests.filter(r=>r.request?.action==='apply').length")
             == 0
@@ -41,7 +50,9 @@ def check_guided_setup(browser, errors) -> None:
         card.get_by_role("button", name="Settings", exact=True).click()
         wizard = card.locator(".setup-wizard")
         expect(wizard.locator(".setup-review")).to_contain_text("Applied")
-        expect(wizard.locator('input[type="number"]')).to_have_value("0.3")
+        # The applied plan hides the form, so find its fields by label rather than by role.
+        expect(wizard.locator('input[aria-label^="Announcement volume"]')).to_have_value("0.3")
+        expect(wizard.locator('input[aria-label="Speaking speed"]')).to_have_value("0.85")
         wizard.get_by_role("button", name="Play test sound", exact=True).click()
         wizard.get_by_role("button", name="I heard it", exact=True).click()
         expect(wizard.locator(".wizard-status")).to_contain_text("Setup verified")

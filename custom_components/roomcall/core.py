@@ -284,16 +284,20 @@ async def to_playable(
     chime: str | None = None,
     chime_url: str | None = None,
     processing: str = "off",
+    tempo: float = 1.0,
 ) -> tuple[bytes, str]:
     """Return ``(audio, content_type)`` playable by every speaker (MP3/WAV).
 
     ``chime`` is a built-in style from :mod:`chimes`; ``chime_url`` (a file or URL ffmpeg can
-    read) takes precedence over it. Either is prepended to the recording.
+    read) takes precedence over it. Either is prepended to the recording. ``tempo`` speeds up
+    or slows down the voice (not the chime) without changing its pitch.
     """
     base = content_type.split(";", 1)[0].strip().lower()
     filters = f"volume={gain_db}dB"
     if processing == "speech":
         filters += ",highpass=f=100,afftdn=nf=-25,dynaudnorm=f=150:g=15,alimiter=limit=0.9"
+    if tempo != 1:
+        filters += f",atempo={tempo:g}"
     if chime_url:
         inputs = ["-i", chime_url]
         graph = chimes.chime_filter(1, 1, from_file=True)
@@ -302,7 +306,7 @@ async def to_playable(
         graph = chimes.chime_filter(1, len(chimes.STYLES[chime]))
     else:
         inputs, graph = [], ""
-    if base in PLAYABLE and not gain_db and not graph and processing == "off":
+    if base in PLAYABLE and not gain_db and not graph and processing == "off" and tempo == 1:
         return data, "audio/mpeg" if PLAYABLE[base] == "mp3" else "audio/wav"
     if graph:
         voice = f"[0:a]aresample=44100,aformat=channel_layouts=mono,{filters}[voice]"

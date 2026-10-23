@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct RoomCallApp: App {
     @StateObject private var model = AppModel()
+    @AppStorage(ThemeSettings.modeKey, store: RoomCache.defaults) private var mode = ColorMode.auto
 
     var body: some Scene {
         WindowGroup {
@@ -11,7 +12,7 @@ struct RoomCallApp: App {
                 .onReceive(NotificationCenter.default.publisher(for: Notification.Name("roomcall.openRoom"))) { _ in
                     model.consumePendingRoom()
                 }
-                .demoAppearance()
+                .preferredColorScheme(demoScheme ?? mode.scheme)
                 .task { applyDemoState() }
         }
     }
@@ -29,18 +30,17 @@ struct RoomCallApp: App {
         if Demo.arguments.contains("-RoomCallDemoTalking") { model.talk.showDemoTalking() }
         #endif
     }
-}
 
-extension View {
-    @ViewBuilder func demoAppearance() -> some View {
+    /// Screenshot runs pick light or dark explicitly.
+    private var demoScheme: ColorScheme? {
         #if DEBUG
         switch Demo.value("-RoomCallDemoAppearance") {
-        case "dark": preferredColorScheme(.dark)
-        case "light": preferredColorScheme(.light)
-        default: self
+        case "dark": return .dark
+        case "light": return .light
+        default: return nil
         }
         #else
-        self
+        return nil
         #endif
     }
 }

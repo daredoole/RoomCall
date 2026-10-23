@@ -6,6 +6,8 @@
 "ios_answer_hint" = "Terugpraten met de bezoeker gaat in de cameraweergave van Home Assistant, als je camera tweerichtingsaudio ondersteunt.";
 "ios_answer_in_ha" = "Opnemen in Home Assistant";
 "ios_answers" = "Antwoorden";
+"ios_appearance" = "Uiterlijk";
+"ios_appearance_hint" = "Glas en Material kleuren de app en widgets met jouw kleur; Standaard iOS gebruikt het systeemuiterlijk.";
 "ios_ask" = "Vragen";
 "ios_ask_hint" = "De satelliet stelt je vraag hardop en luistert naar het antwoord.";
 "ios_automation" = "Automatisering";
@@ -13,8 +15,15 @@
 "ios_camera_permission" = "RoomCall scant de QR-code op je RoomCall-kaart om te verbinden.";
 "ios_choose_room" = "Kies waar je wilt spreken";
 "ios_close" = "Sluiten";
+"ios_color_blue" = "Blauw";
+"ios_color_coral" = "Koraal";
+"ios_color_mode" = "Licht of donker";
+"ios_color_pink" = "Roze";
+"ios_color_purple" = "Paars";
+"ios_color_teal" = "Petrol";
 "ios_connecting_audio" = "Audio verbinden…";
 "ios_connection_failed" = "RoomCall kon de verbinding niet voltooien. Controleer Home Assistant en probeer opnieuw.";
+"ios_custom_color" = "Eigen kleur";
 "ios_delivery_failed" = "Sommige afspeelverzoeken zijn mislukt. Controleer Home Assistant.";
 "ios_delivery_unknown" = "De afleverbevestiging is nog niet binnen. Sommige luidsprekers spelen mogelijk al. Controleer de oproepgeschiedenis voordat je opnieuw verzendt.";
 "ios_dnd" = "Niet storen";
@@ -38,6 +47,9 @@
 "ios_microphone_denied" = "Sta microfoontoegang toe in Instellingen om te praten.";
 "ios_microphone_permission" = "RoomCall stuurt je stem naar de kamer die je kiest.";
 "ios_mode" = "Modus";
+"ios_mode_auto" = "Zoals iPhone";
+"ios_mode_dark" = "Donker";
+"ios_mode_light" = "Licht";
 "ios_my_room" = "Deze telefoon is meestal in";
 "ios_my_room_hint" = "Antwoorden en handsfree terugpraten komen terug in deze ruimte.";
 "ios_network_slow" = "De verbinding is te langzaam voor live audio. De uitzending is gestopt.";
@@ -83,6 +95,10 @@
 "ios_sign_in_description" = "Maak verbinding met Home Assistant. Je account blijft in het beveiligde aanmeldscherm.";
 "ios_sign_out" = "Afmelden";
 "ios_someone_at" = "Er staat iemand bij %@.";
+"ios_style" = "Stijl";
+"ios_style_glass" = "Glas";
+"ios_style_material" = "Material";
+"ios_style_system" = "Standaard iOS";
 "ios_tab_history" = "Geschiedenis";
 "ios_tab_message" = "Bericht";
 "ios_tab_settings" = "Instellingen";

@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 DOMAIN = "roomcall"
-VERSION = "0.19.0"
+VERSION = "0.20.0"
 
 CONF_SPEAKERS = "speakers"
 CONF_VOLUME = "volume"
 CONF_TTS_ENGINE = "tts_engine"
 CONF_GAIN_DB = "gain_db"
+CONF_SPEECH_RATE = "speech_rate"
 CONF_CHIME = "chime"
 
 # Options grouped into sections in the options flow.
@@ -39,6 +40,8 @@ CONF_REPLY_PATH = "dashboard_path"
 CONF_STT_ENGINE = "stt_engine"
 
 DEFAULT_GAIN_DB = 0.0
+# Speaking speed for synthesized speech (1.0 = the engine's own pace).
+DEFAULT_SPEECH_RATE = 1.0
 DEFAULT_CHIME = True
 DEFAULT_CHIME_STYLE = "chirp"
 DEFAULT_STAGGER_MS = 250

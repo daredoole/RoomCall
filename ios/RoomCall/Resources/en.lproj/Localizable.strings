@@ -6,6 +6,8 @@
 "ios_answer_hint" = "Talking back to the visitor happens in Home Assistant's camera view, when your camera supports two-way audio.";
 "ios_answer_in_ha" = "Answer in Home Assistant";
 "ios_answers" = "Answers";
+"ios_appearance" = "Appearance";
+"ios_appearance_hint" = "Glass and Material colour the app and widgets from your colour; Standard iOS uses the system look.";
 "ios_ask" = "Ask";
 "ios_ask_hint" = "The satellite asks your question out loud and listens for the answer.";
 "ios_automation" = "Automation";
@@ -13,8 +15,15 @@
 "ios_camera_permission" = "RoomCall scans the QR code on your RoomCall card to connect.";
 "ios_choose_room" = "Choose where to speak";
 "ios_close" = "Close";
+"ios_color_blue" = "Blue";
+"ios_color_coral" = "Coral";
+"ios_color_mode" = "Light or dark";
+"ios_color_pink" = "Pink";
+"ios_color_purple" = "Purple";
+"ios_color_teal" = "Teal";
 "ios_connecting_audio" = "Connecting audio…";
 "ios_connection_failed" = "RoomCall could not complete the connection. Check Home Assistant and try again.";
+"ios_custom_color" = "Custom colour";
 "ios_delivery_failed" = "Some playback requests failed. Check Home Assistant for details.";
 "ios_delivery_unknown" = "Delivery confirmation is still pending. Some speakers may already be playing. Check call history before sending again.";
 "ios_dnd" = "Do Not Disturb";
@@ -38,6 +47,9 @@
 "ios_microphone_denied" = "Allow microphone access in Settings to talk.";
 "ios_microphone_permission" = "RoomCall sends your voice to the room you select.";
 "ios_mode" = "Mode";
+"ios_mode_auto" = "Follow iPhone";
+"ios_mode_dark" = "Dark";
+"ios_mode_light" = "Light";
 "ios_my_room" = "This phone is usually in";
 "ios_my_room_hint" = "Replies and hands-free talk-back come back to this room.";
 "ios_network_slow" = "The connection is too slow for live audio. Transmission stopped.";
@@ -83,6 +95,10 @@
 "ios_sign_in_description" = "Connect to your Home Assistant. Your account stays in its secure login screen.";
 "ios_sign_out" = "Sign out";
 "ios_someone_at" = "Someone is at the %@.";
+"ios_style" = "Style";
+"ios_style_glass" = "Glass";
+"ios_style_material" = "Material";
+"ios_style_system" = "Standard iOS";
 "ios_tab_history" = "History";
 "ios_tab_message" = "Message";
 "ios_tab_settings" = "Settings";

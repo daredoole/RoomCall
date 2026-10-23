@@ -102,7 +102,8 @@ async def request_for(
         if language:
             media_id += f"&language={quote(language)}"
         kind = "message"
-        if data.chime_style or data.chime_url or preset or values.get("_prepare"):
+        rate = data.speech_rate
+        if data.chime_style or data.chime_url or preset or rate != 1 or values.get("_prepare"):
             from .communication import validate_targets
             from .http import base_url
 
@@ -138,6 +139,7 @@ async def request_for(
                         0,
                         data.chime_style,
                         data.chime_url,
+                        tempo=rate,
                     )
                     if not result[0]:
                         raise ValueError("empty TTS audio")
@@ -150,6 +152,7 @@ async def request_for(
                             media_id,
                             data.chime_style,
                             data.chime_url,
+                            rate,
                         ]
                     ).encode()
                 ).hexdigest()

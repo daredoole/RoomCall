@@ -105,3 +105,41 @@ async def test_preparation_failures_are_explicit_and_play_nothing(
     if failure in {"url", "forbidden"}:
         tts_audio.assert_not_called()
     assert not data.history.records()
+
+
+async def test_speaking_speed_slows_synthesized_speech_but_not_the_chime(
+    hass, setup_roomcall, house, tts_audio
+):
+    """A slower speaking speed stretches the 1-second voice by real ffmpeg, keeping the chime."""
+    async_mock_service(hass, "media_player", "play_media")
+    hass.states.async_set("tts.piper", "unknown")
+    data = hass.data["roomcall"]
+    seconds = {}
+    for rate in (1.0, 0.75):
+        data.speech_rate = rate
+        response = await hass.services.async_call(
+            "roomcall",
+            "broadcast",
+            {"areas": house["kitchen"], "message": "Dinner"},
+            blocking=True,
+            return_response=True,
+        )
+        assert response["ok"]
+        record = data.history.records()[0]
+        audio = data.history.audio(record.call_id)
+        seconds[rate] = len(await to_speech_pcm("ffmpeg", audio.data)) / 32000
+    # Same message, different speed: synthesized and composed again, not served from cache.
+    assert tts_audio.await_count == 2
+    assert 0.25 < seconds[0.75] - seconds[1.0] < 0.45
+
+
+async def test_speaking_speed_prepares_speech_even_without_a_chime(hass, setup_roomcall, tts_audio):
+    hass.states.async_set("tts.piper", "unknown")
+    data = hass.data["roomcall"]
+    data.chime_style = None
+    plain = await request_for(hass, data, {"message": "Hello"}, Context())
+    assert plain.media_id.startswith("media-source://tts/tts.piper")
+    data.speech_rate = 0.85
+    slowed = await request_for(hass, data, {"message": "Hello"}, Context())
+    assert "/api/roomcall/clip/" in slowed.media_id
+    assert tts_audio.await_count == 1

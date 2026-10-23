@@ -8,11 +8,13 @@
           "speakers": "Enceintes",
           "volume": "Volume des annonces",
           "gain_db": "Gain du micro (dB)",
-          "tts_engine": "Synthèse vocale pour les messages"
+          "tts_engine": "Synthèse vocale pour les messages",
+          "speech_rate": "Vitesse de parole"
         },
         "data_description": {
           "volume": "Laissez vide pour garder le volume actuel de chaque enceinte. Pris en charge par Sonos.",
-          "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles."
+          "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles.",
+          "speech_rate": "1 est le rythme normal de la voix. Baissez-la si les messages tapés et les annonces semblent trop rapides ; 0,85 est un peu plus lent. La hauteur de la voix reste la même."
         }
       }
     },
@@ -31,11 +33,13 @@
           "speakers": "Enceintes",
           "volume": "Volume des annonces",
           "gain_db": "Gain du micro (dB)",
-          "tts_engine": "Synthèse vocale pour les messages"
+          "tts_engine": "Synthèse vocale pour les messages",
+          "speech_rate": "Vitesse de parole"
         },
         "data_description": {
           "volume": "Laissez vide pour garder le volume actuel de chaque enceinte. Pris en charge par Sonos.",
-          "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles."
+          "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles.",
+          "speech_rate": "1 est le rythme normal de la voix. Baissez-la si les messages tapés et les annonces semblent trop rapides ; 0,85 est un peu plus lent. La hauteur de la voix reste la même."
         },
         "sections": {
           "chime_options": {
@@ -511,7 +515,24 @@
         "editor_help_color": "Le bouton pour parler, les pièces sélectionnées et (avec Material) toute la palette viennent de cette couleur.",
         "editor_help_room": "L'emplacement de ce tableau de bord (par exemple une tablette murale). Les réponses à ses appels reviennent ici.",
         "editor_help_rooms": "Laissez vide pour toutes les pièces avec un haut-parleur RoomCall.",
-        "editor_help_live": "Désactivez pour enregistrer d'abord tout le message, puis l'envoyer."
+        "editor_help_live": "Désactivez pour enregistrer d'abord tout le message, puis l'envoyer.",
+        "ios_appearance": "Apparence",
+        "ios_appearance_hint": "Verre et Material colorent l'app et les widgets avec votre couleur ; iOS standard utilise l'apparence du système.",
+        "ios_style": "Style",
+        "ios_style_glass": "Verre",
+        "ios_style_material": "Material",
+        "ios_style_system": "iOS standard",
+        "ios_color_mode": "Clair ou sombre",
+        "ios_mode_auto": "Comme l'iPhone",
+        "ios_mode_light": "Clair",
+        "ios_mode_dark": "Sombre",
+        "ios_custom_color": "Couleur personnalisée",
+        "ios_color_blue": "Bleu",
+        "ios_color_purple": "Violet",
+        "ios_color_teal": "Bleu canard",
+        "ios_color_coral": "Corail",
+        "ios_color_pink": "Rose",
+        "setup_speech_rate": "Vitesse de parole"
       }
     },
     "audio_processing": {

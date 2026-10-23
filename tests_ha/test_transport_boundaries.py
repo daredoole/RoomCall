@@ -159,3 +159,13 @@ async def test_cancelled_transcode_reaps_child():
         await core.to_playable("ffmpeg", b"speech", "audio/webm", 0)
     proc.kill.assert_called_once()
     assert proc.communicate.await_count == 2
+
+
+async def test_tempo_changes_voice_length():
+    ffmpeg = shutil.which("ffmpeg")
+    normal, _ = await core.to_playable(ffmpeg, wav_audio(), "audio/wav", 0, tempo=1.0)
+    slower, content_type = await core.to_playable(ffmpeg, wav_audio(), "audio/wav", 0, tempo=0.5)
+    # 1.0 with no other processing passes the WAV through untouched.
+    assert normal == wav_audio()
+    assert content_type == "audio/mpeg"
+    assert 1.7 < core.mp3_seconds(slower) < 2.4

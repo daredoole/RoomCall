@@ -8,11 +8,13 @@
           "speakers": "Lautsprecher",
           "volume": "Lautstärke der Durchsagen",
           "gain_db": "Mikrofonverstärkung (dB)",
-          "tts_engine": "Text-zu-Sprache für Nachrichten"
+          "tts_engine": "Text-zu-Sprache für Nachrichten",
+          "speech_rate": "Sprechgeschwindigkeit"
         },
         "data_description": {
           "volume": "Leer lassen, um die aktuelle Lautstärke jedes Lautsprechers zu behalten. Von Sonos unterstützt.",
-          "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen."
+          "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen.",
+          "speech_rate": "1 ist das normale Tempo der Stimme. Verringere den Wert, wenn getippte Nachrichten und Durchsagen zu schnell klingen; 0,85 ist etwas langsamer. Die Tonhöhe bleibt gleich."
         }
       }
     },
@@ -31,11 +33,13 @@
           "speakers": "Lautsprecher",
           "volume": "Lautstärke der Durchsagen",
           "gain_db": "Mikrofonverstärkung (dB)",
-          "tts_engine": "Text-zu-Sprache für Nachrichten"
+          "tts_engine": "Text-zu-Sprache für Nachrichten",
+          "speech_rate": "Sprechgeschwindigkeit"
         },
         "data_description": {
           "volume": "Leer lassen, um die aktuelle Lautstärke jedes Lautsprechers zu behalten. Von Sonos unterstützt.",
-          "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen."
+          "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen.",
+          "speech_rate": "1 ist das normale Tempo der Stimme. Verringere den Wert, wenn getippte Nachrichten und Durchsagen zu schnell klingen; 0,85 ist etwas langsamer. Die Tonhöhe bleibt gleich."
         },
         "sections": {
           "chime_options": {
@@ -511,7 +515,24 @@
         "editor_help_color": "Die Sprechtaste, ausgewählte Räume und (mit Material) die ganze Farbpalette basieren auf dieser Farbe.",
         "editor_help_room": "Wo sich dieses Dashboard befindet (zum Beispiel ein Wandtablet). Antworten auf seine Anrufe kommen hierher zurück.",
         "editor_help_rooms": "Leer lassen für alle Räume mit einem RoomCall-Lautsprecher.",
-        "editor_help_live": "Ausschalten, um zuerst die ganze Nachricht aufzunehmen und sie dann zu senden."
+        "editor_help_live": "Ausschalten, um zuerst die ganze Nachricht aufzunehmen und sie dann zu senden.",
+        "ios_appearance": "Aussehen",
+        "ios_appearance_hint": "Glas und Material färben App und Widgets in deiner Farbe; Standard-iOS nutzt das Systemdesign.",
+        "ios_style": "Stil",
+        "ios_style_glass": "Glas",
+        "ios_style_material": "Material",
+        "ios_style_system": "Standard-iOS",
+        "ios_color_mode": "Hell oder dunkel",
+        "ios_mode_auto": "Wie iPhone",
+        "ios_mode_light": "Hell",
+        "ios_mode_dark": "Dunkel",
+        "ios_custom_color": "Eigene Farbe",
+        "ios_color_blue": "Blau",
+        "ios_color_purple": "Lila",
+        "ios_color_teal": "Petrol",
+        "ios_color_coral": "Koralle",
+        "ios_color_pink": "Pink",
+        "setup_speech_rate": "Sprechgeschwindigkeit"
       }
     },
     "audio_processing": {

@@ -8,11 +8,13 @@
           "speakers": "Speakers",
           "volume": "Volume van aankondigingen",
           "gain_db": "Microfoonversterking (dB)",
-          "tts_engine": "Tekst-naar-spraak voor berichten"
+          "tts_engine": "Tekst-naar-spraak voor berichten",
+          "speech_rate": "Spreeksnelheid"
         },
         "data_description": {
           "volume": "Leeg laten om het huidige volume van elke speaker te houden. Ondersteund door Sonos.",
-          "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken."
+          "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken.",
+          "speech_rate": "1 is het normale tempo van de stem. Verlaag dit als getypte berichten en aankondigingen te snel klinken; 0,85 is iets langzamer. De toonhoogte blijft gelijk."
         }
       }
     },
@@ -31,11 +33,13 @@
           "speakers": "Speakers",
           "volume": "Volume van aankondigingen",
           "gain_db": "Microfoonversterking (dB)",
-          "tts_engine": "Tekst-naar-spraak voor berichten"
+          "tts_engine": "Tekst-naar-spraak voor berichten",
+          "speech_rate": "Spreeksnelheid"
         },
         "data_description": {
           "volume": "Leeg laten om het huidige volume van elke speaker te houden. Ondersteund door Sonos.",
-          "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken."
+          "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken.",
+          "speech_rate": "1 is het normale tempo van de stem. Verlaag dit als getypte berichten en aankondigingen te snel klinken; 0,85 is iets langzamer. De toonhoogte blijft gelijk."
         },
         "sections": {
           "chime_options": {
@@ -511,7 +515,24 @@
         "editor_help_color": "De spreekknop, geselecteerde ruimtes en (met Material) het hele palet komen uit deze kleur.",
         "editor_help_room": "Waar dit dashboard is (bijvoorbeeld een wandtablet). Antwoorden op zijn gesprekken komen hier terug.",
         "editor_help_rooms": "Laat leeg voor elke ruimte met een RoomCall-speaker.",
-        "editor_help_live": "Zet uit om eerst het hele bericht op te nemen en het daarna te versturen."
+        "editor_help_live": "Zet uit om eerst het hele bericht op te nemen en het daarna te versturen.",
+        "ios_appearance": "Uiterlijk",
+        "ios_appearance_hint": "Glas en Material kleuren de app en widgets met jouw kleur; Standaard iOS gebruikt het systeemuiterlijk.",
+        "ios_style": "Stijl",
+        "ios_style_glass": "Glas",
+        "ios_style_material": "Material",
+        "ios_style_system": "Standaard iOS",
+        "ios_color_mode": "Licht of donker",
+        "ios_mode_auto": "Zoals iPhone",
+        "ios_mode_light": "Licht",
+        "ios_mode_dark": "Donker",
+        "ios_custom_color": "Eigen kleur",
+        "ios_color_blue": "Blauw",
+        "ios_color_purple": "Paars",
+        "ios_color_teal": "Petrol",
+        "ios_color_coral": "Koraal",
+        "ios_color_pink": "Roze",
+        "setup_speech_rate": "Spreeksnelheid"
       }
     },
     "audio_processing": {

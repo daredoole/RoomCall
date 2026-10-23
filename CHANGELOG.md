@@ -4,6 +4,22 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.20.0 — 2026-10-23
+
+- iPhone app (native build 4): the dashboard card's look. **Glass** by default: Liquid Glass
+  surfaces on iOS 26 (frosted material on iOS 18–25) over soft colour glows, room tiles with icons,
+  a glossy talk button with depth and glass cards, lists and toast.
+- **Material** option: a Material 3 tonal palette generated from one colour, a check mark on the
+  selected room or person and a gradient talk button. **Standard iOS** keeps the system look.
+- New **Settings → Appearance**: style, light/dark/follow iPhone, and a button colour (presets or
+  any colour). The home-screen widgets use the chosen colour; light colours get dark text.
+- Appearance strings in all five languages; Swift unit tests for the colour and tonal maths and a UI
+  test for the colour presets.
+- New **Speaking speed** option (0.5–1.5, default 1) under Configure and in the card's Settings →
+  Setup. Typed messages, announcements and reminders are re-timed with ffmpeg `atempo`, so it works
+  with any text-to-speech engine and keeps the voice's pitch; the chime is unchanged. Real-ffmpeg
+  tests cover the stretched voice, the cache key and speech without a chime.
+
 ## 0.19.0 — 2026-10-23
 
 - New card look: **Glass** (the default) — frosted, Apple-like surfaces, room tiles with

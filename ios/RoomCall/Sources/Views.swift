@@ -1,13 +1,30 @@
 import AVFoundation
 import SwiftUI
 import VisionKit
+import WidgetKit
 
 // MARK: Root
 
 struct RootView: View {
     @ObservedObject var model: AppModel
+    @AppStorage(ThemeSettings.styleKey, store: RoomCache.defaults) private var style = AppStyle.glass
+    @AppStorage(ThemeSettings.accentKey, store: RoomCache.defaults) private var accent = ThemeSettings.defaultAccent
+    @Environment(\.colorScheme) private var scheme
+
+    private var palette: Palette {
+        var style = self.style, accent = self.accent
+        #if DEBUG
+        // Screenshot runs use the default look, not whatever an earlier test stored.
+        if Demo.value("-RoomCallDemoAppearance") != nil {
+            style = Demo.value("-RoomCallDemoStyle").flatMap(AppStyle.init(rawValue:)) ?? .glass
+            accent = ThemeSettings.defaultAccent
+        }
+        #endif
+        return Palette(style: style, dark: scheme == .dark, seed: RGB(hex: accent) ?? .default)
+    }
 
     var body: some View {
+        let palette = self.palette
         Group {
             if model.connected { MainTabs(model: model, talk: model.talk) } else { SignInView(model: model) }
         }
@@ -15,10 +32,14 @@ struct RootView: View {
         .sheet(item: Binding(get: { model.doorbell.map(DoorbellItem.init) },
                              set: { if $0 == nil { model.doorbell = nil } })) { item in
             DoorbellSheet(model: model, bell: item.bell)
+                .environment(\.palette, palette)
+                .tint(palette.primary)
         }
         .alert("ios_error", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button("ios_ok") { model.error = nil }
         } message: { Text(verbatim: model.error ?? "") }
+        .environment(\.palette, palette)
+        .tint(palette.primary)
     }
 }
 
@@ -78,6 +99,7 @@ struct TalkScreen: View {
                 }
                 .padding()
             }
+            .background { ThemeBackground() }
             .navigationTitle("RoomCall")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
@@ -100,22 +122,23 @@ struct TalkScreen: View {
 
 struct TargetPicker: View {
     @ObservedObject var model: AppModel
-    private let columns = [GridItem(.adaptive(minimum: 140), spacing: 10)]
+    @Environment(\.palette) private var palette
+    private let columns = [GridItem(.adaptive(minimum: 100), spacing: 10)]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("ios_choose_room").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(model.rooms) { room in
-                    choice(room.name, icon: room.id == "all" ? "house.fill" : "speaker.wave.2.fill",
-                           selected: model.target == .room(room)) { model.target = .room(room) }
+                    tile(room.name, icon: room.id == "all" ? "house.fill" : "speaker.wave.2.fill",
+                         selected: model.target == .room(room)) { model.target = .room(room) }
                 }
             }
             if !model.people.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(model.people) { person in
-                            choice(person.name, icon: "person.fill", selected: model.target == .person(person)) {
+                            pill(person.name, selected: model.target == .person(person)) {
                                 model.target = .person(person)
                             }
                         }
@@ -126,14 +149,40 @@ struct TargetPicker: View {
         .disabled(model.talk.active)
     }
 
-    private func choice(_ title: String, icon: String, selected: Bool, action: @escaping () -> Void) -> some View {
+    /// Material marks the selected choice with a check mark in place of its icon.
+    private func symbol(_ icon: String, selected: Bool) -> String {
+        palette.style == .material && selected ? "checkmark" : icon
+    }
+
+    private func tile(_ title: String, icon: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Label(title, systemImage: icon)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                .lineLimit(2)
+            VStack(alignment: .leading, spacing: 10) {
+                Image(systemName: symbol(icon, selected: selected)).font(.title3.weight(.semibold))
+                Text(verbatim: title).font(.subheadline.weight(.semibold))
+                    .lineLimit(2).multilineTextAlignment(.leading)
+            }
+            .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+            .padding(12)
+            .foregroundStyle(selected ? palette.onSelected : .primary)
+            .surface(radius: 18, fill: selected ? palette.selected : nil)
+            .contentShape(RoundedRectangle(cornerRadius: 18))
         }
-        .buttonStyle(.bordered)
-        .tint(selected ? .accentColor : .secondary)
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier(title)
+    }
+
+    private func pill(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: symbol("person.fill", selected: selected))
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 16)
+                .frame(minHeight: 44)
+                .foregroundStyle(selected ? palette.onSelected : .primary)
+                .surface(radius: 22, fill: selected ? palette.selected : nil)
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier(title)
     }
@@ -142,6 +191,7 @@ struct TargetPicker: View {
 /// Press and hold to talk; VoiceOver users double-tap to start and again to stop.
 struct TalkButton: View {
     @ObservedObject var talk: TalkController
+    @Environment(\.palette) private var palette
     let urgent: Bool
     let press: () -> Void
     let release: () -> Void
@@ -149,17 +199,30 @@ struct TalkButton: View {
 
     var body: some View {
         let live = talk.phase == .live
+        let alert = live || urgent
+        let glow = alert ? Color.red : palette.primary
         ZStack {
-            Circle()
-                .fill(live || urgent ? Color.red : Color.accentColor)
-                .shadow(color: (live ? Color.red : Color.accentColor).opacity(0.35), radius: live ? 28 : 16)
+            if live {
+                Circle().fill(Color.red.opacity(0.08)).scaleEffect(1.36)
+                Circle().fill(Color.red.opacity(0.16)).scaleEffect(1.18)
+            }
+            Circle().fill(alert ? AnyShapeStyle(Color.red)
+                          : AnyShapeStyle(LinearGradient(colors: [palette.primary, palette.gradientEnd],
+                                                         startPoint: .topLeading, endPoint: .bottomTrailing)))
+            if palette.style != .system {
+                // Specular highlight and rim give the button depth.
+                Circle().fill(RadialGradient(colors: [.white.opacity(0.42), .white.opacity(0)],
+                                             center: UnitPoint(x: 0.34, y: 0.28), startRadius: 0, endRadius: 95))
+                Circle().strokeBorder(.white.opacity(0.3), lineWidth: 1)
+            }
             VStack(spacing: 8) {
                 Image(systemName: "mic.fill").font(.system(size: 44, weight: .semibold))
                 Text(LocalizedStringKey(live ? "ios_release_to_send" : "ios_hold_to_talk")).font(.headline)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(alert ? Color.white : palette.onPrimary)
         }
         .frame(width: 200, height: 200)
+        .shadow(color: glow.opacity(0.45), radius: live ? 30 : 22, y: 12)
         .scaleEffect(live ? 0.96 : 1)
         .animation(.easeOut(duration: 0.15), value: live)
         .opacity(talk.phase == .sending ? 0.6 : 1)
@@ -201,8 +264,8 @@ struct TaskBanner: View {
             .buttonStyle(.borderedProminent).tint(.green)
             .accessibilityIdentifier("done-\(task.id)")
         }
-        .padding(12)
-        .background(.orange.opacity(0.14), in: RoundedRectangle(cornerRadius: 14))
+        .padding(14)
+        .surface()
     }
 }
 
@@ -237,6 +300,7 @@ struct MessageScreen: View {
                             .accessibilityIdentifier("message-text")
                         Toggle("ios_urgent", isOn: $model.urgent)
                     } footer: { Text("ios_type_hint") }
+                .themedRows()
                     Button {
                         Task { if await model.send(text) { text = "" } }
                     } label: { Label("ios_send", systemImage: "paperplane.fill").frame(maxWidth: .infinity) }
@@ -257,6 +321,7 @@ struct MessageScreen: View {
                         }
                         TextField("ios_question", text: $text, axis: .vertical).lineLimit(2...5)
                     } footer: { Text("ios_ask_hint") }
+                .themedRows()
                     Button {
                         Task {
                             asking = true
@@ -277,9 +342,11 @@ struct MessageScreen: View {
                             if answers.isEmpty { Text("ios_no_answer").foregroundStyle(.secondary) }
                             ForEach(answers, id: \.self) { Text(verbatim: "“\($0)”") }
                         }
+                        .themedRows()
                     }
                 }
             }
+            .themedList()
             .navigationTitle("ios_tab_message")
             .task(id: mode) {
                 guard mode == 1, satellites.isEmpty else { return }
@@ -327,6 +394,7 @@ struct TasksScreen: View {
                         .padding(.vertical, 4)
                     }
                 } header: { Text("ios_open_tasks") } footer: { Text("ios_tasks_hint") }
+                .themedRows()
                 let done = model.tasks.filter { $0.state == "done" }
                 if !done.isEmpty {
                     Section("ios_done_recently") {
@@ -336,10 +404,12 @@ struct TasksScreen: View {
                                 Text(verbatim: [task.name, task.done_by].compactMap { $0 }.joined(separator: " · "))
                                     .font(.caption).foregroundStyle(.secondary)
                             }
+                            .themedRows()
                         }
                     }
                 }
             }
+            .themedList()
             .navigationTitle("ios_tab_tasks")
             .refreshable { await model.refreshTasks() }
         }
@@ -371,7 +441,7 @@ struct HistoryScreen: View {
         NavigationStack {
             List {
                 if model.history.isEmpty {
-                    Label("ios_no_history", systemImage: "clock").foregroundStyle(.secondary)
+                    Label("ios_no_history", systemImage: "clock").foregroundStyle(.secondary).themedRows()
                 }
                 ForEach(model.history) { call in
                     HStack(alignment: .top, spacing: 12) {
@@ -402,8 +472,10 @@ struct HistoryScreen: View {
                         }
                     }
                     .padding(.vertical, 4)
+                    .themedRows()
                 }
             }
+            .themedList()
             .navigationTitle("ios_tab_history")
             .refreshable { await model.refresh() }
         }
@@ -414,6 +486,9 @@ struct HistoryScreen: View {
 
 struct SettingsScreen: View {
     @ObservedObject var model: AppModel
+    @AppStorage(ThemeSettings.styleKey, store: RoomCache.defaults) private var style = AppStyle.glass
+    @AppStorage(ThemeSettings.modeKey, store: RoomCache.defaults) private var mode = ColorMode.auto
+    @AppStorage(ThemeSettings.accentKey, store: RoomCache.defaults) private var accent = ThemeSettings.defaultAccent
 
     var body: some View {
         NavigationStack {
@@ -425,17 +500,32 @@ struct SettingsScreen: View {
                         ForEach(model.rooms.dropFirst()) { Text(verbatim: $0.name).tag($0.id) }
                     }
                 } footer: { Text("ios_my_room_hint") }
+                .themedRows()
+                Section {
+                    Picker("ios_style", selection: $style) {
+                        ForEach(AppStyle.allCases) { Text($0.label).tag($0) }
+                    }
+                    .accessibilityIdentifier("appearance-style")
+                    Picker("ios_color_mode", selection: $mode) {
+                        ForEach(ColorMode.allCases) { Text($0.label).tag($0) }
+                    }
+                    .accessibilityIdentifier("appearance-mode")
+                    AccentPicker(hex: $accent)
+                } header: { Text("ios_appearance") } footer: { Text("ios_appearance_hint") }
+                .themedRows()
                 if model.overview.dnd_entity != nil {
                     Section {
                         Toggle("ios_dnd", isOn: Binding(get: { model.overview.dnd == true },
                                                         set: { _ in Task { await model.toggleDoNotDisturb() } }))
                     } footer: { Text("ios_dnd_hint") }
+                    .themedRows()
                 }
                 Section {
                     Link(destination: URL(string: "homeassistant://navigate/")!) {
                         Label("ios_open_ha", systemImage: "house")
                     }
                 } footer: { Text("ios_notifications_hint") }
+                .themedRows()
                 Section {
                     LabeledContent("ios_version") {
                         Text(verbatim: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
@@ -445,8 +535,12 @@ struct SettingsScreen: View {
                         Task { await model.signOut() }
                     }
                 }
+                .themedRows()
             }
+            .themedList()
             .navigationTitle("ios_tab_settings")
+            // Widgets draw with the chosen colour.
+            .onChange(of: accent) { WidgetCenter.shared.reloadAllTimelines() }
         }
     }
 }
@@ -468,6 +562,7 @@ struct SignInView: View {
                     }
                     .padding(.vertical, 8)
                 }
+                .themedRows()
                 Section {
                     Button { scanning = true } label: { Label("ios_scan_qr", systemImage: "qrcode.viewfinder") }
                     Button {
@@ -476,6 +571,7 @@ struct SignInView: View {
                         }
                     } label: { Label("ios_paste_link", systemImage: "doc.on.clipboard") }
                 } footer: { Text("ios_scan_hint") }
+                .themedRows()
                 Section {
                     TextField("ios_server_url", text: $model.serverDraft)
                         .keyboardType(.URL).textInputAutocapitalization(.never)
@@ -485,7 +581,9 @@ struct SignInView: View {
                         .accessibilityIdentifier("sign-in")
                     if model.busy { ProgressView() }
                 }
+                .themedRows()
             }
+            .themedList()
             .navigationTitle("RoomCall")
             .sheet(isPresented: $scanning) {
                 QRScanner { code in
@@ -570,6 +668,7 @@ struct DoorbellSheet: View {
                 Spacer()
             }
             .padding()
+            .background { ThemeBackground() }
             .navigationTitle(Text(verbatim: bell.name))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { Button("ios_close") { model.doorbell = nil } }
@@ -595,7 +694,7 @@ struct Toast: View {
                 .accessibilityIdentifier("notice")
                 .font(.callout.weight(.medium))
                 .padding(.horizontal, 16).padding(.vertical, 10)
-                .background(.thinMaterial, in: Capsule())
+                .surface(radius: 22)
                 .padding(.bottom, 64)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .task(id: notice) {

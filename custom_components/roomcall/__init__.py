@@ -56,6 +56,7 @@ from .const import (
     CONF_RESTORE,
     CONF_RETRY,
     CONF_SPEAKERS,
+    CONF_SPEECH_RATE,
     CONF_STAGGER_MS,
     CONF_STT_ENGINE,
     CONF_TTS_ENGINE,
@@ -67,6 +68,7 @@ from .const import (
     DEFAULT_HOMEKIT_PORT,
     DEFAULT_RESTORE,
     DEFAULT_RETRY,
+    DEFAULT_SPEECH_RATE,
     DEFAULT_STAGGER_MS,
     DEFAULT_URGENT_VOLUME,
     DOMAIN,
@@ -135,6 +137,7 @@ class RoomCallData:
     volume: float | None
     gain_db: float
     tts_engine: str | None
+    speech_rate: float = DEFAULT_SPEECH_RATE
     chime_style: str | None = DEFAULT_CHIME_STYLE  # None = no chime
     chime_url: str | None = None
     stagger_ms: int = DEFAULT_STAGGER_MS
@@ -213,6 +216,7 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         volume=_float(opts.get(CONF_VOLUME)),
         gain_db=float(opts.get(CONF_GAIN_DB, DEFAULT_GAIN_DB)),
         tts_engine=opts.get(CONF_TTS_ENGINE) or None,
+        speech_rate=float(opts.get(CONF_SPEECH_RATE, DEFAULT_SPEECH_RATE)),
         agent_policies=AgentPolicies(communication.get("agent_policies") or {}),
         household_profiles=validate_profiles(communication.get("household_profiles") or {}),
         speech_profiles=dict(communication.get("speech_profiles") or {}),

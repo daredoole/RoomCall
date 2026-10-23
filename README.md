@@ -251,6 +251,7 @@ actions:
 | Announcement volume | speaker's current volume | Fixed volume for calls (Sonos) |
 | Microphone boost | 0 dB | Raise if phone recordings sound quiet |
 | Text-to-speech engine | your default | Used for typed messages |
+| Speaking speed | 1 | Slow down (or speed up) typed messages and announcements, 0.5–1.5 |
 | Chime | walkie-talkie chirp | Chirp, ding, double beep, rising, doorbell, none — or your own file |
 | Delivery | 250 ms apart, retry on | Stops Sonos speakers from dropping simultaneous calls |
 | Quiet hours | off | Quieter calls and skipped rooms overnight |

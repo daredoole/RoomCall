@@ -46,6 +46,7 @@ from .const import (
     CONF_RETRY,
     CONF_ROOMS,
     CONF_SPEAKERS,
+    CONF_SPEECH_RATE,
     CONF_STAGGER_MS,
     CONF_STT_ENGINE,
     CONF_TARGET_SPEAKERS,
@@ -63,6 +64,7 @@ from .const import (
     DEFAULT_REMIND_EVERY,
     DEFAULT_RESTORE,
     DEFAULT_RETRY,
+    DEFAULT_SPEECH_RATE,
     DEFAULT_STAGGER_MS,
     DEFAULT_URGENT_VOLUME,
     DOMAIN,
@@ -126,6 +128,14 @@ def _main_fields(hass: HomeAssistant, defaults: dict[str, Any]) -> dict[Any, Any
         vol.Optional(
             CONF_TTS_ENGINE, description=_suggest(defaults.get(CONF_TTS_ENGINE))
         ): selector.EntitySelector(selector.EntitySelectorConfig(domain="tts")),
+        vol.Optional(
+            CONF_SPEECH_RATE,
+            description={"suggested_value": defaults.get(CONF_SPEECH_RATE, DEFAULT_SPEECH_RATE)},
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0.5, max=1.5, step=0.05, mode=selector.NumberSelectorMode.SLIDER
+            )
+        ),
     }
 
 

@@ -30,6 +30,7 @@ SETTINGS = {
     "volume",
     "gain_db",
     "tts_engine",
+    "speech_rate",
     "chime_options",
     "delivery",
     "quiet_hours",

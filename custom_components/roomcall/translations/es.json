@@ -8,11 +8,13 @@
           "speakers": "Altavoces",
           "volume": "Volumen de los avisos",
           "gain_db": "Ganancia del micrófono (dB)",
-          "tts_engine": "Motor de texto a voz para mensajes"
+          "tts_engine": "Motor de texto a voz para mensajes",
+          "speech_rate": "Velocidad de habla"
         },
         "data_description": {
           "volume": "Déjalo vacío para mantener el volumen actual de cada altavoz. Compatible con Sonos.",
-          "gain_db": "Súbela si las grabaciones del teléfono suenan bajas."
+          "gain_db": "Súbela si las grabaciones del teléfono suenan bajas.",
+          "speech_rate": "1 es el ritmo normal de la voz. Bájalo si los mensajes escritos y los anuncios suenan demasiado rápido; 0,85 es un poco más lento. El tono no cambia."
         }
       }
     },
@@ -31,11 +33,13 @@
           "speakers": "Altavoces",
           "volume": "Volumen de los avisos",
           "gain_db": "Ganancia del micrófono (dB)",
-          "tts_engine": "Motor de texto a voz para mensajes"
+          "tts_engine": "Motor de texto a voz para mensajes",
+          "speech_rate": "Velocidad de habla"
         },
         "data_description": {
           "volume": "Déjalo vacío para mantener el volumen actual de cada altavoz. Compatible con Sonos.",
-          "gain_db": "Súbela si las grabaciones del teléfono suenan bajas."
+          "gain_db": "Súbela si las grabaciones del teléfono suenan bajas.",
+          "speech_rate": "1 es el ritmo normal de la voz. Bájalo si los mensajes escritos y los anuncios suenan demasiado rápido; 0,85 es un poco más lento. El tono no cambia."
         },
         "sections": {
           "chime_options": {
@@ -511,7 +515,24 @@
         "editor_help_color": "El botón de hablar, las habitaciones seleccionadas y (con Material) toda la paleta salen de este color.",
         "editor_help_room": "Dónde está este panel (por ejemplo, una tableta de pared). Las respuestas a sus llamadas vuelven aquí.",
         "editor_help_rooms": "Déjalo vacío para todas las habitaciones con un altavoz de RoomCall.",
-        "editor_help_live": "Desactívalo para grabar primero el mensaje completo y luego enviarlo."
+        "editor_help_live": "Desactívalo para grabar primero el mensaje completo y luego enviarlo.",
+        "ios_appearance": "Apariencia",
+        "ios_appearance_hint": "Cristal y Material colorean la app y los widgets con tu color; iOS estándar usa el aspecto del sistema.",
+        "ios_style": "Estilo",
+        "ios_style_glass": "Cristal",
+        "ios_style_material": "Material",
+        "ios_style_system": "iOS estándar",
+        "ios_color_mode": "Claro u oscuro",
+        "ios_mode_auto": "Igual que el iPhone",
+        "ios_mode_light": "Claro",
+        "ios_mode_dark": "Oscuro",
+        "ios_custom_color": "Color personalizado",
+        "ios_color_blue": "Azul",
+        "ios_color_purple": "Morado",
+        "ios_color_teal": "Verde azulado",
+        "ios_color_coral": "Coral",
+        "ios_color_pink": "Rosa",
+        "setup_speech_rate": "Velocidad de habla"
       }
     },
     "audio_processing": {

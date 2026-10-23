@@ -32,6 +32,11 @@ not required. The optional [Apple Home camera bridge](apple-home.md) is a separa
   satellite and read its transcribed response.
 - **Tasks:** complete or snooze announcement tasks; **History:** read and reply to calls.
 - **Settings:** select this phone's usual room for replies, see the server and sign out.
+- **Appearance:** **Glass** (the default: frosted Liquid Glass surfaces on iOS 26, room tiles and a
+  glossy talk button), **Material** (a tonal palette generated from your colour, with a gradient
+  talk button) or **Standard iOS**; light, dark or follow the iPhone; and a button colour (five
+  presets or any colour). The home-screen widgets use the same colour. These match the dashboard
+  card's `appearance`, `theme` and `color` options but are set separately on the phone.
   Do Not Disturb and urgent controls are available in the room interface.
 - Foreground doorbell detection with a snapshot and an action opening the HA camera.
   Two-way visitor audio depends on that camera's HA support.

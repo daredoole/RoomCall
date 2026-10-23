@@ -55,6 +55,7 @@ Pick your speakers. Everything else is under **Configure** on the integration:
 | Announcement volume | speaker's current volume | Fixed volume for calls (Sonos) |
 | Microphone boost | 0 dB | Raise if phone recordings sound quiet |
 | Text-to-speech engine | your default | Used by `roomcall.broadcast` messages |
+| Speaking speed | 1 | 0.5–1.5. Lower it (try 0.85) if typed messages and announcements sound rushed; pitch is unchanged. Also in the card's **Settings → Setup** |
 | **Chime** → chime | Walkie-talkie chirp | Chirp, ding, double beep, rising tones, doorbell, or none |
 | **Chime** → custom file or URL | — | Your own sound, e.g. `/config/www/chime.mp3`; overrides the chime |
 | **Delivery** → delay between speakers | 250 ms | Stops several Sonos in one home from dropping the same announcement |
