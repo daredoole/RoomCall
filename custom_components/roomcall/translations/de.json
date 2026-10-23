@@ -387,7 +387,8 @@
         "answer_door": "Annehmen",
         "open_camera": "Kamera öffnen",
         "durable_key_required": "Dauerhafte Nachrichten benötigen einen Idempotenzschlüssel.",
-        "job_interrupted": "Die Wiedergabe könnte vor der Unterbrechung begonnen haben. Prüfe den Lautsprecher vor erneutem Senden."
+        "job_interrupted": "Die Wiedergabe könnte vor der Unterbrechung begonnen haben. Prüfe den Lautsprecher vor erneutem Senden.",
+        "interrupted": "Unterbrochen; die Wiedergabe könnte begonnen haben."
       }
     },
     "audio_processing": {

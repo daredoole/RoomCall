@@ -387,7 +387,8 @@
         "answer_door": "Answer",
         "open_camera": "Open the camera",
         "durable_key_required": "Durable messages require an idempotency key.",
-        "job_interrupted": "Playback may have started before interruption. Check the speaker before sending a new message."
+        "job_interrupted": "Playback may have started before interruption. Check the speaker before sending a new message.",
+        "interrupted": "Interrupted; playback may have started."
       }
     },
     "audio_processing": {

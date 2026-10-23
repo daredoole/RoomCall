@@ -387,7 +387,8 @@
         "answer_door": "Opnemen",
         "open_camera": "Camera openen",
         "durable_key_required": "Blijvende berichten vereisen een idempotentiesleutel.",
-        "job_interrupted": "Afspelen kan voor de onderbreking zijn begonnen. Controleer de luidspreker voordat je opnieuw verzendt."
+        "job_interrupted": "Afspelen kan voor de onderbreking zijn begonnen. Controleer de luidspreker voordat je opnieuw verzendt.",
+        "interrupted": "Onderbroken; afspelen kan zijn begonnen."
       }
     },
     "audio_processing": {

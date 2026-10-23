@@ -387,7 +387,8 @@
         "answer_door": "Répondre",
         "open_camera": "Ouvrir la caméra",
         "durable_key_required": "Les messages persistants nécessitent une clé d’idempotence.",
-        "job_interrupted": "La lecture a pu démarrer avant l’interruption. Vérifiez le haut-parleur avant un nouvel envoi."
+        "job_interrupted": "La lecture a pu démarrer avant l’interruption. Vérifiez le haut-parleur avant un nouvel envoi.",
+        "interrupted": "Interrompu ; la lecture a pu commencer."
       }
     },
     "audio_processing": {
