@@ -19,7 +19,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "assets"
-SCREENS = ("sign-in", "rooms", "talking")
+SCREENS = ("sign-in", "rooms", "talking", "message", "tasks", "history", "settings", "doorbell")
 NAMES = [f"ios-{screen}-{look}" for screen in SCREENS for look in ("light", "dark")]
 
 FRAME = """<!doctype html><html><head><style>

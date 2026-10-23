@@ -28,6 +28,10 @@ FILES = {
         ROOT / "custom_components/roomcall/frontend/roomcall-controls.js",
         "text/javascript",
     ),
+    "/roomcall-qr.js": (
+        ROOT / "custom_components/roomcall/frontend/roomcall-qr.js",
+        "text/javascript",
+    ),
     "/strings.json": (ROOT / "custom_components/roomcall/strings.json", "application/json"),
     "/logo.svg": (OUT / "logo.svg", "image/svg+xml"),
 }
@@ -149,6 +153,7 @@ def main() -> int:
             ("ha-settings-shortcuts.png", "Siri Shortcuts"),
             ("ha-settings-stations.png", "Room stations"),
             ("ha-settings-voicemail.png", "Voicemail"),
+            ("ha-settings-phone.png", "iPhone app"),
         ]
         for name, tab in tabs:
             page = browser.new_page(viewport=phone, device_scale_factor=2)

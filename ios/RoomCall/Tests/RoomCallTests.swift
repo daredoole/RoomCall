@@ -122,6 +122,68 @@ final class RoomCallTests: XCTestCase {
         do { _ = try await client.get("api/roomcall/rooms"); XCTFail() }
         catch { XCTAssertEqual(error.localizedDescription, NativeFailure.unauthorized.localizedDescription) }
     }
+    func testTimestampsWithMicrosecondsAndTargets() throws {
+        XCTAssertNotNil(Timestamp.parse("2026-10-22T15:41:01.511431+00:00"))
+        XCTAssertNotNil(Timestamp.parse("2026-10-22T15:41:01+00:00"))
+        XCTAssertNil(Timestamp.parse("yesterday"))
+        XCTAssertNil(Timestamp.parse(nil))
+        XCTAssertEqual(Target.room(.everywhere).request["everywhere"] as? Bool, true)
+        XCTAssertEqual(Target.room(Room(area_id: "kitchen", name: "Kitchen")).request["areas"] as? [String], ["kitchen"])
+        XCTAssertEqual(Target.person(Person(entity_id: "person.alex", name: "Alex")).request["people"] as? [String],
+                       ["person.alex"])
+    }
+    func testServiceDecodesOverviewTasksHistoryAndDoorbell() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubProtocol.self]
+        let client = HAClient(Credentials(server: URL(string: "https://ha.example")!, accessToken: "secret",
+            refreshToken: "refresh", expiresAt: .distantFuture), session: URLSession(configuration: config))
+        var sent: [String: Any] = [:]
+        StubProtocol.handler = { request in
+            switch request.url?.path {
+            case "/api/roomcall/rooms":
+                return (200, Data(#"{"rooms":[{"area_id":"kitchen","name":"Kitchen","speakers":["a"]}],"people":[{"entity_id":"person.alex","name":"Alex"}],"dnd":false,"dnd_entity":"switch.dnd","doorbell":{"entity":"binary_sensor.door","camera":"camera.door","name":"Front Door"}}"#.utf8))
+            case "/api/roomcall/history":
+                return (200, Data(#"{"calls":[{"id":"c1","at":"2026-10-22T15:41:01.511431+00:00","from":"kitchen","target":"basement","kind":"talk","priority":"normal","ok":true,"text":"Hi","has_audio":true,"requires_ack":false}]}"#.utf8))
+            case "/api/roomcall/command":
+                let body = try JSONSerialization.jsonObject(with: request.httpBodyStream.map(Self.read) ?? Data()) as? [String: Any] ?? [:]
+                sent = body
+                return (200, Data(#"{"ok":true,"tasks":[{"id":"t1","name":"Laundry","task":"Took out the dry clothes","state":"open","opened":"2026-10-22T15:41:01+00:00","done":null,"done_by":null,"remind_every":15,"entity_id":"sensor.t1"}]}"#.utf8))
+            case "/api/states/binary_sensor.door":
+                let now = ISO8601DateFormatter().string(from: Date())
+                return (200, Data("{\"state\":\"on\",\"last_changed\":\"\(now)\"}".utf8))
+            default:
+                return (404, Data())
+            }
+        }
+        let overview = try await client.overview()
+        XCTAssertEqual(overview.rooms?.first?.name, "Kitchen")
+        XCTAssertEqual(overview.doorbell?.name, "Front Door")
+        let history = try await client.history()
+        XCTAssertEqual(history.first?.text, "Hi")
+        let tasks = try await client.tasks("complete", id: "t1")
+        XCTAssertEqual(tasks.first?.isOpen, true)
+        XCTAssertEqual(sent["operation"] as? String, "tasks")
+        XCTAssertEqual((sent["request"] as? [String: Any])?["id"] as? String, "t1")
+        try await client.send(.room(Room(area_id: "kitchen", name: "Kitchen")), message: "Dinner", urgent: true)
+        let request = sent["request"] as? [String: Any]
+        XCTAssertEqual(request?["areas"] as? [String], ["kitchen"])
+        XCTAssertEqual(request?["priority"] as? String, "urgent")
+        XCTAssertNotNil(request?["idempotency_key"])
+        let rang = try await client.doorbellRang("binary_sensor.door")
+        XCTAssertNotNil(rang)
+    }
+    private static func read(_ stream: InputStream) -> Data {
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 4096)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            if count <= 0 { break }
+            data.append(buffer, count: count)
+        }
+        return data
+    }
 }
 
 final class StubProtocol: URLProtocol {
