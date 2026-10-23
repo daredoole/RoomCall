@@ -36,8 +36,24 @@ APIs; no extra credentials.
 - HA action: `roomcall.communicate` with `{operation,request}` and return_response.
 - Success means playback request acceptance, not audible playback. Inspect separate
   audio_fetched_ms/playback_reported_ms evidence; human acknowledgment is explicit.
-- New send operations require areas/speakers/people or everywhere:true. HA permissions
-  and assistant exposure apply. Pending jobs/keys are bounded and in memory.
+- New send operations require areas/speakers/people or everywhere:true, directly or through a household profile.
+  HA permissions and assistant exposure apply. Ordinary jobs/keys are bounded and in memory.
+- Durable text jobs: durable:true requires an explicit idempotency_key. Queued/unexpired work
+  resumes with current policy after HA startup. Potentially dispatched work becomes interrupted;
+  never automatically resend it. Retained owner/key/results: at most 128 jobs, up to 24 hours.
+- discover.profiles lists permitted household presets; preview/send accept profile:<id>.
+  Explicit targets replace all preset destinations. Voice/chime changes are per message.
+- discover.speech_profiles lists configured fast/balanced/quality voice labels. Send speech_profile:<label>.
+  Explicit speech profiles override household engine/voice. Labels do not promise model speed.
+- roomcall__speech action:prepare takes message/targets to prepare without playback. Owner-scoped
+  memory cache: ten minutes, 32 entries, 16 MiB total, 4 MiB/item. action:clear requires an administrator.
+  Reload or clear after changing provider defaults or replacing a custom chime file in place.
+- roomcall__policy reports additional RoomCall account restrictions: destinations, operations,
+  local hours, urgency, requested volume and runtime message rate. Use dedicated non-admin accounts;
+  these restrictions do not scope unrelated HA APIs. Accounts without a policy retain existing rules.
+- status.progress is a bounded measured delivery timeline, not evidence of hearing.
+  Authenticated WS roomcall/job_events with job_id subscribes to one owned job. Ownership
+  and permissions are rechecked for every update; unsubscribe with HA unsubscribe_events.
 - Speak in one room: `notify.send_message` on `notify.roomcall_<room>`.
 - Do Not Disturb: `switch.roomcall_do_not_disturb`.
 
@@ -70,3 +86,5 @@ APIs; no extra credentials.
 - [Guided setup and administration contract](https://daredoole.github.io/RoomCall/agent-setup/)
 - [Messages, jobs, room stations and adapters](https://daredoole.github.io/RoomCall/communication/)
 - [Apple Home intercom](https://daredoole.github.io/RoomCall/apple-home/)
+
+- [Native iOS app, signing and platform limits](https://daredoole.github.io/RoomCall/native-ios/)

@@ -26,11 +26,27 @@ Use **`roomcall__announcements`** for announcement administration and
 an authenticated HA administrator.
 
 For daily messaging, use **`roomcall__discover`**, **`roomcall__preview`**, **`roomcall__send`**
-and **`roomcall__status`**. Use an explicit target and reuse the same
+and **`roomcall__status`**. Discover `speech_profiles` and permitted household
+`profiles`; use `speech` to prepare text without playback, or `profile` on preview/send
+to reuse household defaults. Use an explicit target and reuse the same
 `idempotency_key` when retrying an unchanged message. `diagnose` explains policy and
 capabilities; blocked messages must not be automatically promoted to urgent.
 `ask` collects actual satellite responses. The complete contract is in
 [Messages and room stations](communication.md).
+
+For a dedicated non-administrator agent account, start with **`roomcall__policy`**
+to discover its RoomCall restrictions. Policies can limit operations, destinations,
+hours, urgency, requested volume and runtime message rate. They add to HA permissions;
+they do not scope that account's unrelated HA APIs. A setup administrator configures
+these policies under **Configure → Communication**. Accounts without a RoomCall
+policy retain existing access rules.
+
+For restart retention, send `durable: true` with an explicit idempotency key. Only
+queued, unexpired work resumes with current permission/policy checks. An `interrupted`
+result means dispatch may have happened; inspect it before sending a replacement.
+Ordinary jobs remain memory-only. Check `status.progress` for measured stages and
+subscribe to owned jobs with authenticated `roomcall/job_events`; an event is not
+proof of audible playback. See [communication settings and lifecycle](communication.md).
 
 The legacy intent has these slots:
 
@@ -150,13 +166,15 @@ Saving any of these reloads RoomCall automatically.
 Use `roomcall__tasks` to list open tasks, `complete` one, or `snooze` it. Only complete a task
 when a person says they did it; hearing or dismissing an alert is not doing the chore. Completion
 fires `roomcall_task_completed` with `announcement_id`, `name`, `task`, `user_id` and `opened`.
-| `notify.roomcall_<room>` | `notify.send_message` speaks in that room |
+A per-room `notify.roomcall_<room>` entity also accepts `notify.send_message` to speak there.
 
 ## 5. Change settings
 
 Speakers, chime, delivery, quiet hours, notifications, transcripts and Apple Home are the
 RoomCall **options flow** (Configure). Sections are nested objects: `chime_options`, `delivery`,
-`quiet_hours`, `replies`, `homekit`. Omitted sections keep their saved values.
+`quiet_hours`, `replies`, `homekit`, and `communication`. The communication section
+includes `speech_profiles`, `household_profiles`, and `agent_policies`. Omitted sections
+keep their saved values; use setup discovery's current `settings_schema` before editing.
 
 ## 6. Troubleshoot
 

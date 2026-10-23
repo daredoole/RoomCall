@@ -15,3 +15,11 @@ roomcall.yaml
 ios/RoomCall/*.xcodeproj/
 ios/RoomCall/*Info.plist
 ios/RoomCall/*.entitlements
+
+# Generated test reports (may contain local filesystem paths)
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+coverage.md
+ha-results.xml

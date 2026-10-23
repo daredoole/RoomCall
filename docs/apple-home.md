@@ -1,7 +1,7 @@
 # Apple Home intercom
 
 This page describes the optional camera talk-back bridge. The
-[native iOS prototype](native-ios.md) provides a separate SwiftUI/Push to Talk
+[native iOS app](native-ios.md) provides a separate SwiftUI
 client that broadcasts directly through HA, without a camera tile. Neither route
 registers RoomCall as a member of HomePod's built-in Intercom system.
 

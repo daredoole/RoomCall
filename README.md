@@ -42,7 +42,7 @@
 ## Why RoomCall?
 
 Apple's Intercom only works on HomePods, Google's Broadcast only on Google speakers, and Sonos has
-no intercom at all. RoomCall turns **every speaker Home Assistant already controls** into one
+no intercom at all. RoomCall turns **compatible speakers Home Assistant already controls** into one
 intercom, organised by your Home Assistant **areas**, and adds the things a family actually needs:
 replies, quiet nights, reminders that don't go away until the chore is done, and Siri.
 
@@ -50,10 +50,12 @@ replies, quiet nights, reminders that don't go away until the chore is done, and
 
 - **Hold to talk, live** — speakers start playing while you are still talking, from the Home Assistant app or any browser.
 - **Rooms are your areas** — one room, the whole house, or **a person** wherever they are right now.
-- **Talk, Type or Ask** — speak, type a message for text-to-speech, or ask a question and collect a real answer from an Assist satellite. Preview exactly which speakers will play first.
+- **Talk, Type or Ask** — speak, type a message for text-to-speech, or ask a question and collect a real answer from an Assist satellite. Preview intended speaker destinations before sending.
 - **Reply** — hands-free from the called room through a small Assist satellite, or from your phone's notification, aimed back at the caller.
 - **Urgent, Do Not Disturb and quiet hours** — quieter nights, skipped bedrooms, and an override when it matters.
 - **Call history** with replay and speech-to-text transcripts.
+- **Household profiles** — saved destinations, message defaults and voice/chime settings in the Type tab.
+- **Prepared speech** — explicit fast/balanced/quality voice choices and bounded, private in-memory reuse for repeated messages. These names are configuration labels, not speed guarantees.
 - **Your chime** — walkie-talkie, ding, doorbell… or your own file, before talk, typed messages, Siri and announcements alike.
 - **Answer the door** — the doorbell rings your rooms, and phones, watches and every card get the camera snapshot with an **Answer** button that opens the live view.
 - **Browser room stations** — call another open dashboard over WebRTC; the other side answers before any audio connects.
@@ -67,6 +69,8 @@ replies, quiet nights, reminders that don't go away until the chore is done, and
 - **Scheduled and triggered announcements** — "Bus in 10 minutes" on weekdays, "{{ name }} is on" when the porch light switches, "the garage has been open 10 minutes" — to rooms, speakers or people.
 - **Tasks you have to confirm** — give an announcement a task like *Took out the dry clothes*. It keeps reminding until someone taps that button on their phone, on the card's **To do** list or on a **Mark done** button. Swiping the notification away doesn't count; **Remind me later** snoozes it. Who did it, and when, is recorded, and automations get a `roomcall_task_completed` event ([how it works](https://daredoole.github.io/RoomCall/announcements/#tasks-confirm-it-was-actually-done)).
 - **Acknowledgments and delivery evidence** — ask for an explicit "got it", and see what each speaker actually reported instead of a blind "sent".
+- **Durable message jobs** — opt into preserving queued text messages over restarts; uncertain dispatched work is interrupted rather than automatically replayed.
+- **Delivery timeline** — see preparation and dispatch stages, separate from device evidence and human acknowledgment.
 - **Optional voicemail and translation** — bounded local retention, per-person languages and explicit translation providers.
 
 ### ⚙️ One settings panel on the card
@@ -97,20 +101,20 @@ Everything is keyboard accessible and fits from a 240 px column to a wall tablet
   &nbsp;
   <img src="docs/assets/ios-rooms-light.png" alt="RoomCall for iPhone: choose where to speak" width="200">
   &nbsp;
-  <img src="docs/assets/ios-talking-dark.png" alt="RoomCall for iPhone: talking to the kitchen" width="200">
+  <img src="docs/assets/ios-message-dark.png" alt="RoomCall for iPhone: type an announcement" width="200">
 </p>
-<p align="center"><sub>Native iOS prototype, captured from the iOS Simulator in CI.</sub></p>
+<p align="center"><sub>Native iOS app, captured from the iOS Simulator in CI.</sub></p>
 
 - **"Hey Siri, run RoomCall Basement"** — dictate an announcement to any room, with your chime and Home Assistant voice; no HomePod required.
 - **Apple Home intercom** — every room is a camera tile in the Home app; tap the mic on your iPhone or Apple Watch to talk in that room.
 - **Notifications that do something** — Reply, Acknowledge, and task buttons right on the notification.
-- **Native iOS prototype** — SwiftUI, Home Assistant sign-in (no tokens to paste), Apple's Push to Talk for live broadcasts, Siri announcements and a Control Center launcher, in light and dark mode ([build and limitations](https://daredoole.github.io/RoomCall/native-ios/)).
+- **Native iOS app** — sideloadable SwiftUI app with HA sign-in, in-app hold to talk, typed messages, questions, tasks, history, foreground doorbell alerts, Siri, widgets and Live Activities. CI supplies an unsigned IPA that needs your signing ([build and limitations](https://daredoole.github.io/RoomCall/native-ios/)).
 
 ### 🏠 Smart home and AI
 
 - **Automations** — `roomcall.broadcast`, a **notify entity per room** (`notify.roomcall_kitchen`), and ready-made **blueprints** for the doorbell, laundry, bedtime and arrivals.
 - **AV receivers and TV boxes** — Denon/HEOS and onn/Google TV play the call, then go back to the TV input, volume and app they were on. Sonos lowers the music instead of stopping it.
-- **AI-ready** — Assist and MCP agents get explicit RoomCall tools: discover, preview, send, check status, manage announcements and tasks, and run guided setup with reviewable plans and undo ([AI guide](https://daredoole.github.io/RoomCall/ai/), [agent setup](https://daredoole.github.io/RoomCall/agent-setup/), [`llms.txt`](https://daredoole.github.io/RoomCall/llms.txt)). Agents respect Home Assistant permissions and exposure.
+- **AI-ready** — Assist and MCP agents get explicit RoomCall tools: discover, preview, send, check status, manage announcements and tasks, and run guided setup with reviewable plans and undo ([AI guide](https://daredoole.github.io/RoomCall/ai/), [agent setup](https://daredoole.github.io/RoomCall/agent-setup/), [`llms.txt`](https://daredoole.github.io/RoomCall/llms.txt)). Agents respect Home Assistant permissions and exposure. Dedicated accounts can also have RoomCall operation/destination/hour/volume/rate limits and owned-job subscriptions. These limits do not scope unrelated HA services.
 - **Diagnostics and Repairs** — problems show up in Home Assistant, not as silent calls.
 - 🌍 English, Español, Deutsch, Français, Nederlands.
 - 🔒 **Local audio delivery** — recordings go from your phone to Home Assistant to the speaker. Optional speech and translation processing follows only the providers you configure.
@@ -243,6 +247,7 @@ actions:
 | Delivery | 250 ms apart, retry on | Stops Sonos speakers from dropping simultaneous calls |
 | Quiet hours | off | Quieter calls and skipped rooms overnight |
 | Notifications and replies | off | Phones to notify, Reply button, speech-to-text |
+| Communication profiles and agent policies | empty | Saved household/voice profiles and optional per-account RoomCall restrictions |
 | Apple Home | off | Rooms as camera tiles with a talk button in the Home app |
 
 **Announcements** are added from the integration's ⋮ menu: *Add scheduled announcement* /

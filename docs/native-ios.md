@@ -1,65 +1,63 @@
-# Native iOS prototype
+# Native iOS app
+
+RoomCall includes a sideloadable SwiftUI iPhone/iPad app in `ios/RoomCall`.
+It sends live microphone audio and typed announcements through your Home Assistant.
+It uses an ordinary in-app microphone session; Apple's Push to Talk entitlement is
+not required. The optional [Apple Home camera bridge](apple-home.md) is a separate route.
 
 <div class="grid" markdown>
 ![Sign in with Home Assistant](assets/ios-sign-in-light.png){ width="180" }
-![Choose where to speak](assets/ios-rooms-light.png){ width="180" }
-![Talking to the kitchen](assets/ios-talking-light.png){ width="180" }
+![Choose a destination](assets/ios-rooms-light.png){ width="180" }
+![Type an announcement](assets/ios-message-light.png){ width="180" }
+![Confirm a task](assets/ios-tasks-dark.png){ width="180" }
 </div>
-
-<div class="grid" markdown>
-![Sign in, dark](assets/ios-sign-in-dark.png){ width="180" }
-![Rooms, dark](assets/ios-rooms-dark.png){ width="180" }
-![Talking, dark](assets/ios-talking-dark.png){ width="180" }
-</div>
-
-RoomCall includes a SwiftUI iPhone/iPad prototype in `ios/RoomCall`. It broadcasts
-microphone audio to HA-controlled speakers using Apple's Push to Talk framework
-and RoomCall's existing live WebSocket endpoint. It does not emulate a camera.
-The existing Apple Home camera bridge remains an independent, optional route.
 
 ## What is implemented
 
-- Home Assistant sign-in through `ASWebAuthenticationSession`, with state checking,
-  SHA-256 PKCE, token refresh and device-only Keychain storage. No long-lived token
-  is pasted into the app or embedded in a Shortcut.
-- Room discovery, explicit destination selection, channel join/leave and native
-  system transmission controls. Microphone capture waits for both a transmission
-  request and the framework's audio-session activation. Cancelling a pending start,
-  stopping, interruptions and deactivation stop capture.
-- Live audio resampling to mono 16 kHz signed 16-bit PCM and ordered, bounded
-  WebSocket transmission to `roomcall/live`. Finishing explicitly sends the binary
-  end marker and reads HA's result. Accepted playback requests remain separate
-  from audibility.
-- Restoring an authenticated room/channel after app restart. Restoring a channel
-  does not start the microphone.
-- A Siri/Shortcuts action for typed announcements to a selected room. The action
-  returns queue acceptance and never claims the message was heard.
-- An `OpenIntent` and Control Center control that open the room interface. Opening
-  the app does not join a channel or turn on the microphone.
-- Native Dynamic Type, accessibility labels, room controls, and five languages.
-  Native strings are generated from the integration's existing translation catalogs.
+- Home Assistant sign-in through `ASWebAuthenticationSession`, state validation,
+  SHA-256 PKCE, token refresh and device-only Keychain storage. No token to paste.
+- Connect by entering your HA address, or scan **Settings → iPhone app** on the
+  RoomCall dashboard card. The QR code contains a server address, not credentials;
+  you still sign in through Home Assistant.
+- **Talk:** pick a room, Everywhere or a person, then hold the microphone button.
+  Release to finish. VoiceOver users double-tap to start and again to stop.
+  Capture starts only after the local action and microphone permission.
+- Ordered, bounded live WebSocket audio in mono 16 kHz PCM. Releasing while
+  connecting sends no recording. Accepted playback remains separate from audibility.
+- **Message:** type to speak in the selected destination, or ask a compatible Assist
+  satellite and read its transcribed response.
+- **Tasks:** complete or snooze announcement tasks; **History:** read and reply to calls.
+- **Settings:** select this phone's usual room for replies, see the server and sign out.
+  Do Not Disturb and urgent controls are available in the room interface.
+- Foreground doorbell detection with a snapshot and an action opening the HA camera.
+  Two-way visitor audio depends on that camera's HA support.
+- Siri/Shortcuts room entities and typed announcements, Control Center controls,
+  a task widget and task Live Activities with a completion action.
+- Dynamic Type, accessibility labels, light/dark appearances and five languages.
+  Native translations are generated from the integration catalogs.
 
-## Requirements
+## Requirements and installation
 
-- RoomCall **0.10.0** installed in Home Assistant. Earlier integrations do not serve
-  the native callback metadata endpoint.
-- Home Assistant **2026.10 or later**. The app checks the unauthenticated HA
-  WebSocket version before sign-in because older supported integration test
-  versions do not provide the required PKCE flow.
-- iOS/iPadOS **18 or later** is the deployment target. Current API documentation
-  was reviewed for iOS 27; simulator CI records the actual SDK/runtime it builds
-  and tests. A simulator run is not verification on an iOS 27 phone.
-- A Mac with Xcode and XcodeGen to build locally. A physical installation needs
-  your own Apple development team and provisioning for Push to Talk, notifications
-  and the configured app group. CI uses ad-hoc simulator signing, not a device
-  provisioning profile or an App Store distribution identity.
+- Use the current RoomCall integration release for the complete app features.
+  RoomCall 0.10.0 introduced callback metadata; task and doorbell features need later versions.
+- Home Assistant **2026.10 or later** for the app's PKCE sign-in flow. This is separate
+  from the integration's compatibility tests against HA 2026.2.3 and 2026.10.2.
+- iOS/iPadOS **18 or later** is the deployment target; particular controls also depend
+  on the installed OS. See the CI logs for the SDK and simulator actually tested.
+- A signed build is required on a physical phone. CI produces an **unsigned IPA**;
+  it cannot be installed by simply opening the file. Sign it with your own Apple
+  identity using a compatible sideloading tool, or build with Xcode. Signing must
+  cover the app, widget extension and matching app group. Tool/account limitations apply.
 
-Use a trusted HTTPS HA address. The app permits local networking under Apple's
-transport-security rules, but does not bypass certificate validation or globally
-disable App Transport Security. Reachability and local HTTP behavior still depend
-on the address, device and network configuration.
+There is no App Store or TestFlight distribution configured. Find the simulator
+and unsigned-device artifacts in successful [iOS workflow runs](https://github.com/daredoole/RoomCall/actions/workflows/ios.yml).
+Artifact downloads require GitHub access and expire according to GitHub's retention policy.
 
-## Build and run
+Use a trusted HTTPS HA address. Local networking is permitted, but certificate
+validation is not bypassed and App Transport Security is not globally disabled.
+Actual reachability depends on the address, phone and network.
+
+## Build and connect
 
 ```bash
 brew install xcodegen
@@ -68,66 +66,49 @@ xcodegen generate --spec ios/RoomCall/project.yml
 open ios/RoomCall/RoomCall.xcodeproj
 ```
 
-Choose the **RoomCall** scheme. For a physical phone, set your team in Signing &
-Capabilities. If you change bundle identifiers, also change the matching app-group
-identifier in both entitlements and `RoomCache.defaults` in `Shared/Models.swift`.
-Generated Xcode projects, property lists and entitlement files are intentionally
-ignored; `project.yml` is their source.
+Choose the **RoomCall** scheme and your signing team. If bundle identifiers change,
+update the matching app group in `project.yml` and `RoomCache.defaults` in
+`Shared/Models.swift`. Generated projects, plists and entitlements are ignored;
+`project.yml` is their source.
 
-Install, enter your HA address and sign in through HA's own login screen. Choose
-a destination and press **Join this room**. **Start talking** begins transmission;
-**Stop talking** stops the microphone and finishes the message. System PTT controls
-can also control a joined channel. Use **Leave room** before choosing a different
-destination. Text announcements are available in Shortcuts under RoomCall.
+Install the signed app, enter the HA address or scan the card's connection QR code,
+and sign in. Pick a destination and hold to talk, or use **Message** to type.
+Opening the app, a room control or a connection link never starts the microphone.
 
-The HA endpoint `/roomcall/ios` is public IndieAuth callback metadata only. It
-advertises `roomcall://auth-callback`; it neither creates credentials nor grants
-API access. Normal HA login, PKCE validation, authenticated APIs and caller
-permissions still apply.
+The public `/roomcall/ios` endpoint is IndieAuth callback metadata only. It advertises
+`roomcall://auth-callback`; normal HA authentication and caller permissions still apply.
 
-## Prototype boundaries
+## Platform boundaries
 
-This build is **outbound room broadcasting**. Receiving background audio is not
-implemented: ephemeral push tokens are not registered with a server, and incoming
-PTT push payloads do not claim an active participant. It does not join Apple's
-HomePod Intercom system, turn ordinary speakers into Siri-enabled accessories,
-or provide Home app Intercom membership.
+The app broadcasts outbound audio. It does not provide an always-listening background
+receiver, join HomePod's built-in Intercom system, make other speakers Siri accessories,
+or register a native Home app Intercom tile. It does not use system Push to Talk channels.
 
-Background reception needs a provisioned push service, authenticated device-token
-registration, expiring message references, download authorization, audio-session
-handling and real device tests. Apple's Local Push Connectivity alternative also
-requires a separate entitlement approval. These are distinct from ordinary local
-outbound streaming and have not been represented as working features.
+Tasks and doorbells refresh while the app is open. Live Activities and widgets do not
+supply a background push service. Background incoming calls or remotely refreshed
+activities need additional provisioning, a push service and physical-device testing.
+The optional camera bridge remains the route for room talk buttons inside Apple Home.
 
 ## Validation
 
-The `iOS / simulator` workflow generates the Xcode project, compiles the app and
-Control Center extension, exercises URL validation, PKCE/state, Keychain storage,
-native audio conversion, room queries and authenticated API errors, and runs a
-large-text sign-in UI test. It uploads the test result bundle, build log and a
-simulator app archive when successful. Simulator tests cannot prove real microphone
-routing, HomePod behavior, speaker audibility, background wake-up or App Store
-eligibility.
+Native CI checks translation synchronization on every PR. Changes to native sources
+or resources run unit, UI and screenshot tests plus an unsigned device build. Main
+and manual workflow runs also build the app. The device build includes the widget/
+Control Center extension and Live Activity. Successful builds upload the IPA and
+simulator result bundles.
 
-The HA integration and standalone server retain their separate **100% Python
-statement coverage** gates. Those gates do not measure Swift or JavaScript
-execution. Web browser QA independently covers narrow/fixed-height layouts,
-200% text, modal focus/keyboard navigation, guided setup and WebRTC cleanup.
-
-## Apple references
-
-- [Creating a Push to Talk app](https://developer.apple.com/documentation/pushtotalk/creating-a-push-to-talk-app/)
-- [OpenIntent](https://developer.apple.com/documentation/appintents/openintent)
-- [Controls](https://developer.apple.com/documentation/widgetkit/controls-collection)
-- [Local push connectivity](https://developer.apple.com/documentation/networkextension/local-push-connectivity)
-- [Home Assistant authentication](https://developers.home-assistant.io/docs/auth_api/)
+Simulator tests cover sign-in validation, PKCE/state, storage, audio conversion,
+API errors, message/task controls, doorbell presentation and large text. They cannot
+prove physical microphone routing, speaker audibility, background wake-up, signing
+or App Store eligibility. Python's **100% statement coverage** gates cover the HA
+integration and standalone server, not Swift or JavaScript execution. Browser QA
+separately exercises narrow/fixed-height layouts, keyboard access and WebRTC cleanup.
 
 ## Screenshots
 
-The images above are real iOS Simulator captures, not drawings. The
-`testScreenshot*` UI tests launch a debug-only demo mode (`-RoomCallDemo`, sample
-rooms, no server or credentials; release builds don't include it) and CI exports the
-captures with the `roomcall-ios-simulator` artifact. Frame them for the docs with:
+These are actual simulator captures from debug-only demo mode, with sample rooms
+and no server credentials. They illustrate the interface, not real speaker delivery.
+Frame exported CI captures with:
 
 ```bash
 python scripts/ios_mockups.py path/to/ios-screenshots

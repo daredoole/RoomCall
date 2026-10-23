@@ -68,9 +68,9 @@ Details: [Agent setup](agent-setup.md).
 - [x] Card layout follows its width; Talk/Type/Ask everywhere and one keyboard-accessible Settings panel
 - [x] Room-specific Siri setup and native Perform Action shortcuts with a live room picker
 - [x] Configured chime before typed, Siri, notify and scheduled announcements
-- [x] Native iOS prototype: HA sign-in, Push to Talk, Siri announcements, Control Center
+- [x] Native iOS client foundation: HA sign-in, Siri announcements and Control Center
 
-Details: [Siri and Shortcuts](siri-shortcuts.md), [Native iOS prototype](native-ios.md).
+Details: [Siri and Shortcuts](siri-shortcuts.md), [Native iOS app](native-ios.md).
 
 ## v0.11 — Tasks ✅
 
@@ -78,6 +78,18 @@ Details: [Siri and Shortcuts](siri-shortcuts.md), [Native iOS prototype](native-
       phone actions, a card **To do** list, a sensor, a button and a completion event
 
 Details: [Announcements](announcements.md#tasks-confirm-it-was-actually-done).
+
+## v0.12–0.18 — Native app and message workflows ✅
+
+- [x] Sideloadable iOS app with in-app hold to talk, text, satellite questions, tasks,
+      history, foreground doorbell alerts, widgets and Live Activities; no system PTT entitlement
+- [x] Configured speech profiles and bounded owner-scoped prepared-speech caching
+- [x] Opt-in durable queued text messages with conservative interruption after uncertain dispatch
+- [x] Reusable household profiles for destinations, message and voice/chime defaults
+- [x] Measured delivery timeline, separate device observations and human acknowledgment
+- [x] Per-account RoomCall restrictions and owned-job WebSocket subscriptions
+
+Details and limitations: [Communication](communication.md), [Native iOS app](native-ios.md).
 
 ## Further hardware work
 
