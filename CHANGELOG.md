@@ -4,6 +4,14 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.14.0 — 2026-10-23
+
+- Fast, balanced and quality speech profiles select explicit TTS engines and voices.
+- Pre-generate speech without playback using the discoverable speech operation.
+- Reuse composed speech for ten minutes in an owner-scoped cache bounded to 32
+  entries / 16 MiB; concurrent identical requests synthesize once. Administrators
+  can clear it; configuration reload clears all prepared speech.
+
 ## 0.12.0 — 2026-10-22
 
 - Hands-free talk-back ([#11](https://github.com/daredoole/RoomCall/issues/11)): with an Assist

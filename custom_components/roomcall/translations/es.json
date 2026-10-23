@@ -112,7 +112,8 @@
               "talk_back": "Respuesta sin manos",
               "doorbell_entity": "Timbre",
               "doorbell_camera": "Cámara del timbre",
-              "doorbell_rooms": "Salas donde suena"
+              "doorbell_rooms": "Salas donde suena",
+              "speech_profiles": "Perfiles de voz"
             },
             "data_description": {
               "talk_back": "Cuando alguien habla a una sala desde otra, un satélite de Assist en esa sala (Atom Echo, ESP32-S3, Home Assistant Voice) escucha una respuesta y la sala de origen la oye. Las respuestas se transcriben y se dicen con la voz configurada.",
@@ -385,7 +386,9 @@
         "talk_back_reply": "{room} dice: {text}",
         "doorbell_message": "Hay alguien en {name}.",
         "answer_door": "Contestar",
-        "open_camera": "Abrir la cámara"
+        "open_camera": "Abrir la cámara",
+        "tool_speech": "Preparar voz sin reproducir o borrar la caché de voz preparada.",
+        "speech_profile_missing": "Elige un perfil de voz configurado."
       }
     },
     "audio_processing": {

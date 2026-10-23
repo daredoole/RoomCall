@@ -103,6 +103,7 @@ from .policy import QuietHours
 from .protocol import SETUP_KEY
 from .scheduler import Scheduler
 from .schema import vol
+from .speech import SpeechCache
 from .stations import Stations
 from .telemetry import Evidence, Metrics
 from .voicemail import Mailbox
@@ -151,6 +152,8 @@ class RoomCallData:
     clips: ClipStore = field(default_factory=ClipStore)
     live: LiveStore = field(default_factory=LiveStore)
     history: History = field(default_factory=History)
+    speech_cache: SpeechCache = field(default_factory=SpeechCache)
+    speech_profiles: dict[str, dict[str, str]] = field(default_factory=dict)
     chime_cache: dict[str, bytes] = field(default_factory=dict)
     aliases: dict[str, str] = field(default_factory=dict)
     preferences: dict[str, dict[str, Any]] = field(default_factory=dict)
@@ -206,6 +209,7 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         volume=_float(opts.get(CONF_VOLUME)),
         gain_db=float(opts.get(CONF_GAIN_DB, DEFAULT_GAIN_DB)),
         tts_engine=opts.get(CONF_TTS_ENGINE) or None,
+        speech_profiles=dict(communication.get("speech_profiles") or {}),
         chime_style=None if style == chimes.OFF else style,
         chime_url=(chime.get(CONF_CHIME_URL) or "").strip() or None,
         stagger_ms=int(delivery.get(CONF_STAGGER_MS, DEFAULT_STAGGER_MS)),
