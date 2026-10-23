@@ -385,7 +385,24 @@
         "talk_back_reply": "{room} sagt: {text}",
         "doorbell_message": "Jemand ist an der {name}.",
         "answer_door": "Annehmen",
-        "open_camera": "Kamera öffnen"
+        "open_camera": "Kamera öffnen",
+        "delivery_timeline": "Zustellungsverlauf",
+        "phase_queued": "In Warteschlange",
+        "phase_waiting_presence": "Warte auf Anwesenheit",
+        "phase_synthesizing": "Sprache erzeugen",
+        "phase_composing": "Signal hinzufügen",
+        "phase_waiting_speakers": "Warte auf Lautsprecher",
+        "phase_dispatching": "Wiedergabe anfordern",
+        "phase_completed": "Anfragen abgeschlossen",
+        "phase_partial": "Einige Anfragen fehlgeschlagen",
+        "phase_failed": "Fehlgeschlagen",
+        "phase_expired": "Abgelaufen",
+        "phase_cancelled": "Abgebrochen",
+        "phase_acknowledged": "Bestätigt",
+        "phase_answered": "Beantwortet",
+        "phase_waiting_ack": "Warte auf Bestätigung",
+        "phase_audio_fetched_ms": "Audio nach Versand abgerufen",
+        "phase_playback_reported_ms": "Wiedergabe nach Versand gemeldet"
       }
     },
     "audio_processing": {

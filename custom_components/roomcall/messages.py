@@ -27,6 +27,8 @@ async def request_for(
     data: RoomCallData,
     values: dict[str, Any],
     context: Context,
+    *,
+    on_progress: Callable[[str], None] | None = None,
 ) -> CallRequest:
     message = values.get("message")
     language = values.get("language")
@@ -91,9 +93,13 @@ async def request_for(
             except NoURLAvailableError as err:
                 raise Problem("speaker_url_missing") from err
             started = time.monotonic()
+            if on_progress:
+                on_progress("synthesizing")
             try:
                 async with asyncio.timeout(30):
                     extension, speech = await async_get_media_source_audio(hass, media_id)
+                    if on_progress:
+                        on_progress("composing")
                     audio, content_type = await to_playable(
                         get_ffmpeg_manager(hass).binary,
                         speech,
@@ -140,8 +146,11 @@ async def send(
     deadline: float | None = None,
     on_dispatch: Callable[[], None] | None = None,
     notify: bool = True,
+    on_progress: Callable[[str], None] | None = None,
 ) -> CallRecord:
-    request = await request_for(hass, data, values, context)
+    request = await request_for(hass, data, values, context, on_progress=on_progress)
+    if on_progress:
+        on_progress("waiting_speakers")
     request.call_id, request.deadline, request.on_dispatch = call_id, deadline, on_dispatch
     request.notify = notify
     return await place_call(hass, data, request)

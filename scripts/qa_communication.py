@@ -306,6 +306,10 @@ def main() -> None:
             )
             card.get_by_role("button", name="Send", exact=True).click()
             expect(card.locator(".result")).to_contain_text("audibility unconfirmed")
+            timeline = card.get_by_role("list", name="Delivery timeline", exact=True)
+            expect(timeline).to_contain_text("Generating speech")
+            expect(timeline).to_contain_text("Audio fetched after dispatch")
+            expect(timeline).to_contain_text("Playback reported after dispatch")
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             if width == 390:
                 page.screenshot(path=OUT / "ha-card-type.png")

@@ -106,6 +106,9 @@ export class RoomCallControls {
     this.result = document.createElement("div");
     this.result.className = "result muted";
     this.result.setAttribute("role", "status");
+    this.timeline = document.createElement("ol");
+    this.timeline.setAttribute("aria-label", this.t("delivery_timeline"));
+    this.timeline.hidden = true;
     this.jobActions = document.createElement("nav");
     this.dialog = document.createElement("dialog");
     this.dialog.setAttribute("aria-label", this.t("settings"));
@@ -171,7 +174,7 @@ export class RoomCallControls {
     const icon = document.createElement("ha-icon"); icon.setAttribute("icon", "mdi:tune-variant");
     settings.append(icon);
     this.nav.append(settings);
-    this.root.append(this.nav, this.form, this.result, this.jobActions);
+    this.root.append(this.nav, this.form, this.result, this.timeline, this.jobActions);
     card.shadowRoot.querySelector(".wrap").before(this.root);
     this.settingsRoot = document.createElement("section");
     this.settingsRoot.className = "communication settings-surface";
@@ -287,6 +290,23 @@ export class RoomCallControls {
       const job = await this.command("status", { id });
       this.result.textContent = this.t(job.state, { accepted: job.result?.delivered?.length || 0,
         speakers: Object.keys(job.result?.failed || {}).join(", ") });
+      const steps = [...(job.progress || [])];
+      this.timeline.hidden = !steps.length;
+      this.timeline.replaceChildren(...steps.map(step => {
+        const row = document.createElement("li");
+        row.textContent = `${this.t(`phase_${step.stage}`)} · ${(step.elapsed_ms / 1000).toFixed(1)}s`;
+        return row;
+      }));
+      for (const [endpoint, evidence] of Object.entries(job.result?.evidence || {})) {
+        if (endpoint === "human") continue;
+        const name = this.capabilities?.endpoints.find(e => e.entity_id === endpoint)?.name || endpoint;
+        for (const key of ["audio_fetched_ms", "playback_reported_ms"]) {
+          if (evidence[key] == null) continue;
+          const row = document.createElement("li");
+          row.textContent = `${name}: ${this.t(`phase_${key}`)} · ${(evidence[key] / 1000).toFixed(1)}s`;
+          this.timeline.append(row);
+        }
+      }
       this.jobActions.replaceChildren();
       if (job.state === "queued") this.jobActions.append(this.button("cancel", async () => {
         await this.command("cancel", { id });

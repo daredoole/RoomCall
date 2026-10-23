@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.17.0 — 2026-10-23
+
+- Show measured preparation and dispatch stages, with endpoint fetch/playback evidence separate from human acknowledgment. Completion still means requests finished, not audible playback.
+
 ## 0.12.0 — 2026-10-22
 
 - Hands-free talk-back ([#11](https://github.com/daredoole/RoomCall/issues/11)): with an Assist

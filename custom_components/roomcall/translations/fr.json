@@ -385,7 +385,24 @@
         "talk_back_reply": "{room} dit : {text}",
         "doorbell_message": "Quelqu'un est à {name}.",
         "answer_door": "Répondre",
-        "open_camera": "Ouvrir la caméra"
+        "open_camera": "Ouvrir la caméra",
+        "delivery_timeline": "Chronologie de livraison",
+        "phase_queued": "En attente",
+        "phase_waiting_presence": "Attente de présence",
+        "phase_synthesizing": "Génération vocale",
+        "phase_composing": "Ajout du son",
+        "phase_waiting_speakers": "Attente des haut-parleurs",
+        "phase_dispatching": "Envoi des demandes",
+        "phase_completed": "Demandes terminées",
+        "phase_partial": "Échec partiel",
+        "phase_failed": "Échec",
+        "phase_expired": "Expiré",
+        "phase_cancelled": "Annulé",
+        "phase_acknowledged": "Confirmé",
+        "phase_answered": "Répondu",
+        "phase_waiting_ack": "Attente de confirmation",
+        "phase_audio_fetched_ms": "Audio téléchargé après envoi",
+        "phase_playback_reported_ms": "Lecture signalée après envoi"
       }
     },
     "audio_processing": {

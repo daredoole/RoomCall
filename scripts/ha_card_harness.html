@@ -175,7 +175,7 @@
         if (body.operation === "preview") return {ok:true,endpoints:ROOMS.filter((r) => request.areas?.includes("all") || request.areas?.includes(r.area_id)).map((r) => `media_player.${r.area_id}`)};
         if (["send","ask","sound_test"].includes(body.operation)) {
           const id=crypto.randomUUID();
-          const job={ok:true,id,state:body.operation==="ask"?"answered":"completed",responses:body.operation==="ask"?[{sentence:"Pizza"}]:[]};
+          const job={ok:true,id,progress:[{stage:"queued",elapsed_ms:0},{stage:"synthesizing",elapsed_ms:40},{stage:"completed",elapsed_ms:250}],result:{evidence:{"media_player.kitchen":{audio_fetched_ms:100,playback_reported_ms:200}},failed:{}},state:body.operation==="ask"?"answered":"completed",responses:body.operation==="ask"?[{sentence:"Pizza"}]:[]};
           jobs.set(id,{...job,speaker:request.speaker});
           return job;
         }

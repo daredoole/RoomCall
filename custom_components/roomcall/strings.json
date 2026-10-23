@@ -385,7 +385,24 @@
         "talk_back_reply": "{room} says: {text}",
         "doorbell_message": "Someone is at the {name}.",
         "answer_door": "Answer",
-        "open_camera": "Open the camera"
+        "open_camera": "Open the camera",
+        "delivery_timeline": "Delivery timeline",
+        "phase_queued": "Queued",
+        "phase_waiting_presence": "Waiting for presence",
+        "phase_synthesizing": "Generating speech",
+        "phase_composing": "Adding chime",
+        "phase_waiting_speakers": "Waiting for speakers",
+        "phase_dispatching": "Sending playback requests",
+        "phase_completed": "Requests completed",
+        "phase_partial": "Some requests failed",
+        "phase_failed": "Failed",
+        "phase_expired": "Expired",
+        "phase_cancelled": "Cancelled",
+        "phase_acknowledged": "Acknowledged",
+        "phase_answered": "Answered",
+        "phase_waiting_ack": "Waiting for acknowledgment",
+        "phase_audio_fetched_ms": "Audio fetched after dispatch",
+        "phase_playback_reported_ms": "Playback reported after dispatch"
       }
     },
     "audio_processing": {

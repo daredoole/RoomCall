@@ -385,7 +385,24 @@
         "talk_back_reply": "{room} dice: {text}",
         "doorbell_message": "Hay alguien en {name}.",
         "answer_door": "Contestar",
-        "open_camera": "Abrir la cámara"
+        "open_camera": "Abrir la cámara",
+        "delivery_timeline": "Cronología de entrega",
+        "phase_queued": "En cola",
+        "phase_waiting_presence": "Esperando presencia",
+        "phase_synthesizing": "Generando voz",
+        "phase_composing": "Añadiendo sonido",
+        "phase_waiting_speakers": "Esperando altavoces",
+        "phase_dispatching": "Enviando solicitudes",
+        "phase_completed": "Solicitudes completadas",
+        "phase_partial": "Algunas solicitudes fallaron",
+        "phase_failed": "Error",
+        "phase_expired": "Caducado",
+        "phase_cancelled": "Cancelado",
+        "phase_acknowledged": "Confirmado",
+        "phase_answered": "Respondido",
+        "phase_waiting_ack": "Esperando confirmación",
+        "phase_audio_fetched_ms": "Audio descargado tras el envío",
+        "phase_playback_reported_ms": "Reproducción indicada tras el envío"
       }
     },
     "audio_processing": {
