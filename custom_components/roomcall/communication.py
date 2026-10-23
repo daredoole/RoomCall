@@ -289,6 +289,7 @@ async def _execute(hass, operation, values, context, *, assistant=None):
             from .shortcuts import room_choices
 
             result = discover(hass, data)
+            result["speech_profiles"] = sorted(data.speech_profiles)
             result["shortcut_choices"] = await room_choices(
                 hass, data, context, assistant=assistant
             )

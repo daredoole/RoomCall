@@ -20,6 +20,7 @@ async def test_preparation_reuse_profiles_and_permission_boundary(
     data = hass.data["roomcall"]
     hass.states.async_set("tts.piper", "unknown")
     data.speech_profiles = {"fast": {"engine": "tts.piper", "voice": "en_US-lessac-medium"}}
+    assert (await execute(hass, "discover", {}, Context()))["speech_profiles"] == ["fast"]
     values = {"areas": ["kitchen"], "message": "Dinner", "speech_profile": "fast"}
     played = async_mock_service(hass, "media_player", "play_media")
     a, b = await asyncio.gather(*(request_for(hass, data, values, Context()) for _ in range(2)))
