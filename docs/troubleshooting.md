@@ -29,6 +29,17 @@ matching playback evidence in history; unsupported evidence remains unknown.
 
 For HA-hosted audio, verify HA's **internal URL** is reachable from the speaker's
 network. For the standalone server, check `public_url` (printed at startup).
+RoomCall raises a Repair for loopback addresses, `.local` names, the default Docker
+bridge range (`172.17.0.0/16`), and HTTPS certificate failures or connections it cannot
+check. Open **Settings → System → Repairs** to review a LAN address suggested by HA’s
+network integration. The repair changes the shared internal URL only after your
+confirmation. Direct HTTPS servers need a trusted certificate or an HTTP proxy;
+the repair will not suggest plain HTTP to an HTTPS-only listener. Custom Docker
+networks and speaker VLAN access still need manual checking.
+
+After fixing the address, repeat **Test each room** in the card’s guided setup.
+Only your **Yes** verifies a speaker; **No** and **Skip** remain unverified in diagnostics.
+
 Firewalls, private certificates the speaker cannot trust, and expired media URLs
 can prevent downloads. External audio and direct TTS have their own provider URLs.
 

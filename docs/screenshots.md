@@ -60,6 +60,12 @@ assets rather than silently replacing screenshots during the build. If inputs
 change, regenerate/review the affected captures; refresh the complete set before
 recording again. Never update hashes just to suppress a stale-capture error.
 
+The guided setup also captures **Test each room** (`assets/ha-room-listening.png`).
+It shows a simulated second-room listening question with Yes / No / Skip controls;
+these buttons record the user’s answer, never an inferred playback result.
+
+![Room-by-room listening check with sample data](assets/ha-room-listening.png)
+
 ## What remains a hardware check
 
 CI covers browser communication/layout behavior, native unit/UI/screenshot tests,

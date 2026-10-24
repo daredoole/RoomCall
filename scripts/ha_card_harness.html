@@ -157,10 +157,15 @@
           }
           if(request.action==="test") {
             const id=crypto.randomUUID();plan.tests[request.speaker]=id;
+            delete (plan.confirmations??={})[request.speaker];setupHeard.delete(request.speaker);
             jobs.set(id,{ok:true,id,state:"completed",responses:[],speaker:request.speaker});saveSetup();
             return {ok:true,id,plan};
           }
-          if(request.action==="confirm") {if(request.heard)setupHeard.add(request.speaker);else setupHeard.delete(request.speaker);saveSetup();return {ok:true,plan};}
+          if(request.action==="confirm" || request.action==="skip") {
+            const heard=request.action==="confirm" && request.heard;
+            if(heard)setupHeard.add(request.speaker);else setupHeard.delete(request.speaker);
+            (plan.confirmations??={})[request.speaker]={heard,skipped:request.action==="skip",at:Date.now()/1000};
+            saveSetup();return {ok:true,plan};}
           if(request.action==="verify")return {ok:true,plan,verification:{configuration_ready:true,
             completed:plan.settings.speakers.every(id=>setupHeard.has(id)),audio_confirmed:plan.settings.speakers.every(id=>setupHeard.has(id))}};
           return {ok:true,plan};

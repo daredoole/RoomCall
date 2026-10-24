@@ -51,6 +51,7 @@ These are request bodies for `roomcall__setup`:
 | Verify | `{"action":"verify","id":"PLAN"}` separates configuration readiness, provider readiness, endpoint availability, human audio confirmation, and overall completion. Follow its `next_actions`. |
 | Test | `{"action":"test","id":"PLAN","speaker":"media_player.kitchen"}` plays the existing test sound and returns a job ID. Poll `roomcall__status`. |
 | Confirm | `{"action":"confirm","id":"PLAN","speaker":"media_player.kitchen","heard":true}` records what a person reports. An agent must ask the person; it cannot infer this from a successful job. |
+| Skip | `{"action":"skip","id":"PLAN","speaker":"media_player.kitchen"}` records a skipped, unverified speaker. It never supplies a listening confirmation. |
 | Resume | `{"action":"list"}` lists the caller's active plans. `{"action":"get","id":"PLAN"}` retrieves one. |
 | Undo | `{"action":"undo","id":"PLAN","revision":"REVISION","confirm":true}` restores the exact previous options or removes only the entry created by this plan. |
 
@@ -61,7 +62,11 @@ preserve unrelated saved values; `null` removes an optional override (HA's initi
 entry value still applies if present, and is shown in the plan). Review
 `changes` before applying, including defaults added by HA's schema.
 Listening confirmations belong to the plan that issued the test. Confirming an
-unrelated or older test does not verify a new setup.
+unrelated or older test does not verify a new setup. Retesting clears the previous
+confirmation until a person answers again. Endpoint `result` values are `heard`,
+`not_heard`, `skipped`, or `untested`; unsuccessful listening results include a
+`troubleshooting_url`. Discovery and downloaded diagnostics expose the same saved
+`audio_verification`, with `configuration_current` and `audio_confirmed` flags.
 
 Plans belong to their creator, survive HA restarts, expire after 24 hours, and
 carry configuration revisions. Intervening changes return `configuration_conflict`
@@ -111,8 +116,11 @@ history is not an indefinite guarantee after eviction.
 
 `roomcall__doctor` with `{}` reports unavailable/missing selected players, active
 Do Not Disturb and quiet hours, human-reported silence, accepted requests without
-matching playback reports, unavailable/ambiguous TTS, and missing/HTTPS media URLs.
-URL findings link to HA's network settings; they do not prove network reachability.
+matching playback reports, unavailable/ambiguous TTS, and suspicious media URLs.
+Loopback, `.local`, and default Docker bridge findings link to HA Repairs; missing
+URLs and general HTTPS guidance link to network settings. The URL repair proposes
+a source IP from HA’s network integration and requires explicit human confirmation
+before changing the shared internal URL. These checks do not prove speaker access.
 
 An alternative route is proposed only when an available eligible entity shares a
 registry device, stable MAC, verified manufacturer/model/serial identity, or explicitly

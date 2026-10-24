@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add a confirmed LAN URL repair and a room-by-room listening check with saved heard, not-heard and skipped results in diagnostics and setup tools.
+
 All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).

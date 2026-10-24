@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from unittest.mock import AsyncMock, patch
 
 from custom_components.roomcall.diagnostics import async_get_config_entry_diagnostics
 from homeassistant.core import HomeAssistant
@@ -77,7 +78,11 @@ async def test_https_internal_url_raises_a_repair(hass: HomeAssistant, house):
     await async_process_ha_core_config(hass, {"internal_url": "https://ha.example.test"})
     entry = MockConfigEntry(domain=DOMAIN, data={"speakers": ["media_player.kitchen_hub"]})
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    with patch(
+        "custom_components.roomcall.repairs.certificate_problem",
+        AsyncMock(return_value="url_certificate"),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
     issue = ir.async_get(hass).async_get_issue(DOMAIN, "https_internal_url")
     assert issue is not None
     assert issue.translation_placeholders["url"] == "https://ha.example.test"

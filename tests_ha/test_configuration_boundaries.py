@@ -70,7 +70,7 @@ async def test_card_registration_success_and_fallback(hass, house):
 
 async def test_missing_url_repair(hass):
     with patch.object(repairs, "get_url", side_effect=NoURLAvailableError):
-        repairs.async_check_urls(hass)
+        await repairs.async_check_urls(hass)
     assert ir.async_get(hass).async_get_issue("roomcall", repairs.ISSUE_NO_URL)
 
 

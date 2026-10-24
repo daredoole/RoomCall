@@ -54,12 +54,14 @@ def check_guided_setup(browser, errors) -> None:
         expect(wizard.locator('input[aria-label^="Announcement volume"]')).to_have_value("0.3")
         expect(wizard.locator('input[aria-label="Speaking speed"]')).to_have_value("0.85")
         wizard.get_by_role("button", name="Play test sound", exact=True).click()
-        wizard.get_by_role("button", name="I heard it", exact=True).click()
+        wizard.get_by_role("button", name="Yes", exact=True).click()
         expect(wizard.locator(".wizard-status")).to_contain_text("Setup verified")
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
         assert wizard.evaluate("e=>e.scrollWidth<=e.clientWidth")
         if width == 390:
-            wizard.screenshot(path=OUT / "ha-guided-setup.png")
+            card.get_by_role("dialog", name="Settings", exact=True).screenshot(
+                path=OUT / "ha-guided-setup.png"
+            )
         wizard.get_by_role("button", name="Undo this setup", exact=True).click()
         expect(wizard.locator(".wizard-status")).to_contain_text("Explicitly confirm")
         wizard.get_by_role("checkbox", name="Confirm restoring", exact=False).check()
@@ -78,6 +80,50 @@ def check_guided_setup(browser, errors) -> None:
         expect(card.locator(".settings-body > .settings-result")).to_contain_text(
             "Speaker temporarily unavailable"
         )
+        context.close()
+
+
+def check_room_listening(browser, errors) -> None:
+    """One speaker at a time; No/Skip persist without becoming audible success."""
+    for width in (240, 390, 600):
+        context = browser.new_context(viewport={"width": width, "height": 844})
+        page = context.new_page()
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        open_card(page, "mobile", "dark")
+        card = page.locator("roomcall-card")
+        card.get_by_role("button", name="Settings", exact=True).click()
+        wizard = card.locator(".setup-wizard")
+        expect(wizard.locator(".wizard-status")).to_contain_text("Found")
+        speakers = wizard.locator('fieldset input[type="checkbox"]')
+        for index in range(3, speakers.count()):
+            speakers.nth(index).uncheck()
+        wizard.get_by_role("button", name="Review setup plan", exact=True).click()
+        wizard.get_by_role("button", name="Apply this plan", exact=True).click()
+        expect(wizard.get_by_role("button", name="Play test sound", exact=True)).to_have_count(1)
+        expect(wizard.get_by_role("button", name="Yes", exact=True)).to_have_count(0)
+        wizard.get_by_role("button", name="Play test sound", exact=True).click()
+        wizard.get_by_role("button", name="Yes", exact=True).click()
+        expect(wizard.locator(".test-row")).not_to_contain_text("Did you hear it?")
+        wizard.get_by_role("button", name="Play test sound", exact=True).click()
+        expect(wizard.locator(".test-row")).to_contain_text("Did you hear it?")
+        if width == 390:
+            card.get_by_role("dialog", name="Settings", exact=True).screenshot(
+                path=OUT / "ha-room-listening.png"
+            )
+        wizard.get_by_role("button", name="No", exact=True).click()
+        expect(wizard.get_by_role("link", name="Troubleshoot silent speakers")).to_be_visible()
+        wizard.get_by_role("button", name="Skip", exact=True).click()
+        expect(wizard.locator(".wizard-status")).to_contain_text("Test each speaker")
+        expect(wizard.locator(".test-row")).to_have_count(0)
+        tests = page.evaluate("ROOMCALL_HARNESS.requests.filter(r=>r.request?.action==='test')")
+        assert len(tests) == 2 and tests[0]["request"]["speaker"] != tests[1]["request"]["speaker"]
+        page.reload()
+        card.get_by_role("button", name="Settings", exact=True).click()
+        wizard = card.locator(".setup-wizard")
+        expect(wizard).to_contain_text("Heard (you confirmed)")
+        expect(wizard).to_contain_text("Not heard; unverified")
+        expect(wizard).to_contain_text("Skipped; unverified")
+        assert wizard.evaluate("e=>e.scrollWidth<=e.clientWidth")
         context.close()
 
 
@@ -387,6 +433,7 @@ def main() -> None:
         check_appearances(browser)
         check_large_text(browser)
         check_guided_setup(browser, errors)
+        check_room_listening(browser, errors)
         check_shortcuts(browser, errors)
         check_playback_restore(browser, errors)
         check_tasks(browser, errors)
