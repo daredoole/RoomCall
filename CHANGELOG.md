@@ -6,6 +6,11 @@ All notable changes are listed here. The format follows
 
 ## Unreleased
 
+- Security: clip and live call audio now require authentication; speakers get a two-minute
+  signed link instead of a public URL. The Apple Home pairing code is no longer written to the
+  log, its temporary picture folder is created and removed off the event loop, and diagnostics
+  redact agent policies, per-person preferences and household profiles.
+
 - Docs: rewrite the README and docs home page for first-time visitors (three setup steps,
   then what you can do with it); technical details move lower down or into the guides.
 

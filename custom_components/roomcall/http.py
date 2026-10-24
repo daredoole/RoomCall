@@ -163,11 +163,10 @@ class TalkView(HomeAssistantView):
 
 
 class ClipView(HomeAssistantView):
-    """Speakers cannot authenticate, so clips use unguessable, short-lived ids."""
+    """A recorded or prepared clip. Speakers fetch it through a short-lived signed path."""
 
     url = API_CLIP
     name = "api:roomcall:clip"
-    requires_auth = False
 
     async def get(self, request: web.Request, clip: str) -> web.Response:
         found = _data(request).clips.get(clip.split(".", 1)[0])
@@ -182,14 +181,10 @@ class ClipView(HomeAssistantView):
 
 
 class LiveView(HomeAssistantView):
-    """A live call's MP3, served while it is still being recorded.
-
-    Like a clip, it has an unguessable short-lived id because speakers cannot sign in.
-    """
+    """A live call's MP3, served while it is still being recorded, through a signed path."""
 
     url = API_LIVE
     name = "api:roomcall:live"
-    requires_auth = False
 
     async def head(self, request: web.Request, stream: str) -> web.Response:
         if _data(request).live.get(stream.removesuffix(".mp3")) is None:

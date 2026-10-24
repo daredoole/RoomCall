@@ -108,9 +108,12 @@ async def test_live_call_refused_by_do_not_disturb(
     assert "Do Not Disturb" in result["error"]["message"]
 
 
-async def test_unknown_live_stream_is_404(hass: HomeAssistant, setup_roomcall, hass_client_no_auth):
-    client = await hass_client_no_auth()
-    assert (await client.get("/api/roomcall/live/nope.mp3")).status == 404
+async def test_unknown_live_stream_is_404(
+    hass: HomeAssistant, setup_roomcall, hass_client, hass_client_no_auth
+):
+    assert (await (await hass_client()).get("/api/roomcall/live/nope.mp3")).status == 404
+    # Live call audio is never served without a login or a signed path.
+    assert (await (await hass_client_no_auth()).get("/api/roomcall/live/nope.mp3")).status == 401
 
 
 @needs_ffmpeg

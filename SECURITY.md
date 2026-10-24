@@ -28,11 +28,13 @@ SHA-256 digest; a checksum alone is not a signed provenance attestation.
 
 - Push-to-talk uploads (`/api/roomcall/talk`) and the room list require a logged-in Home Assistant
   user.
-- HA clip downloads (`/api/roomcall/clip/…`) are unauthenticated because speakers
-  cannot log in. Clip IDs contain 128 bits of randomness and stop being served
-  after two minutes, or sooner through bounded-store eviction/reload. Live audio
-  URLs and the static chime endpoint are also unauthenticated; treat media URLs
-  as sensitive. The endpoint observation token is not an authentication check.
+- HA clip downloads (`/api/roomcall/clip/…`) and live call audio
+  (`/api/roomcall/live/…`) require authentication. Speakers cannot log in, so
+  each one receives a path signed with Home Assistant's `async_sign_path` that
+  expires after two minutes and is bound to that path and its query. Clip IDs
+  contain 128 bits of randomness and stop being served after two minutes, or
+  sooner through bounded-store eviction/reload. Only the static chime tones are
+  public. The endpoint observation token is not an authentication check.
 - Call history is held in memory (at most 20 records); available recording audio
   has a 24-hour TTL. History/replay endpoints require authentication. Metadata
   remains until eviction/reload; optional voicemail and durable message jobs

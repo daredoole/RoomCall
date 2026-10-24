@@ -5,13 +5,16 @@ from __future__ import annotations
 import secrets
 import time
 from collections import Counter, OrderedDict, defaultdict, deque
+from datetime import timedelta
 from typing import Any
 from urllib.parse import urlencode, urlsplit
 
+from homeassistant.components.http.auth import async_sign_path
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_call_later, async_track_state_change_event
 
+from .const import CLIP_TTL_SECONDS
 from .core import CallRecord
 
 
@@ -89,15 +92,24 @@ class Evidence:
         for cleanup in list(self.watchers):
             cleanup()
 
-    def url(self, url: str, record: CallRecord, entity_id: str) -> str:
-        path = urlsplit(url).path
-        if not path.startswith(("/api/roomcall/clip/", "/api/roomcall/live/")):
+    def url(self, hass: HomeAssistant, url: str, record: CallRecord, entity_id: str) -> str:
+        parts = urlsplit(url)
+        if not parts.path.startswith(("/api/roomcall/clip/", "/api/roomcall/live/")):
             return url
         token = secrets.token_urlsafe(24)
-        self.tokens[token] = (record, entity_id, path, time.monotonic())
+        self.tokens[token] = (record, entity_id, parts.path, time.monotonic())
         while len(self.tokens) > 2048:
             self.tokens.popitem(last=False)
-        return f"{url}{'&' if '?' in url else '?'}{urlencode({'roomcall_token': token})}"
+        query = f"{parts.query}&" if parts.query else ""
+        # Speakers cannot sign in: they get a short-lived signed path, the way Home Assistant
+        # serves media sources, and the clip/live views keep requiring authentication.
+        signed = async_sign_path(
+            hass,
+            f"{parts.path}?{query}{urlencode({'roomcall_token': token})}",
+            timedelta(seconds=CLIP_TTL_SECONDS),
+            use_content_user=True,
+        )
+        return f"{parts.scheme}://{parts.netloc}{signed}"
 
     def fetched(self, token: str | None, path: str) -> None:
         found = self.tokens.get(token or "")

@@ -189,7 +189,9 @@ async def place_call(
         reason.startswith("duplicate:") for reason in routing.skipped.values()
     )
     started = time.monotonic()
-    media_ids = {e: data.evidence.url(request.media_id, record, e) for e in routing.entity_ids}
+    media_ids = {
+        e: data.evidence.url(hass, request.media_id, record, e) for e in routing.entity_ids
+    }
     for entity_id, media_id in media_ids.items():
         data.evidence.watch(hass, record, entity_id, media_id)
     delivery = fan_out(
