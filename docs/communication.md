@@ -272,16 +272,17 @@ Disabled controls, secondary receiver zones and unrelated matching models are no
 automatically used. Placeholder serials are not identity evidence.
 
 For a TV/box feeding an AVR over HDMI, configure **Communication → Playback device
-routes** with the exact controller and source from its HA state:
+routes** with the exact controller and source from its HA state. Enter this
+object as the value of **Playback device routes**:
 
 ```yaml
-playback_routes:
-  media_player.living_room_cast:
-    controller: media_player.living_room_receiver
-    source: HDMI 1
+media_player.living_room_cast:
+  controller: media_player.living_room_receiver
+  source: HDMI 1
 ```
 
-This is the value of the Communication option, not a `configuration.yaml` entry.
+For an agent setup plan, nest this object under `communication.playback_routes`.
+This is an integration option, not a `configuration.yaml` entry.
 Agents discover the item schema in `catalog.playback_routes`, and apply it through
 the shared setup plan/options flow. The endpoint's `interruption` metadata reports
 the controller, source options, affected entity IDs and recovery capabilities.
