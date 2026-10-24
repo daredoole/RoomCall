@@ -6,6 +6,9 @@ All notable changes are listed here. The format follows
 
 ## Unreleased
 
+- Docs: rewrite the README and docs home page for first-time visitors (three setup steps,
+  then what you can do with it); technical details move lower down or into the guides.
+
 - Add a confirmed LAN URL repair and a room-by-room listening check, with saved heard,
   not-heard and skipped results in diagnostics and setup tools.
 - Support Music Assistant announcements and room preferences, recommending only players with verified physical identity; uncertain MA players remain opt-in.
