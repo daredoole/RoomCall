@@ -452,6 +452,7 @@ async def _play_one(
             return Delivery(entity_id, friendly(hass, entity_id), False, 0, code, 0, code)
     guard = None
     dispatched = False
+    ma_completed = False
 
     def authorize() -> None:
         if runtime:
@@ -465,7 +466,7 @@ async def _play_one(
 
         from .communication import permitted
         from .errors import Problem
-        from .playback import route
+        from .playback import is_music_assistant, route
 
         if not await permitted(hass, entity_id, Context(user_id=owner), assistant):
             raise Problem("forbidden")
@@ -494,6 +495,11 @@ async def _play_one(
             on_dispatch()
         dispatched = True
         result = await _attempt(hass, entity_id, media_id, volume, retry, seconds=seconds)
+        ma_completed = result.ok and is_music_assistant(hass, entity_id)
+        if ma_completed:
+            # A successful blocking MA response completes its own playback/restore lifecycle.
+            # External controller guards still restore their snapshots, without a second clip wait.
+            seconds, until, audio_seconds = 0, None, None
         return result
     except Problem as err:
         from .localization import text
@@ -510,7 +516,12 @@ async def _play_one(
                 if lock is not None:
                     lock.release()
         elif lock is not None:
-            scheduler.finish(lock, entity_id, guard, seconds, until, audio_seconds=audio_seconds)
+            if ma_completed and guard is None:
+                lock.release()
+            else:
+                scheduler.finish(
+                    lock, entity_id, guard, seconds, until, audio_seconds=audio_seconds
+                )
         elif guard is not None:
             hass.async_create_background_task(
                 guard.finish(seconds, until, audio_seconds=audio_seconds),

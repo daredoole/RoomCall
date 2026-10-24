@@ -6,6 +6,7 @@ import asyncio
 import itertools
 import json
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import pytest
 from custom_components.roomcall import core
@@ -374,3 +375,68 @@ def test_ma_library_is_not_a_roomcall_setup_requirement():
     manifest = json.loads((root / "manifest.json").read_text())
     assert "music_assistant" not in [*manifest["dependencies"], *manifest["after_dependencies"]]
     assert not any("music-assistant" in requirement for requirement in manifest["requirements"])
+
+
+async def test_completed_ma_request_releases_its_lease_without_a_second_clip_wait(
+    hass, house, monkeypatch
+):
+    area = ar.async_get(hass).async_create("MA Lease").id
+    ma = player(hass, area)
+    await _roomcall(hass, [ma])
+    data = hass.data["roomcall"]
+    extra_wait = AsyncMock()
+    monkeypatch.setattr("custom_components.roomcall.scheduler.wait_for_playback", extra_wait)
+    started, completed = asyncio.Event(), asyncio.Event()
+
+    async def handler(call):
+        started.set()
+        await completed.wait()
+
+    hass.services.async_register("music_assistant", "play_announcement", handler)
+    first = asyncio.create_task(
+        place_call(
+            hass,
+            data,
+            CallRequest(
+                targets=[area], media_id="http://ha.local/long.mp3", kind="recording", seconds=90
+            ),
+        )
+    )
+    await started.wait()
+    key = physical_key(hass, ma, {})
+    assert data.scheduler.locks[key].locked()
+    waiting = asyncio.create_task(data.scheduler.acquire(ma, None))
+    await asyncio.sleep(0)
+    assert not waiting.done()
+    completed.set()
+    record = await first
+    assert record.ok and record.summary()["audible"] is None
+    lease = await asyncio.wait_for(waiting, 0.5)
+    lease.release()
+    await asyncio.sleep(0)
+    extra_wait.assert_not_awaited()
+
+
+async def test_failed_ma_response_retains_the_conservative_lease_wait(hass, house, monkeypatch):
+    area = ar.async_get(hass).async_create("Uncertain MA Lease").id
+    ma = player(hass, area)
+    await _roomcall(hass, [ma])
+    data = hass.data["roomcall"]
+    extra_wait = AsyncMock()
+    monkeypatch.setattr("custom_components.roomcall.scheduler.wait_for_playback", extra_wait)
+
+    async def handler(call):
+        raise TimeoutError("Response lost")
+
+    hass.services.async_register("music_assistant", "play_announcement", handler)
+    record = await place_call(
+        hass,
+        data,
+        CallRequest(
+            targets=[area], media_id="http://ha.local/long.mp3", kind="recording", seconds=90
+        ),
+    )
+    assert not record.ok and record.results[0].attempts == 1
+    await asyncio.gather(*data.scheduler.tasks)
+    extra_wait.assert_awaited_once_with(hass, ma, 90, None)
+    assert record.summary()["audible"] is None

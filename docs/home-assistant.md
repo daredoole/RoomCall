@@ -131,6 +131,9 @@ expiry can still end the wait sooner. MA requests are not automatically retried,
 global native-speaker retry setting is on: an error or timeout can arrive after playback has
 started. A timeout is reported as an unknown playback outcome, without replaying the clip.
 The card’s final request result may arrive after MA has finished the announcement.
+After a successful blocking MA response, RoomCall releases its speaker lease without
+waiting through the clip again. Failed or timed-out requests keep the conservative
+lease wait because remote playback may still be active.
 
 For a proven pair, the native entry’s area determines the room preference when available;
 an MA area is the fallback. Put both entries in the same HA area for room-targeted calls,
