@@ -114,6 +114,17 @@ def check_simple(browser) -> None:
         expect(card.locator(".history .call")).to_have_count(1)
         assert more.get_attribute("aria-expanded") == "false"
         page.close()
+    # Turning recent calls off later must not let More reveal calls fetched before.
+    page = browser.new_page(viewport={"width": 390, "height": 820})
+    open_card(page, "mobile", "dark", "&card=simple")
+    card = page.locator("roomcall-card")
+    expect(card.locator(".history .call")).to_have_count(1)
+    card.evaluate("c=>c.setConfig({...c._config, history: 0})")
+    expect(card.locator(".communication").first).to_be_attached()
+    card.get_by_role("button", name="More", exact=True).click()
+    expect(card.locator("[data-toolbar]")).to_be_visible()
+    expect(card.locator(".history .call")).to_have_count(0)
+    page.close()
     # A saved card without `layout` keeps the Standard layout, with no More button.
     page = browser.new_page(viewport={"width": 390, "height": 820})
     open_card(page, "mobile", "dark")

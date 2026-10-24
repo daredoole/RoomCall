@@ -822,8 +822,10 @@ class RoomCallCard extends HTMLElement {
     const box = this.shadowRoot.querySelector(".history");
     box.replaceChildren();
     // The collapsed simple card keeps only the latest call (and its reply button) in view.
+    // Calls fetched under an earlier config never exceed the current `history` setting.
+    const limit = Number(this._config.history) || 0;
     const collapsed = this._config.layout === "simple" && !this._expanded;
-    for (const call of (this._history || []).slice(0, collapsed ? 1 : undefined)) {
+    for (const call of (this._history || []).slice(0, collapsed ? Math.min(1, limit) : limit)) {
       const row = document.createElement("div");
       row.className = "call";
       const from = call.from ? this._roomName(call.from) : call.kind === "talk" ? "Someone" : "Automation";
