@@ -18,7 +18,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.helpers.storage import Store
 
-from .capabilities import deduplicate
+from .capabilities import deduplicate, default_destination
 from .const import DOMAIN
 from .core import friendly, speaker_area
 from .errors import Problem
@@ -102,6 +102,8 @@ class Setup:
         entry = current_entry(self.hass)
         configured = {**entry.data, **entry.options} if entry else {}
         registry = er.async_get(self.hass)
+        communication = configured.get("communication", {})
+        aliases = communication.get("aliases", {})
         endpoints = []
         candidates = []
         for state in self.hass.states.async_all("media_player"):
@@ -112,9 +114,9 @@ class Setup:
                 continue
             features = state.attributes.get("supported_features", 0)
             eligible = bool(features & (512 | 1048576)) and not (
-                item and item.platform in {"music_assistant", "dlna_dmr", "mobile_app"}
+                item and item.platform in {"dlna_dmr", "mobile_app"}
             )
-            if eligible:
+            if eligible and default_destination(self.hass, state.entity_id, aliases):
                 candidates.append(state.entity_id)
             endpoints.append(
                 {
@@ -126,7 +128,6 @@ class Setup:
                     "selected": state.entity_id in configured.get("speakers", []),
                 }
             )
-        aliases = configured.get("communication", {}).get("aliases", {})
         for entity_id in configured.get("speakers", []):
             if self.hass.states.get(entity_id) is None and await permitted(
                 self.hass, entity_id, context, assistant
@@ -141,7 +142,9 @@ class Setup:
                         "selected": True,
                     }
                 )
-        recommended, duplicates = deduplicate(self.hass, candidates, aliases)
+        recommended, duplicates = deduplicate(
+            self.hass, candidates, aliases, communication.get("prefer_music_assistant", [])
+        )
         engines = [
             e
             for e in self.hass.states.async_entity_ids("tts")
@@ -251,7 +254,10 @@ class Setup:
             if not await permitted(self.hass, entity, context, assistant):
                 raise Problem("forbidden")
         desired["speakers"], _ = deduplicate(
-            self.hass, desired["speakers"], desired.get("communication", {}).get("aliases", {})
+            self.hass,
+            desired["speakers"],
+            desired.get("communication", {}).get("aliases", {}),
+            desired.get("communication", {}).get("prefer_music_assistant", []),
         )
         if not desired["speakers"]:
             raise Problem("no_targets")

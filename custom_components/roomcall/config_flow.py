@@ -20,7 +20,7 @@ from homeassistant.helpers import selector
 from homeassistant.setup import async_setup_component
 
 from . import chimes
-from .capabilities import deduplicate
+from .capabilities import deduplicate, default_destination
 from .const import (
     CONF_CHIME,
     CONF_CHIME_STYLE,
@@ -80,22 +80,27 @@ from .const import (
 )
 from .schema import vol
 
-# Music Assistant mirrors physical speakers that already have a native entity; skipping it by
-# default avoids playing every message twice.
-_SKIP_PLATFORMS_BY_DEFAULT = {"music_assistant", "dlna_dmr", "mobile_app"}
+# Unknown Music Assistant identities are handled by default_destination instead.
+_SKIP_PLATFORMS_BY_DEFAULT = {"dlna_dmr", "mobile_app"}
 
 
-def suggested_speakers(hass: HomeAssistant) -> list[str]:
+def suggested_speakers(hass: HomeAssistant, current: dict | None = None) -> list[str]:
     registry = er.async_get(hass)
+    communication = (current or {}).get("communication", {})
+    aliases = communication.get("aliases", {})
     out = []
     for state in hass.states.async_all("media_player"):
         entry = registry.async_get(state.entity_id)
         if entry and (entry.disabled_by or entry.platform in _SKIP_PLATFORMS_BY_DEFAULT):
             continue
         features = state.attributes.get("supported_features", 0)
-        if features & MediaPlayerEntityFeature.MEDIA_ANNOUNCE:
+        if features & MediaPlayerEntityFeature.MEDIA_ANNOUNCE and default_destination(
+            hass, state.entity_id, aliases
+        ):
             out.append(state.entity_id)
-    return deduplicate(hass, sorted(out), {})[0]
+    return deduplicate(hass, sorted(out), aliases, communication.get("prefer_music_assistant", []))[
+        0
+    ]
 
 
 def _suggest(value: Any) -> dict[str, Any]:
@@ -113,7 +118,7 @@ def _volume_slider() -> selector.NumberSelector:
 def _main_fields(hass: HomeAssistant, defaults: dict[str, Any]) -> dict[Any, Any]:
     return {
         vol.Required(
-            CONF_SPEAKERS, default=defaults.get(CONF_SPEAKERS, suggested_speakers(hass))
+            CONF_SPEAKERS, default=defaults.get(CONF_SPEAKERS, suggested_speakers(hass, defaults))
         ): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="media_player", multiple=True)
         ),
@@ -270,6 +275,10 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                 vol.Schema(
                     {
                         vol.Optional(
+                            "prefer_music_assistant",
+                            default=communication.get("prefer_music_assistant", []),
+                        ): selector.AreaSelector(selector.AreaSelectorConfig(multiple=True)),
+                        vol.Optional(
                             "aliases", default=communication.get("aliases", {})
                         ): selector.ObjectSelector(),
                         vol.Optional(
@@ -375,6 +384,7 @@ def validate_communication(values: dict[str, Any]) -> None:
                     }
                 )
             },
+            vol.Optional("prefer_music_assistant"): [str],
             vol.Optional("aliases"): {cv_entity: vol.All(str, vol.Length(min=1, max=80))},
             vol.Optional("playback_routes"): vol.All(
                 {

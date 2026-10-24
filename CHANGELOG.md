@@ -8,7 +8,7 @@ All notable changes are listed here. The format follows
 
 - Add a confirmed LAN URL repair and a room-by-room listening check, with saved heard,
   not-heard and skipped results in diagnostics and setup tools.
-
+- Support Music Assistant announcements and room preferences, recommending only players with verified physical identity; uncertain MA players remain opt-in.
 - Add a **simple** card layout: rooms, the talk button and the latest call, with Urgent,
   Do Not Disturb, people, Talk/Type/Ask, Settings and older calls behind **More**. Cards
   added from the card picker start simple; saved cards without `layout` keep Standard.

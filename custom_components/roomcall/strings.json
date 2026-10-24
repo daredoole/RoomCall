@@ -120,14 +120,16 @@
               "speech_profiles": "Speech profiles",
               "household_profiles": "Household profiles",
               "agent_policies": "Agent account policies",
-              "playback_routes": "Playback device routes"
+              "playback_routes": "Playback device routes",
+              "prefer_music_assistant": "Prefer Music Assistant in these rooms"
             },
             "data_description": {
               "talk_back": "After someone talks to a room from another room, an Assist satellite in that room (Atom Echo, ESP32-S3, Home Assistant Voice) listens for a reply and the caller's room hears it. Replies are transcribed, then spoken in your voice of choice.",
               "doorbell_entity": "The doorbell button or event. When it rings, RoomCall says who is at the door, notifies phones with an Answer button, and shows a banner on RoomCall cards.",
               "doorbell_camera": "Answer opens this camera's live view, where two-way talk works when the camera supports it.",
               "doorbell_rooms": "Leave empty to ring everywhere.",
-              "playback_routes": "Map a playback entity to an explicit controller and source for its audio output. HDMI connections are not inferred from room names. Restoration and app resumption depend on device support."
+              "playback_routes": "Map a playback entity to an explicit controller and source for its audio output. HDMI connections are not inferred from room names. Restoration and app resumption depend on device support.",
+              "prefer_music_assistant": "For verified copies of the same physical speaker, prefer its Music Assistant player. Unknown MA identities still need manual selection; this setting never matches devices by room or name."
             }
           }
         }
@@ -565,7 +567,8 @@
         "url_container": "This address is in the default Docker bridge range and may be unreachable from speakers.",
         "url_certificate": "The HTTPS certificate failed validation against public certificate authorities.",
         "url_tls_unverified": "The HTTPS connection could not be checked. Certificate trust and speaker access are unknown.",
-        "url_missing": "Not configured"
+        "url_missing": "Not configured",
+        "music_assistant_timeout": "Music Assistant did not finish the request in time. Playback may have started; RoomCall did not retry to avoid a duplicate announcement."
       }
     },
     "audio_processing": {

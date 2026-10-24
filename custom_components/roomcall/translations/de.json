@@ -120,14 +120,16 @@
               "speech_profiles": "Sprachprofile",
               "household_profiles": "Haushaltsprofile",
               "agent_policies": "Richtlinien für Agentenkonten",
-              "playback_routes": "Wiedergabegeräterouten"
+              "playback_routes": "Wiedergabegeräterouten",
+              "prefer_music_assistant": "Music Assistant in diesen Räumen bevorzugen"
             },
             "data_description": {
               "talk_back": "Spricht jemand aus einem anderen Raum in einen Raum, hört ein Assist-Satellit dort (Atom Echo, ESP32-S3, Home Assistant Voice) auf eine Antwort, die im Raum des Anrufers zu hören ist. Antworten werden transkribiert und mit der eingestellten Stimme gesprochen.",
               "doorbell_entity": "Taste oder Ereignis der Türklingel. Beim Klingeln sagt RoomCall, wer an der Tür ist, benachrichtigt Telefone mit einer Annehmen-Taste und zeigt einen Hinweis auf RoomCall-Karten.",
               "doorbell_camera": "Annehmen öffnet die Live-Ansicht dieser Kamera, in der Gegensprechen funktioniert, wenn die Kamera es unterstützt.",
               "doorbell_rooms": "Leer lassen, um überall zu klingeln.",
-              "playback_routes": "Ordne einer Wiedergabeentität einen ausdrücklichen Controller und eine Quelle für die Audioausgabe zu. HDMI-Verbindungen werden nicht aus Raumnamen abgeleitet. Wiederherstellung und App-Fortsetzung hängen vom Gerät ab."
+              "playback_routes": "Ordne einer Wiedergabeentität einen ausdrücklichen Controller und eine Quelle für die Audioausgabe zu. HDMI-Verbindungen werden nicht aus Raumnamen abgeleitet. Wiederherstellung und App-Fortsetzung hängen vom Gerät ab.",
+              "prefer_music_assistant": "Bei bestätigten Einträgen desselben physischen Lautsprechers wird Music Assistant bevorzugt. Unbekannte MA-Identitäten müssen manuell gewählt werden; Geräte werden niemals nach Raum oder Name zugeordnet."
             }
           }
         }
@@ -565,7 +567,8 @@
         "url_container": "Diese Adresse liegt im Standardbereich der Docker-Bridge und ist möglicherweise für Lautsprecher nicht erreichbar.",
         "url_certificate": "Das HTTPS-Zertifikat konnte nicht gegen öffentliche Zertifizierungsstellen validiert werden.",
         "url_tls_unverified": "Die HTTPS-Verbindung konnte nicht geprüft werden. Zertifikatsvertrauen und Lautsprecherzugriff sind unbekannt.",
-        "url_missing": "Nicht konfiguriert"
+        "url_missing": "Nicht konfiguriert",
+        "music_assistant_timeout": "Music Assistant hat die Anfrage nicht rechtzeitig beendet. Die Wiedergabe könnte begonnen haben; RoomCall hat sie nicht wiederholt, um eine doppelte Ansage zu vermeiden."
       }
     },
     "audio_processing": {

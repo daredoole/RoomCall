@@ -120,14 +120,16 @@
               "speech_profiles": "Spraakprofielen",
               "household_profiles": "Huishoudprofielen",
               "agent_policies": "Beleid voor agentaccounts",
-              "playback_routes": "Routes voor afspeelapparaten"
+              "playback_routes": "Routes voor afspeelapparaten",
+              "prefer_music_assistant": "Music Assistant in deze kamers verkiezen"
             },
             "data_description": {
               "talk_back": "Als iemand vanuit een andere ruimte tegen een ruimte praat, luistert een Assist-satelliet daar (Atom Echo, ESP32-S3, Home Assistant Voice) naar een antwoord, dat in de ruimte van de beller klinkt. Antwoorden worden uitgeschreven en uitgesproken met de ingestelde stem.",
               "doorbell_entity": "De deurbelknop of het deurbelevenement. Als die gaat, zegt RoomCall wie er aan de deur is, meldt het telefoons met een Opnemen-knop en toont het een melding op RoomCall-kaarten.",
               "doorbell_camera": "Opnemen opent het livebeeld van deze camera, waar terugpraten werkt als de camera dat ondersteunt.",
               "doorbell_rooms": "Leeg laten om overal te bellen.",
-              "playback_routes": "Koppel een afspeelentiteit aan een expliciete controller en bron voor de audio-uitvoer. HDMI-verbindingen worden niet afgeleid van kamernamen. Herstel en hervatting van apps hangen af van het apparaat."
+              "playback_routes": "Koppel een afspeelentiteit aan een expliciete controller en bron voor de audio-uitvoer. HDMI-verbindingen worden niet afgeleid van kamernamen. Herstel en hervatting van apps hangen af van het apparaat.",
+              "prefer_music_assistant": "Geef bij geverifieerde vermeldingen van dezelfde fysieke luidspreker de voorkeur aan Music Assistant. Onbekende MA-identiteiten vereisen handmatige selectie; apparaten worden nooit op kamer of naam gekoppeld."
             }
           }
         }
@@ -565,7 +567,8 @@
         "url_container": "Dit adres valt in het standaard Docker-brugbereik en is mogelijk onbereikbaar voor luidsprekers.",
         "url_certificate": "Het HTTPS-certificaat kon niet worden gevalideerd bij openbare certificaatautoriteiten.",
         "url_tls_unverified": "De HTTPS-verbinding kon niet worden gecontroleerd. Certificaatvertrouwen en luidsprekertoegang zijn onbekend.",
-        "url_missing": "Niet ingesteld"
+        "url_missing": "Niet ingesteld",
+        "music_assistant_timeout": "Music Assistant heeft het verzoek niet op tijd voltooid. Het afspelen kan zijn begonnen; RoomCall heeft het niet opnieuw geprobeerd om een dubbele aankondiging te voorkomen."
       }
     },
     "audio_processing": {
