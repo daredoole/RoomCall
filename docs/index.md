@@ -59,7 +59,7 @@ See [Home Assistant intercom](home-assistant-intercom.md).
 No Home Assistant? RoomCall also runs as its own server with mDNS speaker discovery.
 
 ```bash
-pipx install "roomcall @ https://github.com/daredoole/RoomCall/releases/download/v0.21.0/roomcall-0.21.0-py3-none-any.whl"
+pipx install "roomcall @ https://github.com/daredoole/RoomCall/releases/download/v0.22.0/roomcall-0.22.0-py3-none-any.whl"
 roomcall serve --demo
 ```
 

@@ -4,27 +4,24 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.22.0 — 2026-10-24
 
-- Security: clip and live call audio now require authentication; speakers get a two-minute
-  signed link instead of a public URL. The Apple Home pairing code is no longer written to the
-  log, its temporary picture folder is created and removed off the event loop, and diagnostics
-  redact agent policies, per-person preferences and household profiles.
-
-- Docs: rewrite the README and docs home page for first-time visitors (three setup steps,
-  then what you can do with it); technical details move lower down or into the guides.
-
-- Add a confirmed LAN URL repair and a room-by-room listening check, with saved heard,
-  not-heard and skipped results in diagnostics and setup tools.
-- Support Music Assistant announcements and room preferences, recommending only players with verified physical identity; uncertain MA players remain opt-in.
 - Add a **simple** card layout: rooms, the talk button and the latest call, with Urgent,
   Do Not Disturb, people, Talk/Type/Ask, Settings and older calls behind **More**. Cards
   added from the card picker start simple; saved cards without `layout` keep Standard.
-
-- Docs: group the site navigation by task (use cases, setup, AI and agents, standalone
-  server) and move implementation records and screenshot validation under
-  **Development**. Add short guides for a Home Assistant intercom, a Sonos intercom
-  and announcing to any speaker from Siri.
+- Add a confirmed LAN URL repair for addresses speakers usually cannot use (loopback,
+  `.local`, the default Docker bridge, untrusted HTTPS), and a room-by-room listening check
+  with saved heard, not-heard and skipped results in diagnostics and setup tools.
+- Support Music Assistant players through `music_assistant.play_announcement`, with a
+  per-room preference. Only players with verified physical identity are recommended;
+  uncertain ones stay opt-in. Announcements are never retried automatically.
+- Security: clip and live call audio now require authentication; speakers get a two-minute
+  signed link instead of a public URL. The Apple Home pairing code is no longer written to
+  the log, its temporary picture folder is created and removed off the event loop, and
+  diagnostics redact agent policies, per-person preferences and household profiles.
+- Docs: rewrite the README and docs home page for first-time visitors, group the site
+  navigation by task with development records under **Development**, and add short guides
+  for a Home Assistant intercom, a Sonos intercom and announcing from Siri.
 
 ## 0.21.0 — 2026-10-23
 
