@@ -548,7 +548,24 @@
         "restore_requests_completed": "Restore requests completed; session resumption is best effort.",
         "restore_failed": "Restoration failed. Check the device and its permissions.",
         "restore_skipped_external_change_or_permission": "Restoration skipped after an external change or permission change.",
-        "restore_disabled": "Automatic restoration is disabled."
+        "restore_disabled": "Automatic restoration is disabled.",
+        "test_each_room": "Test each room",
+        "did_you_hear": "Did you hear it?",
+        "listening_yes": "Yes",
+        "listening_no": "No",
+        "listening_skip": "Skip",
+        "listening_room": "Room {current} of {total}: {name}",
+        "listening_heard": "Heard (you confirmed)",
+        "listening_not_heard": "Not heard; unverified",
+        "listening_skipped": "Skipped; unverified",
+        "listening_untested": "Not tested; unverified",
+        "troubleshoot_audio": "Troubleshoot silent speakers",
+        "url_loopback": "This address points back to the device opening it, not to Home Assistant.",
+        "url_mdns": "Chromecast speakers cannot resolve .local names. Use a LAN IP address.",
+        "url_container": "This address is in the default Docker bridge range and may be unreachable from speakers.",
+        "url_certificate": "The HTTPS certificate failed validation against public certificate authorities.",
+        "url_tls_unverified": "The HTTPS connection could not be checked. Certificate trust and speaker access are unknown.",
+        "url_missing": "Not configured"
       }
     },
     "audio_processing": {
@@ -665,11 +682,60 @@
     },
     "https_internal_url": {
       "title": "RoomCall speakers may not reach Home Assistant",
-      "description": "Home Assistant's internal URL is {url}. Speakers download every call from it, and most speakers reject HTTPS certificates that are not from a public authority. If calls report \"delivered\" but stay silent, set the local network URL under Settings → System → Network to http://HOME-ASSISTANT-IP:8123."
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Review the local network URL",
+            "description": "Speakers download calls from {url}. {reason} Open this repair to review a LAN address.\n\nChange Home Assistant’s internal URL from {current_url} to {suggested_url}? This shared setting affects other integrations too. Confirm only if speakers can reach this address. A listening test is still required.",
+            "data": {
+              "confirm": "Confirm changing the internal URL"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "No usable LAN address could be suggested. Open Settings → System → Network and set an address reachable from speakers. If HA serves HTTPS directly, configure a trusted certificate or an HTTP proxy first.",
+          "cancelled": "Cancelled. The internal URL was not changed.",
+          "url_changed": "The internal URL changed while this repair was open. Reopen the repair to review a fresh proposal."
+        }
+      }
     },
     "no_internal_url": {
-      "title": "RoomCall needs a local network URL",
-      "description": "Speakers download every call from Home Assistant, but no internal URL is available. Set one under Settings → System → Network."
+      "title": "RoomCall speakers may not reach Home Assistant",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Review the local network URL",
+            "description": "Speakers download calls from {url}. {reason} Open this repair to review a LAN address.\n\nChange Home Assistant’s internal URL from {current_url} to {suggested_url}? This shared setting affects other integrations too. Confirm only if speakers can reach this address. A listening test is still required.",
+            "data": {
+              "confirm": "Confirm changing the internal URL"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "No usable LAN address could be suggested. Open Settings → System → Network and set an address reachable from speakers. If HA serves HTTPS directly, configure a trusted certificate or an HTTP proxy first.",
+          "cancelled": "Cancelled. The internal URL was not changed.",
+          "url_changed": "The internal URL changed while this repair was open. Reopen the repair to review a fresh proposal."
+        }
+      }
+    },
+    "unreachable_internal_url": {
+      "title": "RoomCall speakers may not reach Home Assistant",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Review the local network URL",
+            "description": "Speakers download calls from {url}. {reason} Open this repair to review a LAN address.\n\nChange Home Assistant’s internal URL from {current_url} to {suggested_url}? This shared setting affects other integrations too. Confirm only if speakers can reach this address. A listening test is still required.",
+            "data": {
+              "confirm": "Confirm changing the internal URL"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "No usable LAN address could be suggested. Open Settings → System → Network and set an address reachable from speakers. If HA serves HTTPS directly, configure a trusted certificate or an HTTP proxy first.",
+          "cancelled": "Cancelled. The internal URL was not changed.",
+          "url_changed": "The internal URL changed while this repair was open. Reopen the repair to review a fresh proposal."
+        }
+      }
     }
   },
   "config_subentries": {

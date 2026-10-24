@@ -201,7 +201,12 @@ async def test_doctor_evidence_and_planned_physical_route(hass, setup_roomcall, 
         "audibility_unconfirmed",
         "choose_tts",
         "speaker_url_tls",
+        "url_mdns",
     }
+    assert (
+        next(f for f in result["findings"] if f["code"] == "url_mdns")["settings_path"]
+        == "/config/repairs"
+    )
     assert len([f for f in result["findings"] if f["code"] == "audibility_unconfirmed"]) == 1
     assert result["alternatives"] == [
         {"from": "media_player.kitchen_sonos", "to": "media_player.kitchen_hub"}

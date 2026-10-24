@@ -548,7 +548,24 @@
         "restore_requests_completed": "Wiederherstellungsanfragen abgeschlossen; Sitzungsfortsetzung nach Möglichkeit.",
         "restore_failed": "Wiederherstellung fehlgeschlagen. Prüfe Gerät und Berechtigungen.",
         "restore_skipped_external_change_or_permission": "Wiederherstellung nach einer externen Änderung oder Berechtigungsänderung übersprungen.",
-        "restore_disabled": "Automatische Wiederherstellung ist deaktiviert."
+        "restore_disabled": "Automatische Wiederherstellung ist deaktiviert.",
+        "test_each_room": "Jeden Raum testen",
+        "did_you_hear": "Hast du es gehört?",
+        "listening_yes": "Ja",
+        "listening_no": "Nein",
+        "listening_skip": "Überspringen",
+        "listening_room": "Raum {current} von {total}: {name}",
+        "listening_heard": "Gehört (von dir bestätigt)",
+        "listening_not_heard": "Nicht gehört; unbestätigt",
+        "listening_skipped": "Übersprungen; unbestätigt",
+        "listening_untested": "Nicht getestet; unbestätigt",
+        "troubleshoot_audio": "Stumme Lautsprecher prüfen",
+        "url_loopback": "Diese Adresse verweist auf das Gerät, das sie öffnet, nicht auf Home Assistant.",
+        "url_mdns": "Chromecast-Lautsprecher können .local-Namen nicht auflösen. Verwende eine LAN-IP-Adresse.",
+        "url_container": "Diese Adresse liegt im Standardbereich der Docker-Bridge und ist möglicherweise für Lautsprecher nicht erreichbar.",
+        "url_certificate": "Das HTTPS-Zertifikat konnte nicht gegen öffentliche Zertifizierungsstellen validiert werden.",
+        "url_tls_unverified": "Die HTTPS-Verbindung konnte nicht geprüft werden. Zertifikatsvertrauen und Lautsprecherzugriff sind unbekannt.",
+        "url_missing": "Nicht konfiguriert"
       }
     },
     "audio_processing": {
@@ -664,12 +681,61 @@
       "description": "Diese RoomCall-Lautsprecher sind nicht verfügbar oder existieren nicht mehr: {speakers}. Durchsagen in ihre Räume werden nicht abgespielt. Schalte sie ein oder entferne sie unter Einstellungen → Geräte & Dienste → RoomCall → Konfigurieren."
     },
     "https_internal_url": {
-      "title": "Lautsprecher erreichen Home Assistant evtl. nicht",
-      "description": "Die interne URL von Home Assistant ist {url}. Lautsprecher laden jede Durchsage von dort, und die meisten lehnen HTTPS-Zertifikate ab, die nicht von einer öffentlichen Stelle stammen. Wenn Durchsagen als „zugestellt“ gelten, aber stumm bleiben, setze die lokale Netzwerk-URL unter Einstellungen → System → Netzwerk auf http://HOME-ASSISTANT-IP:8123."
+      "title": "RoomCall-Lautsprecher erreichen Home Assistant möglicherweise nicht",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Lokale Netzwerk-URL prüfen",
+            "description": "Lautsprecher laden Anrufe von {url} herunter. {reason} Öffne diese Reparatur, um eine LAN-Adresse zu prüfen.\n\nDie interne URL von Home Assistant von {current_url} auf {suggested_url} ändern? Diese gemeinsame Einstellung betrifft auch andere Integrationen. Bestätige nur, wenn die Lautsprecher diese Adresse erreichen können. Ein Hörtest bleibt erforderlich.",
+            "data": {
+              "confirm": "Änderung der internen URL bestätigen"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "Es konnte keine geeignete LAN-Adresse vorgeschlagen werden. Öffne Einstellungen → System → Netzwerk und wähle eine für Lautsprecher erreichbare Adresse. Wenn HA direkt HTTPS bereitstellt, richte zuerst ein vertrauenswürdiges Zertifikat oder einen HTTP-Proxy ein.",
+          "cancelled": "Abgebrochen. Die interne URL wurde nicht geändert.",
+          "url_changed": "Die interne URL wurde während dieser Reparatur geändert. Öffne die Reparatur erneut, um einen neuen Vorschlag zu prüfen."
+        }
+      }
     },
     "no_internal_url": {
-      "title": "RoomCall braucht eine lokale Netzwerk-URL",
-      "description": "Lautsprecher laden jede Durchsage von Home Assistant, aber es gibt keine interne URL. Lege eine unter Einstellungen → System → Netzwerk fest."
+      "title": "RoomCall-Lautsprecher erreichen Home Assistant möglicherweise nicht",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Lokale Netzwerk-URL prüfen",
+            "description": "Lautsprecher laden Anrufe von {url} herunter. {reason} Öffne diese Reparatur, um eine LAN-Adresse zu prüfen.\n\nDie interne URL von Home Assistant von {current_url} auf {suggested_url} ändern? Diese gemeinsame Einstellung betrifft auch andere Integrationen. Bestätige nur, wenn die Lautsprecher diese Adresse erreichen können. Ein Hörtest bleibt erforderlich.",
+            "data": {
+              "confirm": "Änderung der internen URL bestätigen"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "Es konnte keine geeignete LAN-Adresse vorgeschlagen werden. Öffne Einstellungen → System → Netzwerk und wähle eine für Lautsprecher erreichbare Adresse. Wenn HA direkt HTTPS bereitstellt, richte zuerst ein vertrauenswürdiges Zertifikat oder einen HTTP-Proxy ein.",
+          "cancelled": "Abgebrochen. Die interne URL wurde nicht geändert.",
+          "url_changed": "Die interne URL wurde während dieser Reparatur geändert. Öffne die Reparatur erneut, um einen neuen Vorschlag zu prüfen."
+        }
+      }
+    },
+    "unreachable_internal_url": {
+      "title": "RoomCall-Lautsprecher erreichen Home Assistant möglicherweise nicht",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Lokale Netzwerk-URL prüfen",
+            "description": "Lautsprecher laden Anrufe von {url} herunter. {reason} Öffne diese Reparatur, um eine LAN-Adresse zu prüfen.\n\nDie interne URL von Home Assistant von {current_url} auf {suggested_url} ändern? Diese gemeinsame Einstellung betrifft auch andere Integrationen. Bestätige nur, wenn die Lautsprecher diese Adresse erreichen können. Ein Hörtest bleibt erforderlich.",
+            "data": {
+              "confirm": "Änderung der internen URL bestätigen"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "Es konnte keine geeignete LAN-Adresse vorgeschlagen werden. Öffne Einstellungen → System → Netzwerk und wähle eine für Lautsprecher erreichbare Adresse. Wenn HA direkt HTTPS bereitstellt, richte zuerst ein vertrauenswürdiges Zertifikat oder einen HTTP-Proxy ein.",
+          "cancelled": "Abgebrochen. Die interne URL wurde nicht geändert.",
+          "url_changed": "Die interne URL wurde während dieser Reparatur geändert. Öffne die Reparatur erneut, um einen neuen Vorschlag zu prüfen."
+        }
+      }
     }
   },
   "config_subentries": {

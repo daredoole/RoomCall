@@ -548,7 +548,24 @@
         "restore_requests_completed": "Demandes de restauration terminées ; reprise de session si possible.",
         "restore_failed": "La restauration a échoué. Vérifiez l’appareil et ses autorisations.",
         "restore_skipped_external_change_or_permission": "Restauration ignorée après un changement externe ou d’autorisations.",
-        "restore_disabled": "La restauration automatique est désactivée."
+        "restore_disabled": "La restauration automatique est désactivée.",
+        "test_each_room": "Tester chaque pièce",
+        "did_you_hear": "Avez-vous entendu le son ?",
+        "listening_yes": "Oui",
+        "listening_no": "Non",
+        "listening_skip": "Passer",
+        "listening_room": "Pièce {current} sur {total} : {name}",
+        "listening_heard": "Entendu (confirmé par vous)",
+        "listening_not_heard": "Non entendu ; non vérifié",
+        "listening_skipped": "Ignoré ; non vérifié",
+        "listening_untested": "Non testé ; non vérifié",
+        "troubleshoot_audio": "Dépanner les enceintes silencieuses",
+        "url_loopback": "Cette adresse renvoie à l’appareil qui l’ouvre, pas à Home Assistant.",
+        "url_mdns": "Les enceintes Chromecast ne peuvent pas résoudre les noms .local. Utilisez une adresse IP du réseau local.",
+        "url_container": "Cette adresse appartient à la plage du pont Docker par défaut et peut être inaccessible aux enceintes.",
+        "url_certificate": "Le certificat HTTPS n’a pas pu être validé auprès des autorités de certification publiques.",
+        "url_tls_unverified": "La connexion HTTPS n’a pas pu être vérifiée. La confiance du certificat et l’accès des enceintes sont inconnus.",
+        "url_missing": "Non configurée"
       }
     },
     "audio_processing": {
@@ -664,12 +681,61 @@
       "description": "Ces enceintes RoomCall sont indisponibles ou n'existent plus : {speakers}. Les appels vers leurs pièces ne seront pas joués. Allumez-les, ou retirez-les dans Paramètres → Appareils et services → RoomCall → Configurer."
     },
     "https_internal_url": {
-      "title": "Les enceintes risquent de ne pas joindre Home Assistant",
-      "description": "L'URL interne de Home Assistant est {url}. Les enceintes y téléchargent chaque appel, et la plupart refusent les certificats HTTPS qui ne viennent pas d'une autorité publique. Si les appels sont « livrés » mais restent muets, réglez l'URL du réseau local dans Paramètres → Système → Réseau sur http://IP-HOME-ASSISTANT:8123."
+      "title": "Les enceintes RoomCall risquent de ne pas atteindre Home Assistant",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Vérifier l’URL du réseau local",
+            "description": "Les enceintes téléchargent les appels depuis {url}. {reason} Ouvrez cette réparation pour examiner une adresse locale.\n\nRemplacer l’URL interne de Home Assistant {current_url} par {suggested_url} ? Ce réglage partagé affecte aussi les autres intégrations. Confirmez uniquement si les enceintes peuvent atteindre cette adresse. Un test d’écoute reste nécessaire.",
+            "data": {
+              "confirm": "Confirmer le changement d’URL interne"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "Aucune adresse locale utilisable n’a pu être proposée. Ouvrez Paramètres → Système → Réseau et choisissez une adresse accessible aux enceintes. Si HA utilise directement HTTPS, configurez d’abord un certificat de confiance ou un proxy HTTP.",
+          "cancelled": "Annulé. L’URL interne n’a pas été modifiée.",
+          "url_changed": "L’URL interne a changé pendant cette réparation. Rouvrez la réparation pour examiner une nouvelle proposition."
+        }
+      }
     },
     "no_internal_url": {
-      "title": "RoomCall a besoin d'une URL de réseau local",
-      "description": "Les enceintes téléchargent chaque appel depuis Home Assistant, mais aucune URL interne n'est disponible. Définissez-en une dans Paramètres → Système → Réseau."
+      "title": "Les enceintes RoomCall risquent de ne pas atteindre Home Assistant",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Vérifier l’URL du réseau local",
+            "description": "Les enceintes téléchargent les appels depuis {url}. {reason} Ouvrez cette réparation pour examiner une adresse locale.\n\nRemplacer l’URL interne de Home Assistant {current_url} par {suggested_url} ? Ce réglage partagé affecte aussi les autres intégrations. Confirmez uniquement si les enceintes peuvent atteindre cette adresse. Un test d’écoute reste nécessaire.",
+            "data": {
+              "confirm": "Confirmer le changement d’URL interne"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "Aucune adresse locale utilisable n’a pu être proposée. Ouvrez Paramètres → Système → Réseau et choisissez une adresse accessible aux enceintes. Si HA utilise directement HTTPS, configurez d’abord un certificat de confiance ou un proxy HTTP.",
+          "cancelled": "Annulé. L’URL interne n’a pas été modifiée.",
+          "url_changed": "L’URL interne a changé pendant cette réparation. Rouvrez la réparation pour examiner une nouvelle proposition."
+        }
+      }
+    },
+    "unreachable_internal_url": {
+      "title": "Les enceintes RoomCall risquent de ne pas atteindre Home Assistant",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Vérifier l’URL du réseau local",
+            "description": "Les enceintes téléchargent les appels depuis {url}. {reason} Ouvrez cette réparation pour examiner une adresse locale.\n\nRemplacer l’URL interne de Home Assistant {current_url} par {suggested_url} ? Ce réglage partagé affecte aussi les autres intégrations. Confirmez uniquement si les enceintes peuvent atteindre cette adresse. Un test d’écoute reste nécessaire.",
+            "data": {
+              "confirm": "Confirmer le changement d’URL interne"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "Aucune adresse locale utilisable n’a pu être proposée. Ouvrez Paramètres → Système → Réseau et choisissez une adresse accessible aux enceintes. Si HA utilise directement HTTPS, configurez d’abord un certificat de confiance ou un proxy HTTP.",
+          "cancelled": "Annulé. L’URL interne n’a pas été modifiée.",
+          "url_changed": "L’URL interne a changé pendant cette réparation. Rouvrez la réparation pour examiner une nouvelle proposition."
+        }
+      }
     }
   },
   "config_subentries": {

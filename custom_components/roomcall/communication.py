@@ -53,7 +53,18 @@ SCHEMAS = {
     "setup": vol.Schema(
         {
             vol.Required("action"): vol.In(
-                ("discover", "list", "plan", "get", "apply", "verify", "undo", "test", "confirm")
+                (
+                    "discover",
+                    "list",
+                    "plan",
+                    "get",
+                    "apply",
+                    "verify",
+                    "undo",
+                    "test",
+                    "confirm",
+                    "skip",
+                )
             ),
             vol.Optional("settings", default={}): dict,
             vol.Optional("id"): cv.string,

@@ -157,10 +157,15 @@
           }
           if(request.action==="test") {
             const id=crypto.randomUUID();plan.tests[request.speaker]=id;
+            delete (plan.confirmations??={})[request.speaker];setupHeard.delete(request.speaker);
             jobs.set(id,{ok:true,id,state:"completed",responses:[],speaker:request.speaker});saveSetup();
             return {ok:true,id,plan};
           }
-          if(request.action==="confirm") {if(request.heard)setupHeard.add(request.speaker);else setupHeard.delete(request.speaker);saveSetup();return {ok:true,plan};}
+          if(request.action==="confirm" || request.action==="skip") {
+            const heard=request.action==="confirm" && request.heard;
+            if(heard)setupHeard.add(request.speaker);else setupHeard.delete(request.speaker);
+            (plan.confirmations??={})[request.speaker]={heard,skipped:request.action==="skip",at:Date.now()/1000};
+            saveSetup();return {ok:true,plan};}
           if(request.action==="verify")return {ok:true,plan,verification:{configuration_ready:true,
             completed:plan.settings.speakers.every(id=>setupHeard.has(id)),audio_confirmed:plan.settings.speakers.every(id=>setupHeard.has(id))}};
           return {ok:true,plan};
@@ -181,7 +186,7 @@
           jobs.set(id,{...job,speaker:request.speaker});
           return job;
         }
-        if (body.operation === "status") return jobs.get(request.id);
+        if (body.operation === "status") return jobs.get(request.id) || {ok:false,error:{code:"not_found",message:"Test expired"}};
         if (body.operation === "confirm_test") {tests.set(jobs.get(request.id).speaker,{heard:request.heard});return {ok:true,heard:request.heard};}
         if (body.operation === "voicemail") return {ok:true,messages:params.get("voicemail")==="on"?[
           {id:"v1",message:"Can someone grab the packages from the porch?"},

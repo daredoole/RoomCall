@@ -187,6 +187,7 @@ class Setup:
             "questions": questions,
             "settings": {k: v for k, v in configured.items() if k in SETTINGS},
             "settings_schema": json_schema(_options_schema(self.hass, configured)),
+            "audio_verification": self.audio_verification(entry) if entry else None,
         }
 
     async def get(self, plan_id: str, context: Context) -> dict:
@@ -380,16 +381,8 @@ class Setup:
         plan["state"] = "rolled_back"
         await self.save()
 
-    async def verify(self, plan: dict) -> dict:
-        entry = current_entry(self.hass)
-        data = self.hass.data.get(DOMAIN)
-        matches = plan["state"] == "applied" and revision(entry) == plan.get("after_revision")
-        ready = bool(
-            matches
-            and data
-            and entry.state == ConfigEntryState.LOADED
-            and set(data.speakers) == set(plan["settings"]["speakers"])
-        )
+    def listening_results(self, plan: dict) -> list[dict]:
+        """The same explicit human reports for the wizard, tools and diagnostics."""
         endpoints = []
         for entity_id in plan["settings"]["speakers"]:
             state = self.hass.states.get(entity_id)
@@ -403,8 +396,51 @@ class Setup:
                     "available": state is not None
                     and state.state not in {"unknown", "unavailable"},
                     "heard": heard,
+                    "result": (
+                        "heard"
+                        if heard
+                        else "skipped"
+                        if test.get("skipped")
+                        else "not_heard"
+                        if test.get("at", 0) >= plan.get("applied_at", float("inf"))
+                        else "untested"
+                    ),
+                    "troubleshooting_url": (
+                        "https://daredoole.github.io/RoomCall/troubleshooting/"
+                        "#speakers-report-success-but-stay-silent"
+                        if not heard
+                        else None
+                    ),
                 }
             )
+        return endpoints
+
+    def audio_verification(self, entry) -> dict:
+        plans = [
+            p
+            for p in self.plans.values()
+            if p["entry_id"] == entry.entry_id and p["state"] == "applied"
+        ]
+        plan = max(plans, key=lambda p: p["created"], default=None)
+        endpoints = self.listening_results(plan) if plan else []
+        current = bool(plan and revision(entry) == plan.get("after_revision"))
+        return {
+            "configuration_current": current,
+            "audio_confirmed": bool(current and endpoints and all(e["heard"] for e in endpoints)),
+            "endpoints": endpoints,
+        }
+
+    async def verify(self, plan: dict) -> dict:
+        entry = current_entry(self.hass)
+        data = self.hass.data.get(DOMAIN)
+        matches = plan["state"] == "applied" and revision(entry) == plan.get("after_revision")
+        ready = bool(
+            matches
+            and data
+            and entry.state == ConfigEntryState.LOADED
+            and set(data.speakers) == set(plan["settings"]["speakers"])
+        )
+        endpoints = self.listening_results(plan)
         audio_confirmed = bool(endpoints and all(e["heard"] for e in endpoints))
         engine = plan["settings"].get("tts_engine")
         tts_ready = bool(
@@ -481,7 +517,7 @@ class Setup:
                     await self.apply(plan, values.get("revision", ""))
                 elif action == "undo":
                     await self.undo(plan, values.get("revision", ""), values.get("confirm", False))
-                elif action in {"test", "confirm"}:
+                elif action in {"test", "confirm", "skip"}:
                     if (
                         plan["state"] != "applied"
                         or revision(current_entry(self.hass)) != plan["after_revision"]
@@ -490,6 +526,15 @@ class Setup:
                     speaker = values.get("speaker")
                     if speaker not in plan["settings"]["speakers"]:
                         raise Problem("no_targets")
+                    if action == "skip":
+                        plan["tests"].pop(speaker, None)
+                        plan.setdefault("confirmations", {})[speaker] = {
+                            "heard": False,
+                            "skipped": True,
+                            "at": time.time(),
+                        }
+                        await self.save()
+                        return {"ok": True, "plan": self.public(plan)}
                     if action == "test":
                         result = await execute(
                             self.hass,
@@ -499,6 +544,7 @@ class Setup:
                             assistant=assistant,
                         )
                         if result["ok"]:
+                            plan.setdefault("confirmations", {}).pop(speaker, None)
                             plan["tests"][speaker] = result["id"]
                             await self.save()
                     else:
@@ -530,6 +576,7 @@ class Setup:
 
         from .capabilities import physical_key
         from .http import base_url
+        from .repairs import url_problem
 
         await require_admin(self.hass, context)
         found = await self.discover(context, assistant)
@@ -618,6 +665,14 @@ class Setup:
             )
         try:
             url = base_url(self.hass)
+            if reason := url_problem(url):
+                findings.append(
+                    {
+                        "code": reason,
+                        "message": text(self.hass, reason),
+                        "settings_path": "/config/repairs",
+                    }
+                )
             if url.startswith("https:"):
                 findings.append(
                     {

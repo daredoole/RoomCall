@@ -47,6 +47,12 @@ The [native app](native-ios.md) requires HA 2026.10 or later for PKCE sign-in.
 
 Or go to **Settings → Devices & services → Add integration → RoomCall**.
 
+After setup, open the card’s **Settings → Setup and sound tests** and apply a guided
+setup plan. **Test each room** plays one selected speaker at a time. Answer **Yes**
+only when you hear it; **No** shows a troubleshooting link, and **Skip** leaves that speaker
+unverified. Reports survive a reload and appear in integration diagnostics and setup
+tools. A playback request being accepted never counts as a listening confirmation.
+
 Pick your speakers. Everything else is under **Configure** on the integration:
 
 | Option | Default | What it does |

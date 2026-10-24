@@ -548,7 +548,24 @@
         "restore_requests_completed": "Solicitudes de restauración completadas; la sesión se reanuda si es posible.",
         "restore_failed": "La restauración falló. Revisa el dispositivo y sus permisos.",
         "restore_skipped_external_change_or_permission": "Restauración omitida tras un cambio externo o de permisos.",
-        "restore_disabled": "La restauración automática está desactivada."
+        "restore_disabled": "La restauración automática está desactivada.",
+        "test_each_room": "Probar cada habitación",
+        "did_you_hear": "¿Lo has oído?",
+        "listening_yes": "Sí",
+        "listening_no": "No",
+        "listening_skip": "Omitir",
+        "listening_room": "Habitación {current} de {total}: {name}",
+        "listening_heard": "Oído (lo has confirmado)",
+        "listening_not_heard": "No oído; sin verificar",
+        "listening_skipped": "Omitida; sin verificar",
+        "listening_untested": "Sin probar; sin verificar",
+        "troubleshoot_audio": "Solucionar altavoces silenciosos",
+        "url_loopback": "Esta dirección apunta al dispositivo que la abre, no a Home Assistant.",
+        "url_mdns": "Los altavoces Chromecast no pueden resolver nombres .local. Usa una IP de la red local.",
+        "url_container": "Esta dirección está en el rango del puente Docker predeterminado y puede ser inaccesible desde los altavoces.",
+        "url_certificate": "El certificado HTTPS no superó la validación con las autoridades de certificación públicas.",
+        "url_tls_unverified": "No se pudo comprobar la conexión HTTPS. Se desconoce la confianza del certificado y el acceso de los altavoces.",
+        "url_missing": "Sin configurar"
       }
     },
     "audio_processing": {
@@ -664,12 +681,61 @@
       "description": "Estos altavoces de RoomCall no están disponibles o ya no existen: {speakers}. Las llamadas a sus habitaciones no sonarán. Enciéndelos o quítalos en Ajustes → Dispositivos y servicios → RoomCall → Configurar."
     },
     "https_internal_url": {
-      "title": "Puede que los altavoces no lleguen a Home Assistant",
-      "description": "La URL interna de Home Assistant es {url}. Los altavoces descargan cada llamada desde ella, y la mayoría rechaza certificados HTTPS que no son de una autoridad pública. Si las llamadas dicen «entregada» pero no suenan, pon la URL de red local en Ajustes → Sistema → Red como http://IP-DE-HOME-ASSISTANT:8123."
+      "title": "Los altavoces de RoomCall podrían no acceder a Home Assistant",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Revisar la URL de la red local",
+            "description": "Los altavoces descargan las llamadas desde {url}. {reason} Abre esta reparación para revisar una dirección local.\n\n¿Cambiar la URL interna de Home Assistant de {current_url} a {suggested_url}? Este ajuste compartido también afecta a otras integraciones. Confirma solo si los altavoces pueden acceder a esta dirección. Aún es necesaria una prueba de escucha.",
+            "data": {
+              "confirm": "Confirmar el cambio de URL interna"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "No se pudo proponer una dirección local válida. Abre Ajustes → Sistema → Red y configura una dirección accesible desde los altavoces. Si HA sirve HTTPS directamente, configura primero un certificado de confianza o un proxy HTTP.",
+          "cancelled": "Cancelado. No se cambió la URL interna.",
+          "url_changed": "La URL interna cambió mientras esta reparación estaba abierta. Vuelve a abrirla para revisar una nueva propuesta."
+        }
+      }
     },
     "no_internal_url": {
-      "title": "RoomCall necesita una URL de red local",
-      "description": "Los altavoces descargan cada llamada desde Home Assistant, pero no hay URL interna. Configura una en Ajustes → Sistema → Red."
+      "title": "Los altavoces de RoomCall podrían no acceder a Home Assistant",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Revisar la URL de la red local",
+            "description": "Los altavoces descargan las llamadas desde {url}. {reason} Abre esta reparación para revisar una dirección local.\n\n¿Cambiar la URL interna de Home Assistant de {current_url} a {suggested_url}? Este ajuste compartido también afecta a otras integraciones. Confirma solo si los altavoces pueden acceder a esta dirección. Aún es necesaria una prueba de escucha.",
+            "data": {
+              "confirm": "Confirmar el cambio de URL interna"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "No se pudo proponer una dirección local válida. Abre Ajustes → Sistema → Red y configura una dirección accesible desde los altavoces. Si HA sirve HTTPS directamente, configura primero un certificado de confianza o un proxy HTTP.",
+          "cancelled": "Cancelado. No se cambió la URL interna.",
+          "url_changed": "La URL interna cambió mientras esta reparación estaba abierta. Vuelve a abrirla para revisar una nueva propuesta."
+        }
+      }
+    },
+    "unreachable_internal_url": {
+      "title": "Los altavoces de RoomCall podrían no acceder a Home Assistant",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Revisar la URL de la red local",
+            "description": "Los altavoces descargan las llamadas desde {url}. {reason} Abre esta reparación para revisar una dirección local.\n\n¿Cambiar la URL interna de Home Assistant de {current_url} a {suggested_url}? Este ajuste compartido también afecta a otras integraciones. Confirma solo si los altavoces pueden acceder a esta dirección. Aún es necesaria una prueba de escucha.",
+            "data": {
+              "confirm": "Confirmar el cambio de URL interna"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "No se pudo proponer una dirección local válida. Abre Ajustes → Sistema → Red y configura una dirección accesible desde los altavoces. Si HA sirve HTTPS directamente, configura primero un certificado de confianza o un proxy HTTP.",
+          "cancelled": "Cancelado. No se cambió la URL interna.",
+          "url_changed": "La URL interna cambió mientras esta reparación estaba abierta. Vuelve a abrirla para revisar una nueva propuesta."
+        }
+      }
     }
   },
   "config_subentries": {

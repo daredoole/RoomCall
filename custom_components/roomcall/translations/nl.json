@@ -548,7 +548,24 @@
         "restore_requests_completed": "Herstelverzoeken voltooid; de sessie wordt hervat waar mogelijk.",
         "restore_failed": "Herstel mislukt. Controleer het apparaat en de rechten.",
         "restore_skipped_external_change_or_permission": "Herstel overgeslagen na een externe wijziging of gewijzigde rechten.",
-        "restore_disabled": "Automatisch herstel is uitgeschakeld."
+        "restore_disabled": "Automatisch herstel is uitgeschakeld.",
+        "test_each_room": "Elke kamer testen",
+        "did_you_hear": "Heb je het gehoord?",
+        "listening_yes": "Ja",
+        "listening_no": "Nee",
+        "listening_skip": "Overslaan",
+        "listening_room": "Kamer {current} van {total}: {name}",
+        "listening_heard": "Gehoord (door jou bevestigd)",
+        "listening_not_heard": "Niet gehoord; niet geverifieerd",
+        "listening_skipped": "Overgeslagen; niet geverifieerd",
+        "listening_untested": "Niet getest; niet geverifieerd",
+        "troubleshoot_audio": "Stille luidsprekers onderzoeken",
+        "url_loopback": "Dit adres verwijst naar het apparaat dat het opent, niet naar Home Assistant.",
+        "url_mdns": "Chromecast-luidsprekers kunnen .local-namen niet omzetten. Gebruik een LAN-IP-adres.",
+        "url_container": "Dit adres valt in het standaard Docker-brugbereik en is mogelijk onbereikbaar voor luidsprekers.",
+        "url_certificate": "Het HTTPS-certificaat kon niet worden gevalideerd bij openbare certificaatautoriteiten.",
+        "url_tls_unverified": "De HTTPS-verbinding kon niet worden gecontroleerd. Certificaatvertrouwen en luidsprekertoegang zijn onbekend.",
+        "url_missing": "Niet ingesteld"
       }
     },
     "audio_processing": {
@@ -664,12 +681,61 @@
       "description": "Deze RoomCall-speakers zijn niet beschikbaar of bestaan niet meer: {speakers}. Oproepen naar hun ruimtes worden niet afgespeeld. Zet ze aan of verwijder ze via Instellingen → Apparaten & diensten → RoomCall → Configureren."
     },
     "https_internal_url": {
-      "title": "Speakers bereiken Home Assistant misschien niet",
-      "description": "De interne URL van Home Assistant is {url}. Speakers halen elke oproep daar op, en de meeste weigeren HTTPS-certificaten die niet van een publieke instantie komen. Als oproepen \"bezorgd\" melden maar stil blijven, zet dan de lokale netwerk-URL onder Instellingen → Systeem → Netwerk op http://HOME-ASSISTANT-IP:8123."
+      "title": "RoomCall-luidsprekers kunnen Home Assistant mogelijk niet bereiken",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Lokale netwerk-URL controleren",
+            "description": "Luidsprekers downloaden oproepen van {url}. {reason} Open deze reparatie om een LAN-adres te controleren.\n\nDe interne URL van Home Assistant wijzigen van {current_url} naar {suggested_url}? Deze gedeelde instelling beïnvloedt ook andere integraties. Bevestig alleen als luidsprekers dit adres kunnen bereiken. Een luistertest blijft nodig.",
+            "data": {
+              "confirm": "Wijziging van interne URL bevestigen"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "Er kon geen bruikbaar LAN-adres worden voorgesteld. Open Instellingen → Systeem → Netwerk en stel een voor luidsprekers bereikbaar adres in. Als HA zelf HTTPS aanbiedt, configureer dan eerst een vertrouwd certificaat of een HTTP-proxy.",
+          "cancelled": "Geannuleerd. De interne URL is niet gewijzigd.",
+          "url_changed": "De interne URL veranderde tijdens deze reparatie. Open de reparatie opnieuw voor een nieuw voorstel."
+        }
+      }
     },
     "no_internal_url": {
-      "title": "RoomCall heeft een lokale netwerk-URL nodig",
-      "description": "Speakers halen elke oproep op bij Home Assistant, maar er is geen interne URL. Stel er een in onder Instellingen → Systeem → Netwerk."
+      "title": "RoomCall-luidsprekers kunnen Home Assistant mogelijk niet bereiken",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Lokale netwerk-URL controleren",
+            "description": "Luidsprekers downloaden oproepen van {url}. {reason} Open deze reparatie om een LAN-adres te controleren.\n\nDe interne URL van Home Assistant wijzigen van {current_url} naar {suggested_url}? Deze gedeelde instelling beïnvloedt ook andere integraties. Bevestig alleen als luidsprekers dit adres kunnen bereiken. Een luistertest blijft nodig.",
+            "data": {
+              "confirm": "Wijziging van interne URL bevestigen"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "Er kon geen bruikbaar LAN-adres worden voorgesteld. Open Instellingen → Systeem → Netwerk en stel een voor luidsprekers bereikbaar adres in. Als HA zelf HTTPS aanbiedt, configureer dan eerst een vertrouwd certificaat of een HTTP-proxy.",
+          "cancelled": "Geannuleerd. De interne URL is niet gewijzigd.",
+          "url_changed": "De interne URL veranderde tijdens deze reparatie. Open de reparatie opnieuw voor een nieuw voorstel."
+        }
+      }
+    },
+    "unreachable_internal_url": {
+      "title": "RoomCall-luidsprekers kunnen Home Assistant mogelijk niet bereiken",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Lokale netwerk-URL controleren",
+            "description": "Luidsprekers downloaden oproepen van {url}. {reason} Open deze reparatie om een LAN-adres te controleren.\n\nDe interne URL van Home Assistant wijzigen van {current_url} naar {suggested_url}? Deze gedeelde instelling beïnvloedt ook andere integraties. Bevestig alleen als luidsprekers dit adres kunnen bereiken. Een luistertest blijft nodig.",
+            "data": {
+              "confirm": "Wijziging van interne URL bevestigen"
+            }
+          }
+        },
+        "abort": {
+          "no_lan_url": "Er kon geen bruikbaar LAN-adres worden voorgesteld. Open Instellingen → Systeem → Netwerk en stel een voor luidsprekers bereikbaar adres in. Als HA zelf HTTPS aanbiedt, configureer dan eerst een vertrouwd certificaat of een HTTP-proxy.",
+          "cancelled": "Geannuleerd. De interne URL is niet gewijzigd.",
+          "url_changed": "De interne URL veranderde tijdens deze reparatie. Open de reparatie opnieuw voor een nieuw voorstel."
+        }
+      }
     }
   },
   "config_subentries": {

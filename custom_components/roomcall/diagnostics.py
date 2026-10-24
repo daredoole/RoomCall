@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN, VERSION
 from .core import rooms, speaker_area, supports_announce
+from .protocol import SETUP_KEY
 
 # Transcripts and messages are what people said; notify targets name their phones.
 TO_REDACT = {"text", "message", "transcript", "notify", "custom_url", "pincode"}
@@ -66,4 +67,7 @@ async def async_get_config_entry_diagnostics(
         ),
         "communication_metrics": data.metrics.summary() if data else {},
         "homekit": homekit,
+        "audio_verification": (
+            manager.audio_verification(entry) if (manager := hass.data.get(SETUP_KEY)) else None
+        ),
     }

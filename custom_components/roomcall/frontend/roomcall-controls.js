@@ -332,7 +332,7 @@ export class RoomCallControls {
     const job = await this.command(this.currentMode === "ask" ? "ask" : "send", request);
     this.watch(job.id);
   }
-  async watch(id, onDone, restoreDeadline = Date.now() + 180000) {
+  async watch(id, onDone, restoreDeadline = Date.now() + 180000, onError) {
     if (this.closed) return;
     try {
       const job = await this.command("status", { id });
@@ -371,10 +371,10 @@ export class RoomCallControls {
       if (!active && onDone) { onDone(job); onDone = undefined; }
       const restoring = Object.values(job.result?.evidence || {}).some(e => e.interruption?.restore === "pending");
       if (active || (restoring && Date.now() < restoreDeadline)) {
-        const timer = setTimeout(() => { this.timers.delete(timer); this.watch(id, onDone, restoreDeadline); }, 700);
+        const timer = setTimeout(() => { this.timers.delete(timer); this.watch(id, onDone, restoreDeadline, onError); }, 700);
         this.timers.add(timer);
       } else { this.card._loadHistory(); }
-    } catch (error) { this.error(error); }
+    } catch (error) { this.error(error); onError?.(error); }
   }
   async refresh() {
     if (this.card._configured === false) return;
@@ -675,40 +675,85 @@ class SetupWizard {
     }
     this.review.append(title, list);
     this.renderActions();
-    if (plan.state === "applied")
-      for (const entity of plan.settings.speakers) {
-        const row = document.createElement("div");
-        row.className = "test-row";
-        const name = document.createElement("span");
-        name.textContent =
-          this.discovery.endpoints.find((e) => e.entity_id === entity)?.name ||
-          entity;
-        row.append(
-          name,
-          this.button("test", async () => {
-            const job = await this.request("test", {
-              id: plan.id,
-              speaker: entity,
-            });
-            this.status.textContent = this.t("test_pending");
-            this.controls.watch(job.id, () => {
-              if (this.closed) return;
-              for (const heard of [true, false])
-                row.append(
-                  this.button(heard ? "heard" : "silent", async () => {
-                    await this.request("confirm", {
-                      id: plan.id,
-                      speaker: entity,
-                      heard,
-                    });
-                    await this.verify();
-                  }),
-                );
-            });
-          }),
-        );
-        this.tests.append(row);
+    this.testIndex = plan.settings.speakers.findIndex(
+      (entity) => !plan.confirmations?.[entity],
+    );
+    if (this.testIndex < 0) this.testIndex = plan.settings.speakers.length;
+    this.renderTests();
+  }
+  renderTests() {
+    this.tests.replaceChildren();
+    const plan = this.active;
+    if (plan?.state !== "applied") return;
+    const heading = document.createElement("strong");
+    heading.textContent = this.t("test_each_room");
+    this.tests.append(heading);
+    const name = (entity) => this.discovery.endpoints.find(
+      (e) => e.entity_id === entity,
+    )?.name || entity;
+    for (const entity of plan.settings.speakers) {
+      const report = plan.confirmations?.[entity];
+      const row = document.createElement("p");
+      const result = !report ? "untested" : report.skipped ? "skipped" : report.heard ? "heard" : "not_heard";
+      row.textContent = `${name(entity)}: ${this.t(`listening_${result}`)}`;
+      if (result === "not_heard") {
+        const link = document.createElement("a");
+        link.href = "https://daredoole.github.io/RoomCall/troubleshooting/#speakers-report-success-but-stay-silent";
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = this.t("troubleshoot_audio");
+        row.append(" ", link);
       }
+      this.tests.append(row);
+    }
+    const index = this.testIndex;
+    const entity = plan.settings.speakers[index];
+    if (!entity) {
+      this.tests.append(this.button("test_each_room", () => {
+        this.testIndex = 0;
+        this.renderTests();
+      }));
+      return;
+    }
+    const row = document.createElement("div");
+    row.className = "test-row";
+    const label = document.createElement("p");
+    label.textContent = this.t("listening_room", {
+      name: name(entity), current: index + 1, total: plan.settings.speakers.length,
+    });
+    this.tests.append(label, row);
+    const advance = async (action, values = {}) => {
+      const result = await this.request(action, { id: plan.id, speaker: entity, ...values });
+      this.active = result.plan;
+      this.testIndex = index + 1;
+      this.renderTests();
+      await this.verify();
+    };
+    const start = () => row.replaceChildren(
+      this.button("test", async () => {
+        const job = await this.request("test", { id: plan.id, speaker: entity });
+        this.active = job.plan;
+        listen(job.id);
+      }),
+      this.button("listening_skip", () => advance("skip")),
+    );
+    const listen = (id) => {
+      row.replaceChildren(document.createTextNode(this.t("test_pending")));
+      this.controls.watch(id, () => {
+        if (this.closed || this.active?.id !== plan.id || this.testIndex !== index || !row.isConnected) return;
+        row.replaceChildren(document.createTextNode(this.t("did_you_hear")));
+        for (const heard of [true, false])
+          row.append(this.button(heard ? "listening_yes" : "listening_no", () => advance("confirm", { heard })));
+        row.append(this.button("listening_skip", () => advance("skip")));
+      }, undefined, (error) => {
+        if (error.problem?.code === "not_found" && row.isConnected && !this.closed) start();
+      });
+    };
+    if (plan.tests[entity] && !plan.confirmations?.[entity]) {
+      listen(plan.tests[entity]);
+    } else {
+      start();
+    }
   }
   renderActions() {
     this.actions.replaceChildren();
