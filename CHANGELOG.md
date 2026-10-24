@@ -10,6 +10,11 @@ All notable changes are listed here. The format follows
   Do Not Disturb, people, Talk/Type/Ask, Settings and older calls behind **More**. Cards
   added from the card picker start simple; saved cards without `layout` keep Standard.
 
+- Docs: group the site navigation by task (use cases, setup, AI and agents, standalone
+  server) and move implementation records and screenshot validation under
+  **Development**. Add short guides for a Home Assistant intercom, a Sonos intercom
+  and announcing to any speaker from Siri.
+
 ## 0.21.0 — 2026-10-23
 
 - Keep live-call restoration leases through the captured audio duration so buffered
