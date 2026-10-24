@@ -18,7 +18,7 @@ demo mode; neither proves speaker delivery. See [screenshots and validation](scr
 ## What you get
 
 - **Hold-to-talk card, live** — stream while you talk; speaker startup and queues determine when playback begins. Set it up in the
-  visual card editor, with compact and kiosk layouts.
+  visual card editor, with simple, compact and kiosk layouts.
 - **Rooms are your areas** — talk to one room, everywhere, specific speakers, or a person
   wherever they are.
 - **[Apple Home intercom](apple-home.md)** — every room is a camera tile with a talk button on
