@@ -6,12 +6,14 @@ import asyncio
 import io
 import shutil
 import wave
+from datetime import timedelta
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from custom_components.roomcall import core, ws
 from custom_components.roomcall.calls import CallError
 from custom_components.roomcall.live import MAX_SECONDS, LiveStore, LiveStream
+from homeassistant.components.http.auth import async_sign_path
 from homeassistant.helpers.network import NoURLAvailableError
 
 
@@ -71,12 +73,17 @@ async def test_http_rejects_invalid_empty_and_oversized_uploads(
         assert (await client.post("/api/roomcall/talk", data=b"x" * 9)).status == 413
     assert (await client.post("/api/roomcall/command", data=b"x" * 65537)).status == 400
     speaker = await hass_client_no_auth()
-    assert (await speaker.get("/api/roomcall/clip/missing.mp3")).status == 404
+    assert (await speaker.get("/api/roomcall/clip/missing.mp3")).status == 401
+    assert (await client.get("/api/roomcall/clip/missing.mp3")).status == 404
     assert (await client.get("/api/roomcall/history/missing.mp3")).status == 404
-    assert (await speaker.head("/api/roomcall/live/missing.mp3")).status == 404
+    assert (await speaker.head("/api/roomcall/live/missing.mp3")).status == 401
+    assert (await client.head("/api/roomcall/live/missing.mp3")).status == 404
     stream = LiveStream("ffmpeg")
     hass.data["roomcall"].live.add(stream)
-    assert (await speaker.head(f"/api/roomcall/live/{stream.id}.mp3")).status == 200
+    path = f"/api/roomcall/live/{stream.id}.mp3"
+    assert (await speaker.head(path)).status == 401
+    signed = async_sign_path(hass, path, timedelta(seconds=60), use_content_user=True)
+    assert (await speaker.head(signed)).status == 200
     stream.done = True
 
 

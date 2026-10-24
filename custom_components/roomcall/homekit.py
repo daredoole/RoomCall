@@ -376,7 +376,9 @@ class HomeKitIntercom:
         self.pincode = await self._load_pincode()
         storage = self.hass.config.path(".storage")
         await self.hass.async_add_executor_job(partial(os.makedirs, storage, exist_ok=True))
-        self._tmp = tempfile.TemporaryDirectory(prefix="roomcall-homekit-")
+        self._tmp = await self.hass.async_add_executor_job(
+            partial(tempfile.TemporaryDirectory, prefix="roomcall-homekit-")
+        )
         tmp = Path(self._tmp.name)
         for index, room in enumerate(sorted(rooms, key=lambda r: r["area_id"])):
             area_id = room["area_id"]
@@ -401,12 +403,9 @@ class HomeKitIntercom:
             )
             await driver.async_start()
             self.drivers[area_id] = driver
+        # The pairing code is only shown to admins in the persistent notification.
         _LOGGER.info(
-            "RoomCall Apple Home: %d rooms on %s:%s+ (code %s)",
-            len(self.drivers),
-            address,
-            self.port,
-            self.pincode,
+            "RoomCall Apple Home: %d rooms on %s:%s+", len(self.drivers), address, self.port
         )
 
     async def async_stop(self) -> None:
@@ -415,8 +414,8 @@ class HomeKitIntercom:
                 await driver.async_stop()
         self.drivers.clear()
         if self._tmp is not None:
-            self._tmp.cleanup()
-            self._tmp = None
+            tmp, self._tmp = self._tmp, None
+            await self.hass.async_add_executor_job(tmp.cleanup)
 
     async def async_live_start(self, area_id: str) -> Any:
         """Start a live call to the room; returns the LiveStream to feed."""

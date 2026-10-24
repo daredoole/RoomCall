@@ -24,6 +24,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import intent, llm
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_mock_service
+from yarl import URL
 
 
 async def finished(hass, job_id):
@@ -392,7 +393,7 @@ async def test_command_http_authentication_locale_and_validation(
 
 
 async def test_delivery_tokens_do_not_claim_audibility(hass, setup_roomcall, hass_client_no_auth):
-    async_mock_service(hass, "media_player", "play_media")
+    played = async_mock_service(hass, "media_player", "play_media")
     data = hass.data["roomcall"]
     clip = data.clips.add(b"audio", "audio/mpeg")
     record = await place_call(
@@ -408,7 +409,15 @@ async def test_delivery_tokens_do_not_claim_audibility(hass, setup_roomcall, has
     assert "audio_fetched_ms" not in record.evidence["media_player.basement_sonos"]
     data.evidence.fetched(token, "/wrong")
     anon = await hass_client_no_auth()
-    response = await anon.get(f"/api/roomcall/clip/{clip}.mp3?roomcall_token={token}")
+    # Speakers get a short-lived signed path; the clip itself still requires authentication.
+    url = URL(played[0].data["media_content_id"])
+    assert url.host == "ha.local" and "authSig" in url.query
+    unsigned = f"/api/roomcall/clip/{clip}.mp3?roomcall_token={token}"
+    assert (await anon.get(unsigned)).status == 401
+    tampered = url.update_query(roomcall_token="other")
+    assert (await anon.get(tampered.path_qs)).status == 401
+    assert "audio_fetched_ms" not in record.evidence["media_player.basement_sonos"]
+    response = await anon.get(url.path_qs)
     assert response.status == 200
     assert record.evidence["media_player.basement_sonos"]["audio_fetched_ms"] >= 0
     assert record.summary()["audible"] is None

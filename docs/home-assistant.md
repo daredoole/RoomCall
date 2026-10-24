@@ -392,14 +392,14 @@ Assist intent, every action and field, and how announcements are created through
 **Live calls** (the default) stream from the card over Home Assistant's WebSocket: ffmpeg encodes
 the audio to MP3 as it arrives (chime first) and speakers play one growing URL, so they start
 while you are still talking. **Recorded calls** (`live: false`, typed messages and automations)
-are prepared before dispatch. RoomCall-hosted recording/chime clips use an
-unguessable URL available for up to two minutes; external URLs and direct TTS
-have their own provider lifetimes.
+are prepared before dispatch. RoomCall-hosted recordings and prepared speech are
+held for up to two minutes; external URLs and direct TTS have their own provider lifetimes.
 Either way each speaker gets `media_player.play_media`, a short moment apart. Speakers that support it get `announce: true`,
 so Sonos lowers the music instead of stopping it.
 
-Uploads, history and replays require a signed-in Home Assistant user. Clip and chime URLs are
-unauthenticated because speakers cannot sign in, which is why clips are random and short-lived.
+Uploads, history, replays, clips and live call audio require a signed-in Home Assistant user.
+Speakers cannot sign in, so each speaker is handed a signed link that works for two minutes,
+the same way Home Assistant lets speakers fetch its own media. The built-in chime tones are public.
 History holds at most 20 records in memory. Available recording audio expires after
 24 hours (or earlier through eviction/reload); record metadata can remain until
 eviction/reload. The sensor exposes the last 10 records. Optional voicemail and

@@ -12,8 +12,19 @@ from .const import DOMAIN, VERSION
 from .core import rooms, speaker_area, supports_announce
 from .protocol import SETUP_KEY
 
-# Transcripts and messages are what people said; notify targets name their phones.
-TO_REDACT = {"text", "message", "transcript", "notify", "custom_url", "pincode"}
+# Transcripts and messages are what people said; notify targets name their phones. Agent
+# policies are keyed by user ids, and preferences and profiles by or for people.
+TO_REDACT = {
+    "text",
+    "message",
+    "transcript",
+    "notify",
+    "custom_url",
+    "pincode",
+    "agent_policies",
+    "preferences",
+    "household_profiles",
+}
 
 
 async def async_get_config_entry_diagnostics(

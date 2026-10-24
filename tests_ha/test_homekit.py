@@ -240,12 +240,34 @@ async def test_live_call_starts_while_still_talking():
 
 
 async def test_bridge_publishes_one_camera_per_room_and_keeps_its_code(
-    hass: HomeAssistant, setup_roomcall
+    hass: HomeAssistant, setup_roomcall, caplog
 ):
+    import tempfile
+    import threading
+
     from custom_components.roomcall.core import rooms
 
     data = hass.data[DOMAIN]
+    loop_thread = threading.current_thread()
+    real_tmp = tempfile.TemporaryDirectory
+    tmp_threads = []
+
+    class TrackedTemporaryDirectory(real_tmp):
+        """Records where the bridge's picture directory is created and removed."""
+
+        def __init__(self, *args, **kwargs):
+            tmp_threads.append(threading.current_thread())
+            super().__init__(*args, **kwargs)
+
+        def cleanup(self):
+            tmp_threads.append(threading.current_thread())
+            super().cleanup()
+
     with (
+        patch(
+            "custom_components.roomcall.homekit.tempfile.TemporaryDirectory",
+            TrackedTemporaryDirectory,
+        ),
         patch(
             "homeassistant.components.network.async_get_source_ip",
             AsyncMock(return_value="127.0.0.1"),
@@ -265,7 +287,17 @@ async def test_bridge_publishes_one_camera_per_room_and_keeps_its_code(
         camera = next(iter(first.drivers.values())).accessory
         assert camera.display_name.endswith("Intercom")
         code = first.pincode
+        # Anyone reading the log could pair a room; the code is only in the admin notification.
+        # (The test harness's own mock storage logs what it writes; HA's real Store does not.)
+        logged = [
+            r.getMessage()
+            for r in caplog.records
+            if not r.name.startswith("pytest_homeassistant_custom_component")
+        ]
+        assert logged and not any(code in message for message in logged)
         await first.async_stop()
+        # Creating and removing the directory is blocking I/O, done off the event loop.
+        assert len(tmp_threads) == 2 and loop_thread not in tmp_threads
 
         second = HomeKitIntercom(hass, data, 51800)
         await second.async_start(rooms(hass, data.speakers))

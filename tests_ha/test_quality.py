@@ -37,6 +37,30 @@ async def test_diagnostics_hide_what_people_said(hass: HomeAssistant, setup_room
     assert diag["recent_calls"][0]["text"] == "**REDACTED**"
 
 
+async def test_diagnostics_redact_people_and_agent_accounts(hass: HomeAssistant, house):
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"speakers": ["media_player.kitchen_hub"]},
+        options={
+            "communication": {
+                "agent_policies": {"user-id-123": {"operations": ["send"]}},
+                "preferences": {"person.alex": {"language": "es"}},
+                "household_profiles": {
+                    "dinner": {"name": "Dinner", "defaults": {"people": ["person.alex"]}}
+                },
+            }
+        },
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    diag = await async_get_config_entry_diagnostics(hass, entry)
+    communication = diag["options"]["communication"]
+    for key in ("agent_policies", "preferences", "household_profiles"):
+        assert communication[key] == "**REDACTED**"
+    assert "user-id-123" not in str(diag) and "person.alex" not in str(diag)
+
+
 async def test_unavailable_speaker_raises_a_repair_after_a_grace_period(hass: HomeAssistant, house):
     hass.states.async_set("media_player.basement_sonos", "unavailable")
     entry = MockConfigEntry(

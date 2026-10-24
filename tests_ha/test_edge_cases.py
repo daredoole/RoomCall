@@ -222,7 +222,9 @@ async def test_evidence_and_mailbox_retention_caps(hass, setup_roomcall):
     evidence = Evidence(Metrics())
     record = core.CallRecord("Kitchen", "media", [])
     for _ in range(2049):
-        evidence.url("http://ha/api/roomcall/clip/a.mp3", record, "media_player.kitchen_sonos")
+        evidence.url(
+            hass, "http://ha/api/roomcall/clip/a.mp3", record, "media_player.kitchen_sonos"
+        )
     assert len(evidence.tokens) == 2048
     evidence.fetched("missing", "/api/roomcall/clip/a.mp3")
     for _ in range(2049):
