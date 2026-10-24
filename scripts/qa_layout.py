@@ -6,13 +6,9 @@ from ha_screenshots import open_card
 from playwright.sync_api import expect
 
 
-def check_layout(browser) -> None:
-    for layout in ("default", "compact", "kiosk"):
-        page = browser.new_page(viewport={"width": 688, "height": 560})
-        open_card(page, "mobile", "dark", f"&card={layout}")
-        card = page.locator("roomcall-card")
-        expect(card.locator(".communication").first).to_be_attached()
-        page.evaluate("""() => {
+def add_container(page) -> None:
+    """Put the card in a one-column grid followed by another card, like an HA section."""
+    page.evaluate("""() => {
           const card=document.querySelector('roomcall-card');
           const container=card.parentElement;
           container.style.cssText='display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0';
@@ -26,6 +22,18 @@ def check_layout(browser) -> None:
           card._renderRooms();
           window.layoutContainer=container;
         }""")
+
+
+def check_layout(browser) -> None:
+    for layout in ("simple", "default", "compact", "kiosk"):
+        page = browser.new_page(viewport={"width": 688, "height": 560})
+        open_card(page, "mobile", "dark", f"&card={layout}")
+        card = page.locator("roomcall-card")
+        expect(card.locator(".communication").first).to_be_attached()
+        add_container(page)
+        if layout == "simple":
+            # The collapsed card is covered by check_simple; expanded it has every control.
+            card.get_by_role("button", name="More", exact=True).click()
         for width in (240, 280, 320, 390, 600):
             page.evaluate("width=>{layoutContainer.style.width=width+'px'}", width)
             # Use the public sizing API just as HA sections does.
@@ -54,6 +62,68 @@ def check_layout(browser) -> None:
             assert_contained(page, fixed=True)
             page.keyboard.press("Escape")
         page.close()
+
+
+def check_simple(browser) -> None:
+    """Simple shows rooms, talk and the latest call; More reveals and Less hides the rest."""
+    hidden_when_collapsed = (".toggles", ".people", "[data-toolbar]")
+    for appearance in ("glass", "material", "home-assistant"):
+        page = browser.new_page(viewport={"width": 688, "height": 560})
+        open_card(page, "mobile", "dark", f"&card=simple&appearance={appearance}")
+        card = page.locator("roomcall-card")
+        expect(card.locator(".communication").first).to_be_attached()
+        expect(card.locator(".history .call")).to_have_count(1)
+        add_container(page)
+        more = card.get_by_role("button", name="More", exact=True)
+        assert more.get_attribute("aria-expanded") == "false"
+        for selector in hidden_when_collapsed:
+            expect(card.locator(selector).first).to_be_hidden()
+        expect(card.get_by_role("button", name="Settings", exact=True)).to_be_hidden()
+        expect(card.locator(".rooms .chip").first).to_be_visible()
+        expect(card.locator("button.talk")).to_be_visible()
+        expect(card.locator(".destination")).to_have_text("To: Kitchen")
+        expect(card.locator(".history .call")).to_have_count(1)
+        expect(card.locator(".history")).to_contain_text("Dinner's ready")
+        for width in (240, 280, 320, 390, 600):
+            page.evaluate("width=>{layoutContainer.style.width=width+'px'}", width)
+            page.evaluate("layoutContainer.style.gridTemplateRows='auto 120px'")
+            page.wait_for_timeout(40)
+            assert_contained(page, fixed=False)
+            bounds = more.bounding_box()
+            assert bounds and bounds["width"] >= 44 and bounds["height"] >= 44, bounds
+            page.evaluate("layoutContainer.style.gridTemplateRows='280px 120px'")
+            page.wait_for_timeout(40)
+            assert_contained(page, fixed=True)
+        page.evaluate("layoutContainer.style.width='390px'")
+        page.evaluate("layoutContainer.style.gridTemplateRows='auto 120px'")
+        more.click()
+        less = card.get_by_role("button", name="Less", exact=True)
+        assert less.get_attribute("aria-expanded") == "true"
+        for selector in hidden_when_collapsed:
+            expect(card.locator(selector).first).to_be_visible()
+        expect(card.locator(".history .call")).to_have_count(3)
+        card.locator('[data-mode="type"]').click()
+        expect(card.locator("button.talk")).to_be_hidden()
+        page.wait_for_timeout(40)
+        assert_contained(page, fixed=False)
+        # Collapsing returns to Talk: the hidden toolbar can't leave the card in Type.
+        less.click()
+        expect(card.locator("button.talk")).to_be_visible()
+        expect(card.get_by_role("textbox", name="Message", exact=True)).to_be_hidden()
+        assert card.locator('[data-mode="talk"]').get_attribute("aria-pressed") == "true"
+        expect(card.locator(".history .call")).to_have_count(1)
+        assert more.get_attribute("aria-expanded") == "false"
+        page.close()
+    # A saved card without `layout` keeps the Standard layout, with no More button.
+    page = browser.new_page(viewport={"width": 390, "height": 820})
+    open_card(page, "mobile", "dark")
+    card = page.locator("roomcall-card")
+    assert card.get_attribute("layout") == "default"
+    expect(card.locator(".communication").first).to_be_attached()
+    expect(card.locator(".more")).to_be_hidden()
+    expect(card.locator("[data-toolbar]")).to_be_visible()
+    expect(card.locator(".history .call")).to_have_count(3)
+    page.close()
 
 
 def check_appearances(browser) -> None:

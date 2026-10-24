@@ -1,13 +1,13 @@
 {
   "schema": 1,
-  "capture_base_commit": "f7aa8a2ff3da84838e950c925bef00fe80c16dc2",
+  "capture_base_commit": "e3eaad4e7f1fdf2a43cf05ed095ef8de536a94de",
   "ios_source_commit": "7f1a3069bb4b89d89ebc63404dd3c3d663e20758",
   "ios_run": "https://github.com/daredoole/RoomCall/actions/runs/40035013972",
   "sample_data": true,
   "groups": {
     "home_assistant": {
       "images": {
-        "docs/assets/demo.gif": "b323b1c1b62d2770f25d59e764ee06e54db25143a2364a249f66ba2e2bd7d8d8",
+        "docs/assets/demo.gif": "172bf3cbb6fd7551335026ce987067dd4ed4e17e0799c331cefaac905e27b3a8",
         "docs/assets/ha-card-ask.png": "3e0838fd223f685b09bd9fc3bf946d0d8d6a5c286b18861289cc85ee82384861",
         "docs/assets/ha-card-compact.png": "fb00518617d208bf1f4ab8b27c8e36a4104a309037014a47d612e9b0897dc35c",
         "docs/assets/ha-card-delivered.png": "6cebc0d0309b4090363df5373a96f7bbd88b1eb5103e1b8cf7ecf4912a2cb57f",
@@ -18,11 +18,12 @@
         "docs/assets/ha-card-mobile.png": "577fbe8e28ab6957f4e4470b693398c167538aaa5037bdd02269c60b4c59ca50",
         "docs/assets/ha-card-reply.png": "11972c00c8e0a744056ac5e1daaf758b33790d3d0e8f8a1bb228859a2c242876",
         "docs/assets/ha-card-setup.png": "83592317c3692ed6d3b4789b0dc09b8622aac7b975b02dfb5877e23af8995f18",
-        "docs/assets/ha-card-talking.png": "697adef15bc74fb480aef4606c63b31acabfca616b97ec15dba01400d9b0bbc8",
+        "docs/assets/ha-card-simple.png": "4238f8be2f1f8e0d2f00efd5e4030a8f43b041e16c5d640a09d0bb90031d334c",
+        "docs/assets/ha-card-talking.png": "981eb357f7e21bf922a4c3b5a3a3722126da01fe72de8526a2b7a1dde93fad24",
         "docs/assets/ha-card-tasks.png": "bb32529ae395fb4adf652391b781e7116aebdd4a6ccbdda7494b2a9a0dd430da",
         "docs/assets/ha-card-type.png": "f38f0d14fe9a2ce11f1e1943fd742c64bdf9ad7cb6728599419ef307b98779f5",
         "docs/assets/ha-dashboard-desktop.png": "2808552d063f0b546a8a2644e6f4824ca361efe29b619c1b94c84818ccfbb40b",
-        "docs/assets/ha-guided-setup.png": "4f15a5d421d6cf5b8136b1ef95d44db6757232129facb92f2731b77252712ed5",
+        "docs/assets/ha-guided-setup.png": "217e8de2d6f12eb6f7008168718b98c4cb3c05eff3d82849988de71324c18cb0",
         "docs/assets/ha-playback-preview.png": "10aa5ea03fe0163b4da7f7a87a1b6ba12e8c1247387274398c0ac40df19f9242",
         "docs/assets/ha-playback-restoration.png": "c1d903db1fe3641fa30bdbdb704e459617d9e91305f933bae0d409e196ceb4db",
         "docs/assets/ha-settings-phone.png": "93877bcd40803f6b2f44456fa7f596e3d065998fda7b662a0d5b53a70dd83f0a",
@@ -33,13 +34,13 @@
         "docs/assets/ha-siri-shortcuts.png": "bef6e264a01e69c89913a0f9466642d60cc25d80b9c83e7775d442eff14fa37c"
       },
       "inputs": {
-        "custom_components/roomcall/frontend/roomcall-card.js": "831db010d2ceb97319f7b2c4f19b538ac12123b5461db30ced1101559d56be86",
+        "custom_components/roomcall/frontend/roomcall-card.js": "c4bf943379d5b328162144d11fdfba44530d529ca6f8403dd4603c29deeb283b",
         "custom_components/roomcall/frontend/roomcall-controls.js": "7a7cdde931baa84ce81a01652e5bd56c26efe7d8835479842812aba2e754ea8a",
         "custom_components/roomcall/frontend/roomcall-qr.js": "b8fdb1a738c36b7989ebacad214540ab143065b04f6bf270d3ca29d0d5cadc2d",
-        "custom_components/roomcall/strings.json": "0cd04a83f42e1e345abf119b0b818be2e2aede0fe649b0f6a931be2529f80005",
-        "scripts/ha_card_harness.html": "4dd5d3df43bca9a031707e441053917050dc65c90cb393ea569078045bc5e896",
-        "scripts/ha_screenshots.py": "f77adc56e65e398a5f71b2ada1d8be8a7cee236c36cfecf5eab46a48940530be",
-        "scripts/qa_communication.py": "00caa928f3f6fd983559a95a7dcda4cb785b56b5fba2f57037a3a32442f76c8b"
+        "custom_components/roomcall/strings.json": "2c8a9b7fb98115d13bcf3c948981b2e3e3967881752b78b560f96d48fc1751cf",
+        "scripts/ha_card_harness.html": "75d32cd6ef3765b57608917981c50544aca95cc9dc833f68e9f157dbbdfd2f45",
+        "scripts/ha_screenshots.py": "56ab0002fc6ba0872a5676bcf041f3d19de029122de23688cb99bb338a47815f",
+        "scripts/qa_communication.py": "a3c9ef0aca1a5c8b529829c8a4a59cebc917fcfc08fa3dba3380b2b8ad366a47"
       }
     },
     "standalone": {

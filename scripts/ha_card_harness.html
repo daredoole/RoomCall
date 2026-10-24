@@ -262,12 +262,14 @@
 
   const main = document.querySelector("main");
   const card = document.createElement("roomcall-card");
-  const layout = params.get("card") || "default";
+  // No ?card= leaves `layout` unset, as in a card saved before the simple layout existed.
+  const layout = params.get("card");
   hass.themes = { darkMode: document.documentElement.dataset.scheme === "dark" };
   const look = {};
   if (params.get("appearance")) look.appearance = params.get("appearance");
   if (params.get("color")) look.color = `#${params.get("color")}`;
-  card.setConfig({ title: "Intercom", default_room: "kitchen", room: "kitchen", layout, ...look });
+  if (layout) look.layout = layout;
+  card.setConfig({ title: "Intercom", default_room: "kitchen", room: "kitchen", ...look });
   card.hass = hass;
   if (desktop) {
     document.querySelector(".tabs").innerHTML = "<b>Home</b><span>Rooms</span><span>Media</span><span>Energy</span>";

@@ -2,9 +2,21 @@
 const CARD_VERSION = "0.21.0";
 // Peak level (0–1) below which a recording is treated as silence.
 const SILENCE_PEAK = 0.04;
-const LAYOUTS = ["default", "compact", "kiosk"];
+const LAYOUTS = ["simple", "default", "compact", "kiosk"];
 const APPEARANCES = ["glass", "material", "home-assistant"];
 const THEMES = ["auto", "light", "dark"];
+// Cards added from the card picker start simple; a saved card without `layout` keeps "default".
+const NEW_CARD = { title: "Intercom", layout: "simple" };
+const cardConfig = (config) => ({
+  title: "Intercom",
+  layout: "default",
+  history: 3,
+  people: true,
+  live: true,
+  appearance: "glass",
+  theme: "auto",
+  ...config,
+});
 const LIVE_RATE = 16000;
 // Turns the microphone into 16 kHz 16-bit PCM frames of 40 ms for live calls.
 const PCM_WORKLET = `
@@ -146,7 +158,7 @@ const ICONS = {
 
 class RoomCallCard extends HTMLElement {
   static getStubConfig() {
-    return { title: "Intercom" };
+    return { ...NEW_CARD };
   }
 
   static getConfigElement() {
@@ -165,16 +177,8 @@ class RoomCallCard extends HTMLElement {
     if (config.theme && !THEMES.includes(config.theme)) {
       throw new Error(`theme must be one of: ${THEMES.join(", ")}`);
     }
-    this._config = {
-      title: "Intercom",
-      layout: "default",
-      history: 3,
-      people: true,
-      live: true,
-      appearance: "glass",
-      theme: "auto",
-      ...config,
-    };
+    this._config = cardConfig(config);
+    this._expanded = false;
     const fromUrl = new URLSearchParams(window.location.search).get("roomcall");
     this._replyTo = fromUrl || null;
     this._target = fromUrl || this._config.default_room || "all";
@@ -222,7 +226,7 @@ class RoomCallCard extends HTMLElement {
 
   getCardSize() {
     const height = this.shadowRoot?.querySelector("ha-card")?.getBoundingClientRect().height;
-    return height ? Math.ceil(height / 50) : this._config.layout === "compact" ? 3 : 7;
+    return height ? Math.ceil(height / 50) : { compact: 3, simple: 5 }[this._config.layout] || 7;
   }
 
   getGridOptions() {
@@ -257,6 +261,7 @@ class RoomCallCard extends HTMLElement {
       const strings = await this._hass.callApi("GET", `roomcall/locale?language=${encodeURIComponent(this._hass.language || "en")}`);
       this._strings = strings;
       this.shadowRoot.querySelector(".recipients-title").textContent = strings.recipients;
+      this._renderMore();
       this._renderRooms();
       this._loadTasks();
       if (!this._configured) this._setStatus(strings.not_ready, "muted");
@@ -292,7 +297,7 @@ class RoomCallCard extends HTMLElement {
   }
 
   async _loadHistory() {
-    if (!this._config.history || this._config.layout !== "default") return;
+    if (!this._config.history || !["default", "simple"].includes(this._config.layout)) return;
     try {
       const res = await this._hass.callApi("GET", "roomcall/history");
       this._history = res.calls.slice(0, this._config.history);
@@ -537,6 +542,16 @@ class RoomCallCard extends HTMLElement {
           min-width:44px; min-height:44px; border-radius:50%; }
         .task button:disabled { opacity:0.55; cursor:progress; }
 
+        /* Simple: rooms, the talk button and the latest call; More reveals everything else. */
+        .head .more[hidden] { display:none; }
+        :host([layout="simple"]) .head .chip.more { min-height:44px; }
+        /* More/Less stays beside the title; Urgent and Do Not Disturb get their own row. */
+        :host([layout="simple"]) .head .more { margin-inline-start:auto; }
+        :host([layout="simple"]) .head .toggles { order:1; flex-basis:100%; flex-wrap:wrap; justify-content:flex-end; }
+        :host([layout="simple"]:not([expanded])) .toggles,
+        :host([layout="simple"]:not([expanded])) .people,
+        :host([layout="simple"]:not([expanded])) .communication nav[data-toolbar] { display:none; }
+
         :host([layout="compact"]) ha-card { padding:12px; gap:10px; }
         :host([layout="compact"]) .title, :host([layout="compact"]) .recipients-title, :host([layout="compact"]) .history { display: none; }
         :host([layout="compact"]) .workspace { gap:12px; }
@@ -660,6 +675,9 @@ class RoomCallCard extends HTMLElement {
         <div class="head">
           <span class="title"></span>
           <span class="toggles"></span>
+          <button class="chip small more" type="button" aria-expanded="false" hidden>
+            <ha-icon icon="mdi:dots-horizontal"></ha-icon><span class="more-label">More</span>
+          </button>
         </div>
         <div class="reply" role="status">
           <ha-icon icon="mdi:reply"></ha-icon><span class="reply-text"></span>
@@ -685,7 +703,18 @@ class RoomCallCard extends HTMLElement {
         <div class="history" aria-label="Recent calls"></div>
       </ha-card>`;
     this.setAttribute("layout", layout);
+    this.removeAttribute("expanded");
     this.shadowRoot.querySelector(".title").textContent = this._config.title;
+    const more = this.shadowRoot.querySelector(".more");
+    more.hidden = layout !== "simple";
+    more.addEventListener("click", () => {
+      this._expanded = !this._expanded;
+      // Talk is the only mode the collapsed card can show.
+      if (!this._expanded) this._communication?.mode("talk");
+      this._renderMore();
+      this._renderHistory();
+    });
+    this._renderMore();
     const talk = this.shadowRoot.querySelector(".talk");
     talk.addEventListener("pointerdown", (e) => this._start(e));
     for (const ev of ["pointerup", "pointerleave", "pointercancel"]) talk.addEventListener(ev, (e) => this._stop(e));
@@ -703,6 +732,16 @@ class RoomCallCard extends HTMLElement {
       this._renderRooms();
     });
     this._renderRooms();
+  }
+
+  _renderMore() {
+    const more = this.shadowRoot.querySelector(".more");
+    const key = this._expanded ? "fewer_options" : "more_options";
+    this.toggleAttribute("expanded", this._expanded);
+    more.setAttribute("aria-expanded", String(this._expanded));
+    const label = this._strings?.[key] || (this._expanded ? "Less" : "More");
+    more.querySelector(".more-label").textContent = label;
+    more.setAttribute("aria-label", label);
   }
 
   _chip(icon, label, pressed, onClick, cls = "") {
@@ -782,7 +821,9 @@ class RoomCallCard extends HTMLElement {
   _renderHistory() {
     const box = this.shadowRoot.querySelector(".history");
     box.replaceChildren();
-    for (const call of this._history || []) {
+    // The collapsed simple card keeps only the latest call (and its reply button) in view.
+    const collapsed = this._config.layout === "simple" && !this._expanded;
+    for (const call of (this._history || []).slice(0, collapsed ? 1 : undefined)) {
       const row = document.createElement("div");
       row.className = "call";
       const from = call.from ? this._roomName(call.from) : call.kind === "talk" ? "Someone" : "Automation";
@@ -1102,6 +1143,7 @@ const EDITOR_TEXT = {
   appearance: "Appearance",
   theme: "Light or dark",
   color: "Button colour",
+  layout_simple: "Simple (rooms and the talk button; More shows the rest)",
   layout_default: "Standard",
   layout_compact: "Compact (one row)",
   layout_kiosk: "Kiosk (big button for a wall tablet)",
@@ -1116,6 +1158,7 @@ const EDITOR_TEXT = {
   help_room: "Where this dashboard is (for example a wall tablet). Replies to its calls come back here.",
   help_rooms: "Leave empty for every room with a RoomCall speaker.",
   help_live: "Turn off to record the whole message first, then send it.",
+  help_layout: "Simple puts typing, asking, people, Urgent, Do Not Disturb, settings and older calls behind More.",
 };
 const select = (t, name, values) => ({
   name,

@@ -4,6 +4,12 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- Add a **simple** card layout: rooms, the talk button and the latest call, with Urgent,
+  Do Not Disturb, people, Talk/Type/Ask, Settings and older calls behind **More**. Cards
+  added from the card picker start simple; saved cards without `layout` keep Standard.
+
 ## 0.21.0 — 2026-10-23
 
 - Keep live-call restoration leases through the captured audio duration so buffered
