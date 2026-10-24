@@ -5,6 +5,7 @@
     "diagnostics",
     "frontend",
     "lovelace",
+    "music_assistant",
     "network",
     "zeroconf"
   ],

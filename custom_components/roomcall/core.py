@@ -356,6 +356,17 @@ async def _play_once(
     media_id: str,
     volume: float | None,
 ) -> None:
+    from .playback import is_music_assistant
+
+    if is_music_assistant(hass, entity_id):
+        announcement = {"entity_id": entity_id, "url": media_id, "use_pre_announce": False}
+        if volume is not None:
+            announcement["announce_volume"] = round(volume * 100)
+        async with asyncio.timeout(30):
+            await hass.services.async_call(
+                "music_assistant", "play_announcement", announcement, blocking=True
+            )
+        return
     state = hass.states.get(entity_id)
     features = state.attributes.get("supported_features", 0) if state else 0
     announce = bool(features & MediaPlayerEntityFeature.MEDIA_ANNOUNCE)

@@ -120,14 +120,16 @@
               "speech_profiles": "Perfiles de voz",
               "household_profiles": "Perfiles del hogar",
               "agent_policies": "Políticas de cuentas de agentes",
-              "playback_routes": "Rutas de dispositivos de reproducción"
+              "playback_routes": "Rutas de dispositivos de reproducción",
+              "prefer_music_assistant": "Preferir Music Assistant en estas habitaciones"
             },
             "data_description": {
               "talk_back": "Cuando alguien habla a una sala desde otra, un satélite de Assist en esa sala (Atom Echo, ESP32-S3, Home Assistant Voice) escucha una respuesta y la sala de origen la oye. Las respuestas se transcriben y se dicen con la voz configurada.",
               "doorbell_entity": "El botón o evento del timbre. Cuando suena, RoomCall dice quién está en la puerta, avisa a los teléfonos con un botón Contestar y muestra un aviso en las tarjetas de RoomCall.",
               "doorbell_camera": "Contestar abre la vista en directo de esta cámara, donde se puede hablar si la cámara lo admite.",
               "doorbell_rooms": "Déjalo vacío para que suene en todas partes.",
-              "playback_routes": "Asigna una entidad de reproducción a un controlador y una fuente explícitos para su salida de audio. Las conexiones HDMI no se deducen de los nombres de las habitaciones. La restauración y la reanudación de aplicaciones dependen del dispositivo."
+              "playback_routes": "Asigna una entidad de reproducción a un controlador y una fuente explícitos para su salida de audio. Las conexiones HDMI no se deducen de los nombres de las habitaciones. La restauración y la reanudación de aplicaciones dependen del dispositivo.",
+              "prefer_music_assistant": "Para copias verificadas del mismo altavoz físico, prefiere su reproductor de Music Assistant. Las identidades de MA desconocidas requieren selección manual; este ajuste nunca identifica dispositivos por habitación o nombre."
             }
           }
         }

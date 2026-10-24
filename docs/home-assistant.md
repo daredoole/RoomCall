@@ -75,12 +75,54 @@ Pick your speakers. Everything else is under **Configure** on the integration:
 !!! tip "One entity per speaker"
     A physical speaker often has several media players (native Sonos plus Music Assistant, Cast
     plus Android TV…). Pick one per speaker so messages do not play twice. RoomCall suggests
-    announce-capable native entities and skips Music Assistant mirrors by default.
+    announce-capable routes, favors native players within a known physical pair, and leaves
+    uncertain Music Assistant identities unchecked until you select them.
 
 !!! info "Rooms come from areas"
     Each speaker's room is its entity area, or its device area. Speakers without
     an area remain available through **Everywhere** or an explicit speaker ID,
     but have no room button — assign them in *Settings → Areas*.
+
+## Music Assistant speakers
+
+Music Assistant players can receive recorded voice clips and generated speech through
+`music_assistant.play_announcement`. RoomCall supplies the clip URL, disables MA’s extra
+pre-announcement because the clip already contains RoomCall’s chime, and sends an optional
+announcement volume as a percentage. MA manages playback interruption and restoration;
+what a player actually supports depends on its MA provider. An accepted request does not
+confirm that anyone heard it.
+
+RoomCall recommends MA players automatically only when it has physical identity evidence:
+a shared registry device, MAC address, validated serial identity, or an explicit physical
+speaker alias. A known MA/native pair becomes one destination, preferring the available
+native player by default. Names, models and room membership alone never establish a pair.
+
+The pinned HA integrations usually expose MA’s own player ID without a native-device link.
+Those uncertain MA players remain unchecked in guided setup. Select an MA-only player
+manually under **Speakers**, and assign it a Home Assistant area so calls can target its room.
+This applies to MA-only Snapcast, Squeezebox and other providers as well: discovery cannot
+prove that a player has no native copy just from its name.
+
+To prefer MA for a known pair, select both player entities under **Speakers**, then open
+**Configure → Communication → Prefer Music Assistant in these rooms**. Select the rooms
+where MA should win. Availability still wins over the preference. The setting changes the
+choice within a proven pair; it does not replace other speakers in that room or establish
+identity for an uncertain MA player.
+
+If HA has no shared identity for a pair you have verified yourself, use **Physical speaker
+aliases**, giving just those two entities the same value:
+
+```json
+{
+  "media_player.kitchen_sonos": "kitchen-physical-speaker",
+  "media_player.kitchen_ma": "kitchen-physical-speaker"
+}
+```
+
+Do not group distinct speakers under one alias. Selecting two uncertain copies without an
+alias can still play both; the room preference cannot safely infer that they are one device.
+A missing MA announcement service is reported as a failed request, without falling back to
+a second player or claiming audible delivery.
 
 ## 3. Add the push-to-talk card
 

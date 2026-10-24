@@ -10,6 +10,11 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 
+def is_music_assistant(hass: HomeAssistant, entity_id: str) -> bool:
+    entry = er.async_get(hass).async_get(entity_id)
+    return bool(entry and entry.platform == "music_assistant")
+
+
 def identities(hass: HomeAssistant, entity_id: str) -> set[str]:
     runtime = hass.data.get("roomcall")
     aliases = getattr(runtime, "aliases", {})
@@ -56,6 +61,7 @@ def related(hass: HomeAssistant, entity_id: str, *, available_only: bool = True)
             other != entity_id
             and entry
             and not entry.disabled_by
+            # MA owns its announcement restoration; never restore it as a native companion.
             and entry.platform not in {"music_assistant", "dlna_dmr"}
             and not entry.unique_id.endswith(("-Zone2", "-Zone3"))
             and (

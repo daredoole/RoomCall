@@ -45,18 +45,51 @@ def physical_key(hass: HomeAssistant, entity_id: str, aliases: dict[str, str]) -
     return f"entity:{entity_id}"
 
 
+def default_destination(hass: HomeAssistant, entity_id: str, aliases: dict[str, str]) -> bool:
+    """Unknown MA identities need an explicit selection, never a name/area guess."""
+    from .playback import is_music_assistant
+
+    if not is_music_assistant(hass, entity_id):
+        return True
+    key = physical_key(hass, entity_id, aliases)
+    if key.startswith(("alias:", "mac:", "serial:")):
+        return True
+    entry = er.async_get(hass).async_get(entity_id)
+    return bool(
+        entry.device_id
+        and any(
+            other.domain == "media_player" and other.platform != "music_assistant"
+            for other in er.async_entries_for_device(er.async_get(hass), entry.device_id)
+        )
+    )
+
+
 def deduplicate(
-    hass: HomeAssistant, entity_ids: list[str], aliases: dict[str, str]
+    hass: HomeAssistant,
+    entity_ids: list[str],
+    aliases: dict[str, str],
+    prefer_music_assistant: list[str] | None = None,
 ) -> tuple[list[str], dict[str, str]]:
     selected: dict[str, str] = {}
     skipped = {}
     registry = er.async_get(hass)
 
-    def rank(entity_id: str) -> tuple[bool, bool, bool]:
+    from .playback import is_music_assistant
+
+    preferred_areas = (
+        prefer_music_assistant
+        if prefer_music_assistant is not None
+        else getattr(hass.data.get("roomcall"), "prefer_music_assistant", [])
+    )
+
+    def rank(entity_id: str, other: str) -> tuple[bool, bool, bool, bool]:
         state = hass.states.get(entity_id)
         return (
             state is not None and state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN),
             can_play(hass, entity_id),
+            (is_music_assistant(hass, entity_id) or is_music_assistant(hass, other))
+            and is_music_assistant(hass, entity_id)
+            == (speaker_area(hass, entity_id) in preferred_areas),
             supports_announce(hass, entity_id),
         )
 
@@ -69,7 +102,7 @@ def deduplicate(
         previous = selected.get(key)
         if previous is None:
             selected[key] = entity_id
-        elif rank(entity_id) > rank(previous):
+        elif rank(entity_id, previous) > rank(previous, entity_id):
             skipped[previous] = f"duplicate:{entity_id}"
             selected[key] = entity_id
         else:

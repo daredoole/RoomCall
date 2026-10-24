@@ -233,6 +233,9 @@ satellite's Assist pipeline and played in the caller's room as
   ([details](#answer-the-door)).
 - **Hands-free talk-back:** an Assist satellite in a called room listens for a reply
   ([details](#hands-free-talk-back)). Off by default.
+- **Prefer Music Assistant in these rooms:** select MA instead of a native route only
+  within a verified physical-speaker pair. Unknown MA identities still require manual
+  selection or explicit aliases ([setup and limits](home-assistant.md#music-assistant-speakers)).
 - **Speech processing:** optional recorded-audio high-pass filtering, noise reduction,
   normalization and peak limiting using ffmpeg. Live audio keeps its existing
   low-latency encoder. Browsers request echo cancellation/noise suppression for
