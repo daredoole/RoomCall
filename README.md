@@ -131,7 +131,7 @@ Two wall tablets can also call each other live as
 | | |
 |---|---|
 | Home Assistant | 2025.6 or newer (tested on 2026.2 and 2026.10) |
-| Speakers | Any `media_player` that can play an MP3 URL: Sonos, Google Cast / Nest, AirPlay, … |
+| Speakers | Any `media_player` that can play an MP3 URL: Sonos, Google Cast / Nest, AirPlay, … — and [Music Assistant](https://daredoole.github.io/RoomCall/home-assistant/#music-assistant-speakers) players |
 | Microphone | The Home Assistant app, or a browser on **HTTPS** (Nabu Casa, a reverse proxy, Tailscale). Browsers block the mic on plain `http://`. |
 | Optional | Speech-to-text (transcripts), room presence such as Bermuda (call a person), an Assist satellite (spoken replies) |
 
