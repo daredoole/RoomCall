@@ -1,57 +1,58 @@
+---
+title: RoomCall — push-to-talk intercom for Home Assistant
+description: Hold a button, talk, and your voice plays in the room you picked, on the Sonos, Google Cast and AirPlay speakers Home Assistant already controls.
+---
+
 # RoomCall
 
-**Push-to-talk intercom for Home Assistant, on the speakers you already own.** Hold a button,
-talk, and your voice plays in the room you picked — on Sonos, AirPlay and Google Cast speakers.
+**A push-to-talk intercom for Home Assistant, on the speakers you already own.** Hold a button,
+talk, and your voice plays in the room you picked — on Sonos, Google Cast or AirPlay.
 
 [![Open your Home Assistant instance and open RoomCall in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=daredoole&repository=RoomCall&category=integration)
 
 <div class="grid" markdown>
-![Pick a room and hold to talk](assets/ha-card-mobile.png){ width="200" }
-![Talking](assets/ha-card-talking.png){ width="200" }
-![A task to confirm on the To do list](assets/ha-card-tasks.png){ width="200" }
-![Settings panel](assets/ha-settings.png){ width="200" }
+![Pick a room, hold to talk, and it plays live](assets/demo.gif){ width="260" }
+![The card: rooms, a big talk button and the latest call](assets/ha-card-simple.png){ width="240" }
 </div>
 
-Browser captures show sample data in the card harness. Native captures use simulator
-demo mode; neither proves speaker delivery. See [screenshots and validation](screenshots.md).
+The real card in a test harness with sample rooms; it shows the interface, not a speaker
+playing ([how screenshots are made](screenshots.md)).
 
-## What you get
+## Get started in three steps
 
-- **Hold-to-talk card, live** — stream while you talk; speaker startup and queues determine when playback begins. Set it up in the
-  visual card editor, with simple, compact and kiosk layouts.
-- **Rooms are your areas** — talk to one room, everywhere, specific speakers, or a person
-  wherever they are.
-- **[Apple Home intercom](apple-home.md)** — every room is a camera tile with a talk button on
-  iPhone, Apple Watch and Control Center.
-- **[Announcements](announcements.md)** — scheduled ("bus in 10 minutes" on weekdays) and
-  triggered ("the garage has been open 10 minutes"), with live values in the message.
-- **[Tasks you have to confirm](announcements.md#tasks-confirm-it-was-actually-done)** —
-  "the laundry is done" keeps reminding until someone taps *Took out the dry clothes*;
-  swiping the notification away doesn't count.
-- **Talk, Type or Ask** — speak, type for text-to-speech, or ask an Assist satellite and get
-  the answer back ([messages](communication.md)).
-- **One Settings panel on the card** — guided setup and sound tests, Siri Shortcuts, room
-  stations and voicemail ([tour](home-assistant.md#settings-panel)).
-- **[Siri](siri-shortcuts.md)** — "Hey Siri, run RoomCall Basement", or one shortcut with a
-  live room picker. The [native iOS app](native-ios.md) adds in-app talk, typed messages and tasks.
-- **Reusable household profiles and prepared speech** — select saved destinations,
-  message defaults and explicit voices; prepare/cache repeated speech without playback.
-- **Durable jobs and delivery timeline** — opt into restart-safe queued messages and
-  inspect preparation, dispatch, device evidence and explicit acknowledgment separately.
-- **Scoped agent accounts** — restrict RoomCall operations, rooms, hours, urgency,
-  requested volume and message rate; subscribe to owned-job updates.
-- **Reply** from a phone notification, straight back to the caller's room.
-- **Do Not Disturb, quiet hours and urgent calls.**
-- **Call history** with replay and speech-to-text transcripts.
-- **Works with receivers and TV boxes** — Denon/HEOS and Google TV go back to what they were doing.
-- **Automations and AI** — `roomcall.broadcast`, a notify entity per room,
-  [blueprints](blueprints.md), and explicit tools for Assist and MCP agents, including
-  [guided setup](agent-setup.md) ([managing RoomCall with AI](ai.md)).
-- **Local audio** — calls go from your phone to Home Assistant to the speaker. Optional
-  speech, translation and shortcut signing use only providers you choose.
+1. **Install** RoomCall from HACS and restart Home Assistant.
+2. **Add the integration** and pick one media player per speaker.
+3. **Add the RoomCall card** to a dashboard, open it in the Home Assistant app or over HTTPS,
+   pick a room and hold to talk.
 
-[Set it up in Home Assistant →](home-assistant.md){ .md-button .md-button--primary }
-[Run it without Home Assistant](getting-started.md){ .md-button }
+Then check each room once with **More → Settings → Setup and sound tests**.
+[Full setup guide →](home-assistant.md){ .md-button .md-button--primary }
+
+## What you can do with it
+
+- **"Dinner's ready!"** — talk to one room, everywhere, or a person wherever they are; or
+  type it and hear it in your Home Assistant voice.
+- **Answer the door from any room** — the doorbell rings your rooms, and every card shows the
+  camera with an **Answer** button ([details](communication.md#answer-the-door)).
+- **Siri to any speaker** — "Hey Siri, run RoomCall Basement", no HomePod needed
+  ([Siri](siri-announce.md)), or a talk button in the [Apple Home app](apple-home.md).
+- **Reminders that wait until it's done** — "The laundry is done" repeats until someone taps
+  *Took out the dry clothes* ([announcements and tasks](announcements.md)).
+- **Talk back** — a **Reply** button on the call notification, or a small Assist satellite
+  that listens for a spoken answer ([talk-back](communication.md#hands-free-talk-back)).
+
+Using Sonos? See [Sonos intercom](sonos-intercom.md). Comparing intercom options?
+See [Home Assistant intercom](home-assistant-intercom.md).
+
+## Also included
+
+- Do Not Disturb, quiet hours and **Urgent** calls.
+- Your own chime, call history with replay, and transcripts with a speech-to-text engine.
+- Simple, standard, compact and kiosk card layouts; Glass, Material or your dashboard theme.
+- Receivers and TV boxes woken for the call and put back afterwards, where the device allows it.
+- `roomcall.broadcast`, a notify entity per room, and [blueprints](blueprints.md).
+- A sideloadable [iPhone app](native-ios.md), and tools for [Assist and AI agents](ai.md).
+- Local audio: your phone → Home Assistant → the speaker.
 
 ## Try the standalone app in 30 seconds
 

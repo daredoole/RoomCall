@@ -5,8 +5,8 @@
 <h1 align="center">RoomCall</h1>
 
 <p align="center">
-  <b>Push-to-talk intercom for Home Assistant, on the speakers you already own.</b><br>
-  Hold a button, talk, and your voice plays in the room you picked — Sonos, AirPlay and Google Cast.
+  <b>A push-to-talk intercom for Home Assistant, on the speakers you already own.</b><br>
+  Hold a button, talk, and your voice plays in the room you picked — on Sonos, Google Cast or AirPlay.
 </p>
 
 <p align="center">
@@ -17,222 +17,138 @@
   <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg" alt="HACS Custom"></a>
   <a href="https://github.com/daredoole/RoomCall/releases"><img src="https://img.shields.io/github/v/release/daredoole/RoomCall" alt="Latest release"></a>
   <a href="https://github.com/daredoole/RoomCall/actions/workflows/ci.yml"><img src="https://github.com/daredoole/RoomCall/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/daredoole/RoomCall/actions/workflows/validate.yml"><img src="https://github.com/daredoole/RoomCall/actions/workflows/validate.yml/badge.svg" alt="HACS and hassfest validation"></a>
   <a href="https://daredoole.github.io/RoomCall/"><img src="https://img.shields.io/badge/docs-online-4f8cff" alt="Documentation"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/daredoole/RoomCall"><img src="https://api.scorecard.dev/projects/github.com/daredoole/RoomCall/badge" alt="OpenSSF Scorecard"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/daredoole/RoomCall" alt="MIT license"></a>
-  <a href="https://github.com/sponsors/daredoole"><img src="https://img.shields.io/github/sponsors/daredoole?logo=githubsponsors&label=Sponsor&color=EA4AAA" alt="GitHub Sponsors"></a>
-  <a href="https://buymeacoffee.com/daredoole"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy me a coffee"></a>
 </p>
 
 <p align="center">
   <img src="docs/assets/demo.gif" alt="Pick a room, hold to talk, and it plays live" width="300">
+  &nbsp;&nbsp;
+  <img src="docs/assets/ha-card-simple.png" alt="The RoomCall card: rooms, a big talk button and the latest call" width="260">
 </p>
 
-<p align="center">
-  <img src="docs/assets/ha-card-mobile.png" alt="RoomCall card: pick a room and hold to talk" width="220">
-  &nbsp;
-  <img src="docs/assets/ha-card-talking.png" alt="RoomCall card while talking live" width="220">
-  &nbsp;
-  <img src="docs/assets/ha-card-delivered.png" alt="RoomCall card after delivery" width="220">
-</p>
+<p align="center"><sub>The real card in a test harness with sample rooms; it shows the interface, not a speaker playing
+(<a href="docs/screenshots.md">how screenshots are made</a>).</sub></p>
 
----
+## Get started in three steps
 
-The browser captures use the real card in a test harness with sample rooms and
-simulated delivery. Native captures use iOS Simulator demo mode. They illustrate
-the interface, not physical-speaker results; see the [capture record](docs/screenshots.md).
+You need Home Assistant 2025.6 or newer with [HACS](https://hacs.xyz/docs/use/), and speakers
+that Home Assistant can already play to.
 
-## Why RoomCall?
+1. **Install.** Click the HACS button above, then **Download**, then restart Home Assistant.
+   <details><summary>No button, or no HACS?</summary>
 
-Apple's Intercom only works on HomePods, Google's Broadcast only on Google speakers, and Sonos has
-no intercom at all. RoomCall turns **compatible speakers Home Assistant already controls** into one
-intercom, organised by your Home Assistant **areas**, and adds the things a family actually needs:
-replies, quiet nights, reminders that don't go away until the chore is done, and Siri.
+   - HACS → ⋮ → **Custom repositories** → add `https://github.com/daredoole/RoomCall` as
+     **Integration** → search **RoomCall** → **Download** → restart.
+   - Without HACS: unzip `roomcall.zip` from the
+     [latest release](https://github.com/daredoole/RoomCall/releases/latest) into
+     `/config/custom_components/roomcall/` and restart.
 
-### 🎙️ Talk to any room
+   </details>
+2. **Add the integration** —
+   [![Add RoomCall to Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=roomcall)
+   and pick your speakers. RoomCall pre-selects the ones that support announcements; choose
+   **one entity per physical speaker** so a call doesn't play twice.
+3. **Add the card.** Edit a dashboard → **Add card** → **RoomCall**. Open it in the Home
+   Assistant app (or over HTTPS, so the browser allows the microphone), pick a room and hold
+   to talk.
 
-- **Hold to talk, live** — stream while you talk from the Home Assistant app or a compatible browser; speaker startup and queues determine when playback begins.
-- **Rooms are your areas** — one room, the whole house, or **a person** wherever they are right now.
-- **Talk, Type or Ask** — speak, type a message for text-to-speech, or ask a question and collect a real answer from an Assist satellite. Preview intended speaker destinations before sending.
-- **Reply** — hands-free from the called room through a small Assist satellite, or from your phone's notification, aimed back at the caller.
-- **Urgent, Do Not Disturb and quiet hours** — quieter nights, skipped bedrooms, and an override when it matters.
-- **Call history** with replay and speech-to-text transcripts.
-- **Household profiles** — saved destinations, message defaults and voice/chime settings in the Type tab.
-- **Prepared speech** — explicit fast/balanced/quality voice choices and bounded, private in-memory reuse for repeated messages. These names are configuration labels, not speed guarantees.
-- **Your chime** — walkie-talkie, ding, doorbell… or your own file, before talk, typed messages, Siri and announcements alike.
-- **Answer the door** — the doorbell rings your rooms, and phones, watches and every card get the camera snapshot with an **Answer** button that opens the live view.
-- **Browser room stations** — call another open dashboard over WebRTC; the other side answers before any audio connects.
+Then check each room once: **More → Settings (sliders icon) → Setup and sound tests** plays a
+test sound in each room and asks whether you heard it.
+[Full setup guide →](https://daredoole.github.io/RoomCall/home-assistant/)
 
-### ✅ Announcements and tasks
+## What you can do with it
 
-<p align="center">
-  <img src="docs/assets/ha-card-tasks.png" alt="The card's To do list: Laundry, with a Took out the dry clothes button" width="260">
-</p>
+### "Dinner's ready!"
 
-- **Scheduled and triggered announcements** — "Bus in 10 minutes" on weekdays, "{{ name }} is on" when the porch light switches, "the garage has been open 10 minutes" — to rooms, speakers or people.
-- **Tasks you have to confirm** — give an announcement a task like *Took out the dry clothes*. It keeps reminding until someone taps that button on their phone, on the card's **To do** list or on a **Mark done** button. Swiping the notification away doesn't count; **Remind me later** snoozes it. Who did it, and when, is recorded, and automations get a `roomcall_task_completed` event ([how it works](https://daredoole.github.io/RoomCall/announcements/#tasks-confirm-it-was-actually-done)).
-- **Acknowledgments and delivery evidence** — ask for an explicit "got it", and see what each speaker actually reported instead of a blind "sent".
-- **Durable message jobs** — opt into preserving queued text messages over restarts; uncertain dispatched work is interrupted rather than automatically replayed.
-- **Delivery timeline** — see preparation and dispatch stages, separate from device evidence and human acknowledgment.
-- **Optional voicemail and translation** — bounded local retention, per-person languages and explicit translation providers.
+Pick **Kitchen**, **Basement** or **Everywhere**, hold the button and say it. Your voice
+streams while you talk, after a short chime. Rather type? **Type** reads your message aloud
+in your Home Assistant voice. Call **a person** and it plays in the room they're in (with room
+presence such as [Bermuda](https://github.com/agittins/bermuda)).
 
-### ⚙️ One settings panel on the card
+### Answer the door from any room
 
-<p align="center">
-  <img src="docs/assets/ha-settings.png" alt="Settings: guided setup and sound tests" width="190">
-  &nbsp;
-  <img src="docs/assets/ha-settings-shortcuts.png" alt="Settings: Siri Shortcuts" width="190">
-  &nbsp;
-  <img src="docs/assets/ha-settings-stations.png" alt="Settings: room stations" width="190">
-  &nbsp;
-  <img src="docs/assets/ha-settings-voicemail.png" alt="Settings: voicemail" width="190">
-</p>
+<img src="docs/assets/ha-card-doorbell.png" alt="Doorbell banner on the card with a camera snapshot and an Answer button" width="260" align="right">
 
-Tap the sliders icon on the card for **Settings**:
+When the doorbell is pressed, the rooms you pick hear *"Someone is at the Front Door."*
+Every RoomCall card, and the phones you've set up for notifications, show the camera snapshot
+with an **Answer** button that opens Home Assistant's live camera view. Talking to the
+visitor works there when your camera supports two-way audio
+([details](https://daredoole.github.io/RoomCall/communication/#answer-the-door)).
 
-- **Setup and sound tests** — scan your speakers, pick a voice and volume, review a saved setup plan, apply it, play a test sound on each speaker and confirm you heard it. Resume anytime, diagnose problems, or undo.
-- **Siri Shortcuts** — build a shortcut for one room or a **live room picker** that asks where to announce each time, as a native Home Assistant *Perform Action* template or a portable link ([guide](https://daredoole.github.io/RoomCall/siri-shortcuts/)).
-- **Room stations** — turn the dashboard you're on into a station other rooms can call.
-- **Voicemail** — when enabled, list, replay or delete retained messages.
+<br clear="right">
 
-Browser QA exercises keyboard controls and layouts from a 240 px column to a wall tablet.
+### Siri to any speaker
 
-### 📱 Your phone and Apple devices
+Say **"Hey Siri, run RoomCall Basement"**, dictate a message, and it's spoken on the basement
+speakers — no HomePod needed. The card builds the shortcut steps for you
+([Siri guide](https://daredoole.github.io/RoomCall/siri-shortcuts/)). Or add each room to the
+**Apple Home** app as a camera tile and tap its microphone to talk
+([Apple Home](https://daredoole.github.io/RoomCall/apple-home/)).
 
-<p align="center">
-  <img src="docs/assets/ios-sign-in-light.png" alt="RoomCall for iPhone: sign in with Home Assistant" width="200">
-  &nbsp;
-  <img src="docs/assets/ios-rooms-light.png" alt="RoomCall for iPhone: choose where to speak" width="200">
-  &nbsp;
-  <img src="docs/assets/ios-message-dark.png" alt="RoomCall for iPhone: type an announcement" width="200">
-</p>
-<p align="center"><sub>Native iOS app, captured from the iOS Simulator in CI.</sub></p>
+### Reminders that wait until it's done
 
-- **"Hey Siri, run RoomCall Basement"** — dictate an announcement to any room, with your chime and Home Assistant voice; no HomePod required.
-- **Apple Home intercom** — every room is a camera tile in the Home app; tap the mic on your iPhone or Apple Watch to talk in that room.
-- **Notifications that do something** — Reply, Acknowledge, and task buttons right on the notification.
-- **Native iOS app** — sideloadable SwiftUI app with HA sign-in, in-app hold to talk, typed messages, questions, tasks, history, foreground doorbell alerts, Siri, widgets and Live Activities. CI supplies an unsigned IPA that needs your signing ([build and limitations](https://daredoole.github.io/RoomCall/native-ios/)).
+<img src="docs/assets/ha-card-tasks.png" alt="The card's To do list: Laundry, with a Took out the dry clothes button" width="240" align="right">
 
-### 🏠 Smart home and AI
+"The laundry is done" keeps reminding until someone taps **Took out the dry clothes** on their
+phone or the card. Swiping the notification away doesn't count. Schedule announcements
+("Bus in 10 minutes" on weekdays) or trigger them ("The garage has been open 10 minutes")
+([announcements](https://daredoole.github.io/RoomCall/announcements/)).
 
-- **Automations** — `roomcall.broadcast`, a **notify entity per room** (`notify.roomcall_kitchen`), and ready-made **blueprints** for the doorbell, laundry, bedtime and arrivals.
-- **AV receivers and TV boxes** — prepare verified receiver/Android controls, interrupt through HEOS or Cast, and restore supported power, input, volume, mute and media/app state. Exact session recovery depends on the device/provider ([routes and limits](docs/communication.md#playback-device-routes)).
-- **AI-ready** — Assist and MCP agents get explicit RoomCall tools: discover, preview, send, check status, manage announcements and tasks, and run guided setup with reviewable plans and undo ([AI guide](https://daredoole.github.io/RoomCall/ai/), [agent setup](https://daredoole.github.io/RoomCall/agent-setup/), [`llms.txt`](https://daredoole.github.io/RoomCall/llms.txt)). Agents respect Home Assistant permissions and exposure. Dedicated accounts can also have RoomCall operation/destination/hour/volume/rate limits and owned-job subscriptions. These limits do not scope unrelated HA services.
-- **Diagnostics and Repairs** — problems show up in Home Assistant, not as silent calls.
+<br clear="right">
+
+### Talk back
+
+Speaker microphones (Sonos, HomePod, Nest) belong to their own assistants, so replies come
+another way: a **Reply** button on the call notification aims the card back at the caller, or a
+small Assist satellite in the room listens for a spoken answer
+([hands-free talk-back](https://daredoole.github.io/RoomCall/communication/#hands-free-talk-back)).
+Two wall tablets can also call each other live as
+[room stations](https://daredoole.github.io/RoomCall/communication/#browser-room-stations).
+
+## Also included
+
+- **Quiet when it should be** — Do Not Disturb, quiet hours that skip bedrooms, and **Urgent**
+  for when it matters.
+- **Your chime** — walkie-talkie, ding, doorbell… or your own sound, before every call.
+- **Call history** with replay, and transcripts if you add a speech-to-text engine.
+- **Card layouts** — simple (new cards), standard, compact, and kiosk for a wall tablet;
+  Glass, Material or your dashboard's own theme.
+- **Receivers and TV boxes** — Denon/HEOS receivers and Android/Google TV boxes can be woken
+  for the call and put back afterwards, where the device allows it
+  ([limits](docs/communication.md#playback-device-routes)).
+- **Automations** — `roomcall.broadcast`, a notify entity per room and ready-made blueprints.
+- **Repairs** — Home Assistant warns about addresses speakers usually can't use (for example
+  `localhost` or a `.local` name) and offers to switch to your network address after you confirm.
+- **iPhone app** — a sideloadable app with hold-to-talk, messages, tasks and history
+  ([native iOS app](https://daredoole.github.io/RoomCall/native-ios/)).
+- **Local audio** — calls go from your phone to Home Assistant to the speaker. Speech and
+  translation use only the providers you choose.
 - 🌍 English, Español, Deutsch, Français, Nederlands.
-- 🔒 **Local audio delivery** — recordings go from your phone to Home Assistant to the speaker. Optional speech and translation processing follows only the providers you configure.
 
-<p align="center">
-  <img src="docs/assets/ha-card-reply.png" alt="Card aimed back at the caller in reply mode" width="200">
-  &nbsp;
-  <img src="docs/assets/ha-card-compact.png" alt="Compact layout" width="200">
-  &nbsp;
-  <img src="docs/assets/ha-card-kiosk.png" alt="Kiosk layout for a wall tablet" width="200">
-</p>
-
-## Requirements
+## Works with
 
 | | |
 |---|---|
-| Home Assistant | 2025.6 or newer |
-| Speakers | Any `media_player` that can play an MP3 URL: Sonos, Google Cast / Nest, AirPlay, … |
-| Microphone | Open the dashboard over **HTTPS** (Nabu Casa, a reverse proxy, Tailscale) or in the Home Assistant mobile app. Browsers block the mic on plain `http://`. |
-| Optional | A speech-to-text engine (transcripts), room presence such as [Bermuda](https://github.com/agittins/bermuda) (call a person) |
+| Home Assistant | 2025.6 or newer (tested on 2026.2 and 2026.10) |
+| Speakers | Any `media_player` that can play an MP3 URL: Sonos, Google Cast / Nest, AirPlay, … — and [Music Assistant](https://daredoole.github.io/RoomCall/home-assistant/#music-assistant-speakers) players |
+| Microphone | The Home Assistant app, or a browser on **HTTPS** (Nabu Casa, a reverse proxy, Tailscale). Browsers block the mic on plain `http://`. |
+| Optional | Speech-to-text (transcripts), room presence such as Bermuda (call a person), an Assist satellite (spoken replies) |
 
-The declared HA minimum is 2025.6; CI tests HA 2026.2.3 and 2026.10.2.
-The native app's PKCE sign-in requires HA 2026.10 or later.
+The iPhone app's sign-in needs Home Assistant 2026.10 or later.
 
-## Install
-
-### 1. Download with HACS (recommended)
-
-Click the button, then **Download**, then restart Home Assistant:
-
-[![Open your Home Assistant instance and open RoomCall in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=daredoole&repository=RoomCall&category=integration)
-
-<details>
-<summary>No button? Add it manually</summary>
-
-1. HACS → ⋮ (top right) → **Custom repositories**.
-2. Repository `https://github.com/daredoole/RoomCall`, type **Integration** → **Add**.
-3. Search for **RoomCall** → **Download** → restart Home Assistant.
-
-</details>
-
-<details>
-<summary>Without HACS</summary>
-
-Download `roomcall.zip` from the [latest release](https://github.com/daredoole/RoomCall/releases/latest),
-unzip it into `/config/custom_components/roomcall/` and restart Home Assistant.
-
-</details>
-
-### 2. Add the integration
-
-[![Open your Home Assistant instance and start setting up RoomCall.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=roomcall)
-
-Pick your speakers — RoomCall pre-selects the ones that support announcements. Choose **one entity
-per physical speaker** so messages don't play twice.
-
-### 3. Add the card
-
-Edit a dashboard → **Add card** → search **RoomCall**, or paste:
-
-```yaml
-type: custom:roomcall-card
-title: Intercom
-```
-
-That's it — no resources to register, the integration loads the card for you.
-
-Then open **Settings → Setup and sound tests** on the card and play a test sound on each speaker.
-See [Messages and room stations](https://daredoole.github.io/RoomCall/communication/)
-for message jobs, acknowledgments, browser calls, permissions and adapter setup.
-
-<p align="center">
-  <img src="docs/assets/ha-dashboard-desktop.png" alt="RoomCall card on a desktop dashboard" width="820">
-</p>
-
-## Use it in automations
+## Automations and blueprints
 
 ```yaml
 action: roomcall.broadcast
 data:
   areas: [kitchen, basement]   # leave out for every RoomCall speaker
   message: Dinner is ready!
-  volume: 0.4                  # optional
+  priority: urgent             # optional: louder, ignores Do Not Disturb and quiet hours
 ```
 
-```yaml
-action: roomcall.broadcast
-data:
-  people: [person.alex]        # wherever Alex is right now
-  message: Your ride is here
-  priority: urgent             # ignores Do Not Disturb and quiet hours
-```
-
-Play an audio file instead of text with `media_url:`. The action returns per-speaker
-request results, not proof of audible playback. `sensor.roomcall_last_call` summarizes
-recent calls. More examples in the
-[Home Assistant guide](https://daredoole.github.io/RoomCall/home-assistant/), and
-"Hey Siri, run RoomCall Basement" in [Siri and Shortcuts](https://daredoole.github.io/RoomCall/siri-shortcuts/).
-
-React when someone confirms a task:
-
-```yaml
-triggers:
-  - trigger: event
-    event_type: roomcall_task_completed
-    event_data:
-      name: Laundry
-actions:
-  - action: light.turn_off
-    target:
-      entity_id: light.laundry_room
-```
-
-## Blueprints
+`people: [person.alex]` plays wherever Alex is; `media_url:` plays a sound file instead of
+text. More in the [Home Assistant guide](https://daredoole.github.io/RoomCall/home-assistant/#roomcallbroadcast-action).
 
 | Blueprint | What it does | |
 |---|---|---|
@@ -241,30 +157,17 @@ actions:
 | **Do Not Disturb at bedtime** | Turns RoomCall's Do Not Disturb on at night and off in the morning. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdaredoole%2FRoomCall%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Froomcall%2Fbedtime_dnd.yaml) |
 | **Announce arrivals** | "Alex is home." when someone arrives. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdaredoole%2FRoomCall%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Froomcall%2Farrival.yaml) |
 
-## Options
+## For power users and developers
 
-**Settings → Devices & services → RoomCall → Configure**
-
-| Option | Default | What it does |
-|---|---|---|
-| Speakers | announce-capable players | Which media players are part of the intercom |
-| Announcement volume | speaker's current volume | Fixed volume for calls (Sonos) |
-| Microphone boost | 0 dB | Raise if phone recordings sound quiet |
-| Text-to-speech engine | your default | Used for typed messages |
-| Speaking speed | 1 | Slow down (or speed up) typed messages and announcements, 0.5–1.5 |
-| Chime | walkie-talkie chirp | Chirp, ding, double beep, rising, doorbell, none — or your own file |
-| Delivery | 250 ms apart, retry on | Stops Sonos speakers from dropping simultaneous calls |
-| Quiet hours | off | Quieter calls and skipped rooms overnight |
-| Notifications and replies | off | Phones to notify, Reply button, speech-to-text |
-| Communication profiles and agent policies | empty | Saved household/voice profiles and optional per-account RoomCall restrictions |
-| Apple Home | off | Rooms as camera tiles with a talk button in the Home app |
-
-**Announcements** are added from the integration's ⋮ menu: *Add scheduled announcement* /
-*Add triggered announcement* ([guide](https://daredoole.github.io/RoomCall/announcements/)).
-Add a **Task to confirm** and **Remind every** to make one stay open until it's done.
-Card options (`room`, `people`, `history`, `layout`, `live`, and the look: `appearance` glass /
-material / home-assistant, `theme`, `color`) are set in the visual editor
-([details](https://daredoole.github.io/RoomCall/home-assistant/#3-add-the-push-to-talk-card)).
+- **What "delivered" means** — RoomCall reports that each speaker *accepted* the request, plus
+  any evidence the device sends back. It never claims someone heard it; ask for an explicit
+  acknowledgment when that matters ([messages and delivery](https://daredoole.github.io/RoomCall/communication/)).
+- **AI and Assist** — Assist and MCP agents get RoomCall tools to send messages, manage
+  announcements and run guided setup, within Home Assistant's permissions
+  ([AI guide](https://daredoole.github.io/RoomCall/ai/), [`llms.txt`](https://daredoole.github.io/RoomCall/llms.txt)).
+- **All options** — speakers, volumes, chimes, delivery timing, quiet hours, notifications and
+  more are under *Settings → Devices & services → RoomCall → Configure*
+  ([every option](https://daredoole.github.io/RoomCall/home-assistant/#2-add-the-integration)).
 
 ## How it works
 
@@ -310,12 +213,12 @@ See [Troubleshooting](https://daredoole.github.io/RoomCall/troubleshooting/).
 </details>
 
 <details>
-<summary><b>It says "Delivered" but I hear nothing.</b></summary>
+<summary><b>It says the call was accepted, but I hear nothing.</b></summary>
 
-Acceptance does not establish audibility. Check the selected destination, volume,
-active playback/queue and delivery evidence. A common cause is an unreachable clip
-URL: set **Settings → System → Network → Local network** to an address your speakers
-can reach, e.g. `http://192.168.1.10:8123`. See [troubleshooting](docs/troubleshooting.md).
+Accepted is not the same as heard. Check the room, volume and anything already playing. The
+most common cause is a Home Assistant address the speakers can't reach: look in
+**Settings → System → Repairs**, and make sure **Settings → System → Network → Local network**
+is an address like `http://192.168.1.10:8123`. See [troubleshooting](docs/troubleshooting.md).
 </details>
 
 ## Standalone server (no Home Assistant)
