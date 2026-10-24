@@ -323,7 +323,7 @@ can reach, e.g. `http://192.168.1.10:8123`. See [troubleshooting](docs/troublesh
 RoomCall also runs on its own, discovering speakers over mDNS and serving a web app:
 
 ```bash
-pipx install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.20.0/roomcall-0.20.0-py3-none-any.whl"
+pipx install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.21.0/roomcall-0.21.0-py3-none-any.whl"
 roomcall serve        # http://<this-machine>:8765
 ```
 

@@ -10,24 +10,24 @@
 ## Install
 
 The standalone package is currently distributed as a wheel in GitHub releases,
-not on PyPI. These commands install release **0.20.0** with its speaker extras:
+not on PyPI. These commands install release **0.21.0** with its speaker extras:
 
 === "pipx"
 
     ```bash
-    pipx install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.20.0/roomcall-0.20.0-py3-none-any.whl"
+    pipx install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.21.0/roomcall-0.21.0-py3-none-any.whl"
     ```
 
 === "uv"
 
     ```bash
-    uv tool install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.20.0/roomcall-0.20.0-py3-none-any.whl"
+    uv tool install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.21.0/roomcall-0.21.0-py3-none-any.whl"
     ```
 
 === "Only some speaker types"
 
     ```bash
-    pipx install "roomcall[sonos,cast] @ https://github.com/daredoole/RoomCall/releases/download/v0.20.0/roomcall-0.20.0-py3-none-any.whl"
+    pipx install "roomcall[sonos,cast] @ https://github.com/daredoole/RoomCall/releases/download/v0.21.0/roomcall-0.21.0-py3-none-any.whl"
     ```
 
     Available extras: `sonos`, `airplay`, `cast` and `all`.

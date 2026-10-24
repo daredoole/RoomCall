@@ -216,8 +216,11 @@ prevent full recovery; reopening Netflix does not guarantee the same episode or
 timestamp. Recognizable RoomCall/TTS URLs are not resumed as background media.
 
 !!! tip "Receiver plus TV box in one room"
-    If the TV box plays through the receiver, add only the receiver as a speaker. The call then
-    interrupts the sound for a few seconds while the picture keeps going.
+    If a TV box plays through the receiver, select one audio route for that output.
+    HEOS uses the receiver’s network input; changing that input may also affect video.
+    To interrupt the box itself, use its Cast endpoint, paired Android controls and an
+    explicit receiver/HDMI route. Restoring the receiver input alone does not pause
+    or rewind a program running on another device.
 
 Turn this off under Configure → Delivery → *Put speakers back after a call*.
 An explicit/verified receiver route can still prepare its input when restoration
