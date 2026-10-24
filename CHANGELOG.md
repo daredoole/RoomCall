@@ -1,12 +1,22 @@
 # Changelog
 
-## Unreleased
-
-- Add a confirmed LAN URL repair and a room-by-room listening check with saved heard, not-heard and skipped results in diagnostics and setup tools.
-
 All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
+
+## Unreleased
+
+- Add a confirmed LAN URL repair and a room-by-room listening check, with saved heard,
+  not-heard and skipped results in diagnostics and setup tools.
+
+- Add a **simple** card layout: rooms, the talk button and the latest call, with Urgent,
+  Do Not Disturb, people, Talk/Type/Ask, Settings and older calls behind **More**. Cards
+  added from the card picker start simple; saved cards without `layout` keep Standard.
+
+- Docs: group the site navigation by task (use cases, setup, AI and agents, standalone
+  server) and move implementation records and screenshot validation under
+  **Development**. Add short guides for a Home Assistant intercom, a Sonos intercom
+  and announcing to any speaker from Siri.
 
 ## 0.21.0 — 2026-10-23
 

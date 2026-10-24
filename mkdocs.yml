@@ -28,25 +28,32 @@ theme:
 
 nav:
   - Home: index.md
-  - Home Assistant: home-assistant.md
-  - Siri and Shortcuts: siri-shortcuts.md
-  - Apple Home intercom: apple-home.md
-  - Native iOS app: native-ios.md
-  - Announcements: announcements.md
-  - Blueprints: blueprints.md
-  - Managing with AI: ai.md
-  - Guided agent setup: agent-setup.md
-  - Messages and room stations: communication.md
-  - Implementation plan: implementation-plan.md
-  - Agent setup implementation: agent-setup-plan.md
+  - Use cases:
+      - Home Assistant intercom: home-assistant-intercom.md
+      - Sonos intercom: sonos-intercom.md
+      - Announce from Siri: siri-announce.md
+  - Set up and use:
+      - Home Assistant: home-assistant.md
+      - Siri and Shortcuts: siri-shortcuts.md
+      - Apple Home intercom: apple-home.md
+      - Native iOS app: native-ios.md
+      - Announcements: announcements.md
+      - Blueprints: blueprints.md
+      - Messages and room stations: communication.md
+      - Troubleshooting: troubleshooting.md
+  - AI and agents:
+      - Managing with AI: ai.md
+      - Guided agent setup: agent-setup.md
   - Standalone server:
       - Getting started: getting-started.md
       - Configuration: configuration.md
-  - How it works: how-it-works.md
-  - HTTP API: api.md
-  - Troubleshooting: troubleshooting.md
-  - Screenshots and validation: screenshots.md
+      - How it works: how-it-works.md
+      - HTTP API: api.md
   - Roadmap: roadmap.md
+  - Development:
+      - Implementation plan: implementation-plan.md
+      - Agent setup implementation: agent-setup-plan.md
+      - Screenshots and validation: screenshots.md
 
 markdown_extensions:
   - admonition

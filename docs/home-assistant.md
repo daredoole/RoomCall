@@ -85,7 +85,9 @@ Pick your speakers. Everything else is under **Configure** on the integration:
 ## 3. Add the push-to-talk card
 
 The integration registers the card automatically — no dashboard resource needed. Edit a
-dashboard → **Add card** → **RoomCall** and set it up in the visual editor, or paste:
+dashboard → **Add card** → **RoomCall**. A card added this way starts with the
+[simple layout](#layouts): rooms, the talk button and the latest call, with everything
+else behind **More**. Set it up in the visual editor, or paste:
 
 ```yaml
 type: custom:roomcall-card
@@ -96,7 +98,7 @@ default_room: basement         # room preselected
 rooms: [kitchen, living_room]  # limit the room buttons
 people: true                   # person buttons (true, false, or a list of person entities)
 history: 3                     # recent calls to show (0 to hide)
-layout: default                # default, compact or kiosk
+layout: simple                 # simple, default, compact or kiosk (default when omitted)
 appearance: glass              # glass (Apple-like), material, or home-assistant (your dashboard theme)
 theme: auto                    # auto (follows Home Assistant), light or dark
 color: "#0a84ff"               # talk button colour; Material builds its whole palette from it
@@ -126,10 +128,18 @@ selected), the card says so instead of sending an empty clip.
 ### Layouts
 
 <div class="grid" markdown>
+![Simple: rooms, talk and the latest call](assets/ha-card-simple.png){ width="240" }
 ![Compact](assets/ha-card-compact.png){ width="240" }
 ![Kiosk for a wall tablet](assets/ha-card-kiosk.png){ width="240" }
 ![Reply mode](assets/ha-card-reply.png){ width="240" }
 </div>
+
+`simple` shows the room buttons, the talk button, its status and the latest call
+(with replay and reply when available). **More** reveals Urgent, Do Not Disturb, people,
+Talk / Type / Ask, Settings and the rest of the recent calls; **Less** hides them
+again and returns to Talk. Door and task banners still appear when needed. New cards
+from the card picker use `simple`; a card saved without `layout` keeps `default`
+(Standard), which shows everything at once.
 
 `compact` reduces the talk control's size while retaining destination and messaging
 controls. It still needs space for wrapped room buttons. `kiosk` provides a big

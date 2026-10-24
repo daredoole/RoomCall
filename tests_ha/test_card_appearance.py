@@ -80,7 +80,7 @@ def test_editor_offers_every_option_and_text_is_translated():
         if "select" in field.get("selector", {})
     }
     assert options == {
-        "layout": ["default", "compact", "kiosk"],
+        "layout": ["simple", "default", "compact", "kiosk"],
         "appearance": ["glass", "material", "home-assistant"],
         "theme": ["auto", "light", "dark"],
     }
@@ -94,6 +94,36 @@ def test_editor_offers_every_option_and_text_is_translated():
         assert all(strings.get(f"editor_{key}") for key in keys), language
     assert _run("EDITOR_TEXT") == {key: english[f"editor_{key}"] for key in keys}
     assert catalog("de")["editor_appearance"] != english["editor_appearance"]
+
+
+def test_new_cards_start_simple_and_saved_cards_keep_their_layout():
+    stub, saved, chosen = _run(
+        "[cardConfig(NEW_CARD), cardConfig({type: 'custom:roomcall-card', title: 'Hall'}),"
+        " LAYOUTS.map((layout) => cardConfig({layout}).layout)]"
+    )
+    # The card picker's starting config is the simple layout.
+    assert "static getStubConfig() {\n    return { ...NEW_CARD };" in SOURCE
+    assert stub["layout"] == "simple"
+    assert stub["title"] == "Intercom"
+    # A card saved before the simple layout existed has no `layout` and stays Standard.
+    assert saved["layout"] == "default"
+    assert saved["title"] == "Hall"
+    assert {key: saved[key] for key in ("history", "people", "live", "appearance", "theme")} == {
+        "history": 3,
+        "people": True,
+        "live": True,
+        "appearance": "glass",
+        "theme": "auto",
+    }
+    assert chosen == _run("LAYOUTS")
+
+
+def test_simple_layout_toggle_is_translated():
+    for language in ("en", "es", "de", "fr", "nl"):
+        strings = catalog(language)
+        assert strings["more_options"] and strings["fewer_options"], language
+        assert strings["more_options"] != strings["fewer_options"], language
+    assert catalog("de")["more_options"] == "Mehr"
 
 
 async def test_locale_api_serves_editor_text(hass, setup_roomcall, hass_client):

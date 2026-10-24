@@ -110,6 +110,7 @@ def main() -> int:
         )
         phone = {"width": 390, "height": 844}
         shots = [
+            ("ha-card-simple.png", phone, "mobile", "dark", "&card=simple"),
             ("ha-card-mobile.png", phone, "mobile", "dark", ""),
             ("ha-card-mobile-light.png", phone, "mobile", "light", ""),
             ("ha-card-reply.png", phone, "mobile", "dark", "&roomcall=basement"),
