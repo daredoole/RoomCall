@@ -332,7 +332,7 @@ export class RoomCallControls {
     const job = await this.command(this.currentMode === "ask" ? "ask" : "send", request);
     this.watch(job.id);
   }
-  async watch(id, onDone, restoreDeadline = Date.now() + 180000) {
+  async watch(id, onDone, restoreDeadline = Date.now() + 180000, onError) {
     if (this.closed) return;
     try {
       const job = await this.command("status", { id });
@@ -371,10 +371,10 @@ export class RoomCallControls {
       if (!active && onDone) { onDone(job); onDone = undefined; }
       const restoring = Object.values(job.result?.evidence || {}).some(e => e.interruption?.restore === "pending");
       if (active || (restoring && Date.now() < restoreDeadline)) {
-        const timer = setTimeout(() => { this.timers.delete(timer); this.watch(id, onDone, restoreDeadline); }, 700);
+        const timer = setTimeout(() => { this.timers.delete(timer); this.watch(id, onDone, restoreDeadline, onError); }, 700);
         this.timers.add(timer);
       } else { this.card._loadHistory(); }
-    } catch (error) { this.error(error); }
+    } catch (error) { this.error(error); onError?.(error); }
   }
   async refresh() {
     if (this.card._configured === false) return;
@@ -729,6 +729,14 @@ class SetupWizard {
       this.renderTests();
       await this.verify();
     };
+    const start = () => row.replaceChildren(
+      this.button("test", async () => {
+        const job = await this.request("test", { id: plan.id, speaker: entity });
+        this.active = job.plan;
+        listen(job.id);
+      }),
+      this.button("listening_skip", () => advance("skip")),
+    );
     const listen = (id) => {
       row.replaceChildren(document.createTextNode(this.t("test_pending")));
       this.controls.watch(id, () => {
@@ -737,19 +745,14 @@ class SetupWizard {
         for (const heard of [true, false])
           row.append(this.button(heard ? "listening_yes" : "listening_no", () => advance("confirm", { heard })));
         row.append(this.button("listening_skip", () => advance("skip")));
+      }, undefined, (error) => {
+        if (error.problem?.code === "not_found" && row.isConnected && !this.closed) start();
       });
     };
     if (plan.tests[entity] && !plan.confirmations?.[entity]) {
       listen(plan.tests[entity]);
     } else {
-      row.append(
-        this.button("test", async () => {
-          const job = await this.request("test", { id: plan.id, speaker: entity });
-          this.active = job.plan;
-          listen(job.id);
-        }),
-        this.button("listening_skip", () => advance("skip")),
-      );
+      start();
     }
   }
   renderActions() {

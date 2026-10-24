@@ -186,7 +186,7 @@
           jobs.set(id,{...job,speaker:request.speaker});
           return job;
         }
-        if (body.operation === "status") return jobs.get(request.id);
+        if (body.operation === "status") return jobs.get(request.id) || {ok:false,error:{code:"not_found",message:"Test expired"}};
         if (body.operation === "confirm_test") {tests.set(jobs.get(request.id).speaker,{heard:request.heard});return {ok:true,heard:request.heard};}
         if (body.operation === "voicemail") return {ok:true,messages:params.get("voicemail")==="on"?[
           {id:"v1",message:"Can someone grab the packages from the porch?"},

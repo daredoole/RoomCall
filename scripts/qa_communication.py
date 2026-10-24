@@ -124,6 +124,19 @@ def check_room_listening(browser, errors) -> None:
         expect(wizard).to_contain_text("Not heard; unverified")
         expect(wizard).to_contain_text("Skipped; unverified")
         assert wizard.evaluate("e=>e.scrollWidth<=e.clientWidth")
+        # HA restarts can lose a non-durable test job while retaining its setup plan.
+        page.evaluate("""() => {
+          const plans=JSON.parse(sessionStorage.getItem('roomcall-plans'));
+          const plan=plans[0][1], speaker=plan.settings.speakers[0];
+          delete plan.confirmations[speaker]; plan.tests[speaker]='expired-test';
+          sessionStorage.setItem('roomcall-plans',JSON.stringify(plans));
+        }""")
+        page.reload()
+        card.get_by_role("button", name="Settings", exact=True).click()
+        wizard = card.locator(".setup-wizard")
+        expect(wizard.get_by_role("button", name="Play test sound", exact=True)).to_be_visible()
+        wizard.get_by_role("button", name="Skip", exact=True).click()
+        expect(wizard).to_contain_text("Skipped; unverified")
         context.close()
 
 
