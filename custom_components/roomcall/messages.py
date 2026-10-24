@@ -196,6 +196,7 @@ async def send(
     on_dispatch: Callable[[], None] | None = None,
     notify: bool = True,
     on_progress: Callable[[str], None] | None = None,
+    assistant: str | None = None,
 ) -> CallRecord:
     data.agent_policies.authorize(context.user_id, "send")
     data.agent_policies.consume(context.user_id)
@@ -204,4 +205,5 @@ async def send(
         on_progress("waiting_speakers")
     request.call_id, request.deadline, request.on_dispatch = call_id, deadline, on_dispatch
     request.notify = notify
+    request.assistant = assistant
     return await place_call(hass, data, request)

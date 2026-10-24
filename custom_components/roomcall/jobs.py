@@ -87,6 +87,14 @@ class Jobs:
         self.stop_start = lambda: None
         self.items: dict[str, Job] = {}
         self.keys: dict[tuple[str | None, str], tuple[str, str]] = {}
+        self.stop_delivery = hass.bus.async_listen(
+            "roomcall_delivery_updated", self._delivery_updated
+        )
+
+    async def _delivery_updated(self, event) -> None:
+        job = self.items.get(event.data.get("id"))
+        if job and job.values.get("durable") and not self.closing:
+            await self.save()
 
     async def save(self) -> None:
         async with self.store_lock:
@@ -280,6 +288,7 @@ class Jobs:
                     deadline=job.deadline,
                     on_dispatch=dispatched,
                     on_progress=job.phase,
+                    assistant=job.assistant,
                 )
                 if not job.record.ok:
                     accepted = sum(r.ok for r in job.record.results)
@@ -435,6 +444,7 @@ class Jobs:
     async def close(self) -> None:
         self.closing = True
         self.stop_start()
+        self.stop_delivery()
         tasks = [job.task for job in self.items.values() if job.task and not job.task.done()]
         for task in tasks:
             task.cancel()

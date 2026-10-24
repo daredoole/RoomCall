@@ -4,6 +4,27 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.21.0 — 2026-10-23
+
+- Keep live-call restoration leases through the captured audio duration so buffered
+  speech is not cut off by the former fixed live tail. This remains an estimate,
+  separate from evidence of audible playback.
+
+- Prepare verified HEOS receiver and Android/TV controls before dispatch: wake,
+  select the audible input and honor requested volume, with bounded state confirmation.
+  Failed preparation attempts rollback rather than reporting a successfully sent URL.
+- Pair by physical identity or explicit playback routes; matching room/model names
+  are insufficient. Explicit HDMI outputs share deduplication and playback leases.
+- Restore supported power/input/volume/mute and app/media state; preserve paused
+  playback and reported Cast positions where possible, without inventing provider
+  sessions or replaying earlier announcements. Respect external state/permission changes.
+- Expose interruption plans and source options to humans/agents, enforce companion
+  permissions/exposure, and report late restoration outcomes separately from acceptance.
+  Keep snapshots/targets fixed across asynchronous preparation and release expired leases.
+- Add regressions for receiver/Android preparation, failures, identity, contention,
+  resumption, durable observations and consent/permissions. Existing native clients
+  use the corrected server pipeline; no native app rebuild is required.
+
 ## 0.20.0 — 2026-10-23
 
 - iPhone app (native build 4): the dashboard card's look. **Glass** by default: Liquid Glass

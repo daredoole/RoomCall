@@ -207,7 +207,7 @@ async def test_scheduler_limits_cancellation_and_live_wait(hass, setup_roomcall)
     # Wait until the task actually starts; canceling a never-started task cannot run finally.
     entered = asyncio.Event()
 
-    async def finish(*args):
+    async def finish(*args, **kwargs):
         entered.set()
         await asyncio.Event().wait()
 
@@ -377,7 +377,9 @@ async def test_raw_fanout_restores_without_a_runtime_scheduler(hass, house):
 
 
 async def test_restoration_missing_devices_unavailable_and_volume_failure(hass, house):
-    assert restore._identity(hass, "media_player.missing") is None
+    from custom_components.roomcall.playback import identities
+
+    assert identities(hass, "media_player.missing") == {"entity:media_player.missing"}
     assert restore.related_players(hass, "media_player.kitchen_sonos") == [
         "media_player.kitchen_sonos"
     ]

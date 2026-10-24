@@ -21,6 +21,11 @@ def physical_key(hass: HomeAssistant, entity_id: str, aliases: dict[str, str]) -
     """Use explicit aliases, shared registry devices, or shared stable connections."""
     if entity_id in aliases:
         return f"alias:{aliases[entity_id]}"
+    from .playback import route
+
+    entity_id = route(hass, entity_id).get("controller", entity_id)
+    if entity_id in aliases:
+        return f"alias:{aliases[entity_id]}"
     entry = er.async_get(hass).async_get(entity_id)
     if entry and entry.device_id:
         device = dr.async_get(hass).async_get(entry.device_id)
@@ -29,6 +34,13 @@ def physical_key(hass: HomeAssistant, entity_id: str, aliases: dict[str, str]) -
             macs = sorted(value.lower() for kind, value in device.connections if kind == "mac")
             if macs:
                 return f"mac:{macs[0]}"
+        from .playback import identities
+
+        serials = sorted(
+            value for value in identities(hass, entity_id) if value.startswith("serial:")
+        )
+        if serials:
+            return serials[0]
         return f"device:{entry.device_id}"
     return f"entity:{entity_id}"
 
@@ -40,10 +52,11 @@ def deduplicate(
     skipped = {}
     registry = er.async_get(hass)
 
-    def rank(entity_id: str) -> tuple[bool, bool]:
+    def rank(entity_id: str) -> tuple[bool, bool, bool]:
         state = hass.states.get(entity_id)
         return (
             state is not None and state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN),
+            can_play(hass, entity_id),
             supports_announce(hass, entity_id),
         )
 
@@ -65,6 +78,7 @@ def deduplicate(
 
 
 def discover(hass: HomeAssistant, data: RoomCallData) -> dict[str, Any]:
+    from .playback import describe
     from .policy import person_area
 
     selected, skipped = deduplicate(hass, data.speakers, data.aliases)
@@ -80,6 +94,7 @@ def discover(hass: HomeAssistant, data: RoomCallData) -> dict[str, Any]:
                 "area_id": speaker_area(hass, entity_id),
                 "physical_id": physical_key(hass, entity_id, data.aliases),
                 "route": entry.platform if entry else "media_player",
+                "audio_url_playback": can_play(hass, entity_id),
                 "available": state is not None
                 and state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN),
                 "selected": entity_id in selected,
@@ -88,6 +103,7 @@ def discover(hass: HomeAssistant, data: RoomCallData) -> dict[str, Any]:
                 "playback_observable": False,
                 "microphone": False,
                 "sound_test": data.sound_tests.get(entity_id),
+                "interruption": describe(hass, entity_id),
             }
         )
     satellites = []
@@ -143,6 +159,9 @@ def discover(hass: HomeAssistant, data: RoomCallData) -> dict[str, Any]:
 
 
 def can_play(hass: HomeAssistant, entity_id: str) -> bool:
+    entry = er.async_get(hass).async_get(entity_id)
+    if entry and entry.platform in {"androidtv_remote", "denonavr"}:
+        return False
     state = hass.states.get(entity_id)
     return bool(
         state

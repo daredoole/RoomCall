@@ -55,6 +55,13 @@ class LastCallSensor(SensorEntity):
         self.async_on_remove(
             async_dispatcher_connect(self.hass, SIGNAL_CALL_FINISHED, self._on_call)
         )
+        self.async_on_remove(
+            self.hass.bus.async_listen("roomcall_delivery_updated", self._on_delivery)
+        )
+
+    @callback
+    def _on_delivery(self, event) -> None:
+        self.async_write_ha_state()
 
     @callback
     def _on_call(self, record: CallRecord) -> None:

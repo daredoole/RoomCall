@@ -1,8 +1,8 @@
 # Screenshots and validation
 
-The documentation was audited against **RoomCall 0.18.2 / native build 3** on
-2026-10-23; the Home Assistant card captures were refreshed for the 0.19.0 Glass
-look. The captures illustrate real rendered interfaces with sample data;
+The documentation was audited against **RoomCall 0.20.0**, with the compatible
+**native 0.18.2 / build 3** client, on 2026-10-23. Home Assistant captures include
+the Glass interface and receiver/TV interruption previews and restoration status. The captures illustrate real rendered interfaces with sample data;
 they do not demonstrate a particular household, physical speaker delivery or
 successful Apple signing. Room names, tasks, people and transcripts are examples.
 

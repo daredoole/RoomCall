@@ -185,9 +185,20 @@ async def validate_targets(
         caller_user_id=context.user_id,
     )
     prepared = prepare_call(hass, data, request)
-    for entity_id in [*prepared.routing.entity_ids, *values.get("people", [])]:
+    from .playback import controlled_entities, describe
+
+    controls = {
+        other
+        for entity in prepared.routing.entity_ids
+        for other in controlled_entities(hass, entity)
+    }
+    for entity_id in [*controls, *values.get("people", [])]:
         if not await permitted(hass, entity_id, context, assistant):
             raise Problem("forbidden")
+    interruptions = {entity: describe(hass, entity) for entity in prepared.routing.entity_ids}
+    for item in interruptions.values():
+        if item.get("error"):
+            raise Problem(item["error"])
     return {
         "ok": True,
         "targets": prepared.targets,
@@ -196,6 +207,7 @@ async def validate_targets(
         "skipped": prepared.routing.skipped,
         "audible": None,
         "delivery_semantics": "request_accepted",
+        "interruptions": interruptions,
     }
 
 
@@ -323,6 +335,14 @@ async def _execute(hass, operation, values, context, *, assistant=None):
                     for item in result[key]
                     if await permitted(hass, item["entity_id"], context, assistant, control=False)
                 ]
+            for endpoint in result["endpoints"]:
+                if not all(
+                    [
+                        await permitted(hass, entity, context, assistant, control=False)
+                        for entity in endpoint["interruption"]["entities"]
+                    ]
+                ):
+                    endpoint["interruption"] = {"error": "forbidden"}
             if assistant or context.user_id in data.agent_policies.grants:
                 allowed_areas = {e["area_id"] for e in result["endpoints"]}
                 result["rooms"] = [r for r in result["rooms"] if r["area_id"] in allowed_areas]

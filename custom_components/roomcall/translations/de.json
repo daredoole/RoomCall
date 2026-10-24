@@ -119,13 +119,15 @@
               "doorbell_rooms": "Räume zum Klingeln",
               "speech_profiles": "Sprachprofile",
               "household_profiles": "Haushaltsprofile",
-              "agent_policies": "Richtlinien für Agentenkonten"
+              "agent_policies": "Richtlinien für Agentenkonten",
+              "playback_routes": "Wiedergabegeräterouten"
             },
             "data_description": {
               "talk_back": "Spricht jemand aus einem anderen Raum in einen Raum, hört ein Assist-Satellit dort (Atom Echo, ESP32-S3, Home Assistant Voice) auf eine Antwort, die im Raum des Anrufers zu hören ist. Antworten werden transkribiert und mit der eingestellten Stimme gesprochen.",
               "doorbell_entity": "Taste oder Ereignis der Türklingel. Beim Klingeln sagt RoomCall, wer an der Tür ist, benachrichtigt Telefone mit einer Annehmen-Taste und zeigt einen Hinweis auf RoomCall-Karten.",
               "doorbell_camera": "Annehmen öffnet die Live-Ansicht dieser Kamera, in der Gegensprechen funktioniert, wenn die Kamera es unterstützt.",
-              "doorbell_rooms": "Leer lassen, um überall zu klingeln."
+              "doorbell_rooms": "Leer lassen, um überall zu klingeln.",
+              "playback_routes": "Ordne einer Wiedergabeentität einen ausdrücklichen Controller und eine Quelle für die Audioausgabe zu. HDMI-Verbindungen werden nicht aus Raumnamen abgeleitet. Wiederherstellung und App-Fortsetzung hängen vom Gerät ab."
             }
           }
         }
@@ -133,7 +135,7 @@
     },
     "error": {
       "no_speakers": "Wähle mindestens einen Lautsprecher.",
-      "invalid_settings": "Prüfe Aliasse, Einstellungen und Adapter."
+      "invalid_settings": "Prüfe Aliase, Einstellungen, Adapter und Wiedergaberouten."
     }
   },
   "selector": {
@@ -194,7 +196,7 @@
         "translation_failed": "Die Übersetzung ist fehlgeschlagen. Die Originalnachricht wurde nicht gesendet.",
         "mixed_languages": "Sende getrennte Nachrichten an Empfänger mit unterschiedlichen Sprachen.",
         "voicemail_disabled": "Aktiviere zuerst die Sprachnachrichten in RoomCall.",
-        "invalid_settings": "Prüfe Aliasse, Einstellungen und Adapter.",
+        "invalid_settings": "Prüfe Aliase, Einstellungen, Adapter und Wiedergaberouten.",
         "accepted": "Wiedergabeanforderungen angenommen: {count}. Hörbarkeit unbestätigt.",
         "failed": "Wiedergabeanforderung für {speakers} fehlgeschlagen.",
         "partial": "{accepted} Wiedergabeanforderungen angenommen. Fehlgeschlagen: {speakers}.",
@@ -532,7 +534,17 @@
         "ios_color_teal": "Petrol",
         "ios_color_coral": "Koralle",
         "ios_color_pink": "Pink",
-        "setup_speech_rate": "Sprechgeschwindigkeit"
+        "setup_speech_rate": "Sprechgeschwindigkeit",
+        "playback_prepare_failed": "Receiver oder TV-Eingang konnten nicht vorbereitet werden. Prüfe Stromversorgung, Quelle, Berechtigungen der zugehörigen Steuerungen und Verbindung.",
+        "playback_controller_ambiguous": "Mehrere Receiver-Steuerungen passen zu diesem Player. Konfiguriere vor dem Senden eine ausdrückliche Wiedergaberoute.",
+        "preview_interruption": "{speaker}: {controller} → {source} verwenden.",
+        "preview_resume": "{speaker}: unterstützten Medien-/App-Zustand nach Möglichkeit wiederherstellen; die genaue Sitzung ist nicht garantiert.",
+        "preview_restore_disabled": "{speaker}: automatische Wiederherstellung ist deaktiviert.",
+        "restore_pending": "Wiederherstellung ausstehend.",
+        "restore_requests_completed": "Wiederherstellungsanfragen abgeschlossen; Sitzungsfortsetzung nach Möglichkeit.",
+        "restore_failed": "Wiederherstellung fehlgeschlagen. Prüfe Gerät und Berechtigungen.",
+        "restore_skipped_external_change_or_permission": "Wiederherstellung nach einer externen Änderung oder Berechtigungsänderung übersprungen.",
+        "restore_disabled": "Automatische Wiederherstellung ist deaktiviert."
       }
     },
     "audio_processing": {

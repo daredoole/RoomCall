@@ -178,6 +178,13 @@ keep their saved values; use setup discovery's current `settings_schema` before 
 
 ## 6. Troubleshoot
 
+- Playback endpoints expose an `interruption` plan. Use Cast for audio on Android
+  TVs/boxes; Android TV Remote provides companion controls. HEOS receivers can use
+  a verified native receiver control for power/input preparation. `catalog.playback_routes`
+  describes explicit HDMI mappings under `communication.playback_routes`. Preview
+  before sending; permissions/exposure must include every affected controller.
+  Inspect `evidence[endpoint].interruption.restore` after acceptance. Request completion
+  and best-effort resumption do not prove audibility or recovery of an exact session.
 - **Repairs** explain unavailable speakers and unusable internal URLs.
 - **Diagnostics** (download on the integration) list speakers, rooms, announce support, recent
   calls and Apple Home status, with what people said redacted.

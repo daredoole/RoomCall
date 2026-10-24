@@ -162,6 +162,7 @@ class RoomCallData:
     speech_profiles: dict[str, dict[str, str]] = field(default_factory=dict)
     chime_cache: dict[str, bytes] = field(default_factory=dict)
     aliases: dict[str, str] = field(default_factory=dict)
+    playback_routes: dict[str, dict[str, str]] = field(default_factory=dict)
     preferences: dict[str, dict[str, Any]] = field(default_factory=dict)
     adapters: dict[str, dict[str, str]] = field(default_factory=dict)
     presence_max_age: int = 300
@@ -238,6 +239,7 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         homekit_enabled=bool(homekit.get(CONF_HOMEKIT_ENABLED, False)),
         homekit_port=int(homekit.get(CONF_HOMEKIT_PORT, DEFAULT_HOMEKIT_PORT)),
         aliases=dict(communication.get("aliases") or {}),
+        playback_routes=dict(communication.get("playback_routes") or {}),
         preferences=dict(communication.get("preferences") or {}),
         adapters=dict(communication.get("adapters") or {}),
         presence_max_age=int(communication.get("presence_max_age", 300)),

@@ -119,13 +119,15 @@
               "doorbell_rooms": "Ruimtes om te laten bellen",
               "speech_profiles": "Spraakprofielen",
               "household_profiles": "Huishoudprofielen",
-              "agent_policies": "Beleid voor agentaccounts"
+              "agent_policies": "Beleid voor agentaccounts",
+              "playback_routes": "Routes voor afspeelapparaten"
             },
             "data_description": {
               "talk_back": "Als iemand vanuit een andere ruimte tegen een ruimte praat, luistert een Assist-satelliet daar (Atom Echo, ESP32-S3, Home Assistant Voice) naar een antwoord, dat in de ruimte van de beller klinkt. Antwoorden worden uitgeschreven en uitgesproken met de ingestelde stem.",
               "doorbell_entity": "De deurbelknop of het deurbelevenement. Als die gaat, zegt RoomCall wie er aan de deur is, meldt het telefoons met een Opnemen-knop en toont het een melding op RoomCall-kaarten.",
               "doorbell_camera": "Opnemen opent het livebeeld van deze camera, waar terugpraten werkt als de camera dat ondersteunt.",
-              "doorbell_rooms": "Leeg laten om overal te bellen."
+              "doorbell_rooms": "Leeg laten om overal te bellen.",
+              "playback_routes": "Koppel een afspeelentiteit aan een expliciete controller en bron voor de audio-uitvoer. HDMI-verbindingen worden niet afgeleid van kamernamen. Herstel en hervatting van apps hangen af van het apparaat."
             }
           }
         }
@@ -133,7 +135,7 @@
     },
     "error": {
       "no_speakers": "Kies minstens één speaker.",
-      "invalid_settings": "Controleer aliassen, voorkeuren en adapters."
+      "invalid_settings": "Controleer aliassen, voorkeuren, adapters en afspeelroutes."
     }
   },
   "selector": {
@@ -194,7 +196,7 @@
         "translation_failed": "Vertalen is mislukt. Het oorspronkelijke bericht is niet verzonden.",
         "mixed_languages": "Stuur aparte berichten naar ontvangers met verschillende talen.",
         "voicemail_disabled": "Schakel eerst voicemail in bij RoomCall.",
-        "invalid_settings": "Controleer aliassen, voorkeuren en adapters.",
+        "invalid_settings": "Controleer aliassen, voorkeuren, adapters en afspeelroutes.",
         "accepted": "Afspeelverzoeken geaccepteerd: {count}. Hoorbaarheid onbevestigd.",
         "failed": "Afspeelverzoek mislukt voor {speakers}.",
         "partial": "{accepted} afspeelverzoeken geaccepteerd. Mislukt: {speakers}.",
@@ -532,7 +534,17 @@
         "ios_color_teal": "Petrol",
         "ios_color_coral": "Koraal",
         "ios_color_pink": "Roze",
-        "setup_speech_rate": "Spreeksnelheid"
+        "setup_speech_rate": "Spreeksnelheid",
+        "playback_prepare_failed": "De receiver of tv-ingang kon niet worden voorbereid. Controleer voeding, bron, rechten voor gekoppelde bediening en verbinding.",
+        "playback_controller_ambiguous": "Meerdere receiverbedieningen komen overeen met deze speler. Configureer een expliciete afspeelroute voordat je verzendt.",
+        "preview_interruption": "{speaker}: gebruik {controller} → {source}.",
+        "preview_resume": "{speaker}: herstel ondersteunde media- of appstatus waar mogelijk; herstel van de exacte sessie is niet gegarandeerd.",
+        "preview_restore_disabled": "{speaker}: automatisch herstel is uitgeschakeld.",
+        "restore_pending": "Herstel in behandeling.",
+        "restore_requests_completed": "Herstelverzoeken voltooid; de sessie wordt hervat waar mogelijk.",
+        "restore_failed": "Herstel mislukt. Controleer het apparaat en de rechten.",
+        "restore_skipped_external_change_or_permission": "Herstel overgeslagen na een externe wijziging of gewijzigde rechten.",
+        "restore_disabled": "Automatisch herstel is uitgeschakeld."
       }
     },
     "audio_processing": {

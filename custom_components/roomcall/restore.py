@@ -11,30 +11,31 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlsplit
 
 from homeassistant.components.media_player import MediaPlayerEntityFeature
 from homeassistant.const import STATE_OFF, STATE_PLAYING, STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
+from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.event import async_track_state_change_event
 
-from .core import speaker_area
+from .errors import Problem
+from .playback import controlled_entities, route
 
 _LOGGER = logging.getLogger(__name__)
 
-# Mirrors of other players: restoring them would fight the real entity.
-_IGNORED_PLATFORMS = {"music_assistant", "dlna_dmr"}
 POLL_SECONDS = 0.5
 UNKNOWN_LENGTH_SECONDS = 45.0
 # After a live call ends, receivers still play what they buffered.
 LIVE_TAIL_SECONDS = 5.0
 # Unknown length and never reported "playing": assume a short message took about this long.
 UNSEEN_PLAYING_SECONDS = 12.0
+CONTROL_TIMEOUT = 10.0
 _ACTIVE = "roomcall_restore_active"
+CAST_RECEIVER_APPS = {"com.google.android.apps.mediashell", "com.google.cast.receiver"}
 
 
 @dataclass(slots=True)
@@ -45,41 +46,15 @@ class Snapshot:
     source: str | None
     volume: float | None
     app_id: str | None
-
-
-def _identity(hass: HomeAssistant, entity_id: str) -> tuple[str, str] | None:
-    """Normalised (manufacturer, model) of an entity's device."""
-    entry = er.async_get(hass).async_get(entity_id)
-    if entry is None or entry.device_id is None:
-        return None
-    device = dr.async_get(hass).async_get(entry.device_id)
-    if device is None or not device.manufacturer or not device.model:
-        return None
-    maker = device.manufacturer.strip().lower()
-    model = re.sub(rf"^{re.escape(maker)}\s+", "", device.model.strip().lower())
-    return maker, model
+    muted: bool | None = None
+    media_id: str | None = None
+    media_type: str | None = None
+    position: float | None = None
 
 
 def related_players(hass: HomeAssistant, entity_id: str) -> list[str]:
-    """The speaker plus other media players for the same device model in the same area."""
-    identity = _identity(hass, entity_id)
-    area = speaker_area(hass, entity_id)
-    out = [entity_id]
-    if identity is None or area is None:
-        return out
-    registry = er.async_get(hass)
-    for other in hass.states.async_entity_ids("media_player"):
-        if other == entity_id:
-            continue
-        entry = registry.async_get(other)
-        if entry is None or entry.platform in _IGNORED_PLATFORMS:
-            continue
-        state = hass.states.get(other)
-        if state is None or state.state == STATE_UNAVAILABLE:
-            continue
-        if speaker_area(hass, other) == area and _identity(hass, other) == identity:
-            out.append(other)
-    return out
+    """Verified physical companions plus an explicitly configured audio controller."""
+    return controlled_entities(hass, entity_id)
 
 
 def take(hass: HomeAssistant, entity_ids: list[str]) -> list[Snapshot]:
@@ -98,6 +73,10 @@ def take(hass: HomeAssistant, entity_ids: list[str]) -> list[Snapshot]:
                 source=state.attributes.get("source"),
                 volume=state.attributes.get("volume_level"),
                 app_id=state.attributes.get("app_id"),
+                muted=state.attributes.get("is_volume_muted"),
+                media_id=state.attributes.get("media_content_id"),
+                media_type=state.attributes.get("media_content_type"),
+                position=state.attributes.get("media_position"),
             )
         )
     return snaps
@@ -127,45 +106,106 @@ async def wait_until_done(hass: HomeAssistant, entity_id: str, seconds: float | 
             return
 
 
-async def restore(hass: HomeAssistant, snaps: list[Snapshot]) -> None:
+async def restore(
+    hass: HomeAssistant,
+    snaps: list[Snapshot],
+    context: Context | None = None,
+    assistant: str | None = None,
+) -> list[str]:
+    failed = []
     for snap in snaps:
+        current = hass.states.get(snap.entity_id)
+        if current is None or current.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            failed.append(snap.entity_id)
+            continue
         try:
-            await _restore_one(hass, snap)
+            await _restore_one(hass, snap, context, assistant)
         except Exception as err:
+            failed.append(snap.entity_id)
             _LOGGER.warning("RoomCall could not restore %s: %s", snap.entity_id, err)
+    return failed
 
 
-async def _call(hass: HomeAssistant, service: str, entity_id: str, **data: Any) -> None:
-    await hass.services.async_call(
-        "media_player", service, {"entity_id": entity_id, **data}, blocking=True
-    )
+async def _call(
+    hass: HomeAssistant,
+    service: str,
+    entity_id: str,
+    *,
+    context: Context | None = None,
+    assistant: str | None = None,
+    **data: Any,
+) -> None:
+    from .communication import permitted
+
+    if context is not None and not await permitted(hass, entity_id, context, assistant):
+        raise Problem("forbidden")
+    async with asyncio.timeout(CONTROL_TIMEOUT):
+        await hass.services.async_call(
+            "media_player",
+            service,
+            {"entity_id": entity_id, **data},
+            blocking=True,
+            context=context,
+        )
 
 
-async def _restore_one(hass: HomeAssistant, snap: Snapshot) -> None:
+async def _restore_one(
+    hass: HomeAssistant,
+    snap: Snapshot,
+    context: Context | None = None,
+    assistant: str | None = None,
+) -> None:
     current = hass.states.get(snap.entity_id)
     if current is None or current.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
         return
     features = current.attributes.get("supported_features", 0)
-    if snap.state == STATE_OFF:
-        if current.state != STATE_OFF and features & MediaPlayerEntityFeature.TURN_OFF:
-            await _call(hass, "turn_off", snap.entity_id)
+    if current.state == STATE_OFF:
         return
     sources = current.attributes.get("source_list") or []
+    if (
+        snap.muted is not None
+        and current.attributes.get("is_volume_muted") != snap.muted
+        and features & MediaPlayerEntityFeature.VOLUME_MUTE
+    ):
+        await _call(
+            hass,
+            "volume_mute",
+            snap.entity_id,
+            is_volume_muted=snap.muted,
+            context=context,
+            assistant=assistant,
+        )
     if (
         snap.source
         and snap.source != current.attributes.get("source")
         and snap.source in sources
         and features & MediaPlayerEntityFeature.SELECT_SOURCE
     ):
-        await _call(hass, "select_source", snap.entity_id, source=snap.source)
+        await _call(
+            hass,
+            "select_source",
+            snap.entity_id,
+            source=snap.source,
+            context=context,
+            assistant=assistant,
+        )
     if (
         snap.volume is not None
         and current.attributes.get("volume_level") != snap.volume
         and features & MediaPlayerEntityFeature.VOLUME_SET
     ):
-        await _call(hass, "volume_set", snap.entity_id, volume_level=snap.volume)
+        await _call(
+            hass,
+            "volume_set",
+            snap.entity_id,
+            volume_level=snap.volume,
+            context=context,
+            assistant=assistant,
+        )
     if (
         snap.app_id
+        and snap.app_id not in CAST_RECEIVER_APPS
+        and snap.state != STATE_OFF
         and snap.platform == "androidtv_remote"
         and current.attributes.get("app_id") != snap.app_id
     ):
@@ -176,42 +216,295 @@ async def _restore_one(hass: HomeAssistant, snap: Snapshot) -> None:
             snap.entity_id,
             media_content_type="app",
             media_content_id=snap.app_id,
+            context=context,
+            assistant=assistant,
         )
+    if snap.state == STATE_OFF and features & MediaPlayerEntityFeature.TURN_OFF:
+        await _call(hass, "turn_off", snap.entity_id, context=context, assistant=assistant)
 
 
 class Guard:
     """Snapshot before a call and restore after it, sharing one snapshot when calls overlap."""
 
-    def __init__(self, hass: HomeAssistant, entity_id: str) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entity_id: str,
+        *,
+        owner: str | None = None,
+        assistant: str | None = None,
+        restore_enabled: bool = True,
+        evidence: dict[str, Any] | None = None,
+        call_id: str | None = None,
+    ) -> None:
         self._hass = hass
         self._entity_id = entity_id
         self._active: dict[str, list[Any]] = hass.data.setdefault(_ACTIVE, {})
+        self.owner, self.assistant = owner, assistant
+        self.context = Context(user_id=owner)
+        self.restore_enabled = restore_enabled
+        self.evidence = evidence if evidence is not None else {}
+        self.media_id = ""
+        self.call_id = call_id
+        self.entities: list[str] = []
+        self.output: dict[str, str] = {}
 
     def start(self) -> None:
+        self.entities = controlled_entities(self._hass, self._entity_id)
+        self.output = route(self._hass, self._entity_id)
         if entry := self._active.get(self._entity_id):
             entry[1] += 1
         else:
-            snaps = take(self._hass, related_players(self._hass, self._entity_id))
+            snaps = take(self._hass, self.entities)
             self._active[self._entity_id] = [snaps, 1]
 
+    async def _permitted(self) -> bool:
+        from .communication import permitted
+
+        return all(
+            [
+                await permitted(self._hass, entity, Context(user_id=self.owner), self.assistant)
+                for entity in self.entities
+            ]
+        )
+
+    async def _control(self, entity_id: str, service: str, **values: Any) -> None:
+        if not await self._permitted():
+            raise Problem("forbidden")
+        await _call(
+            self._hass, service, entity_id, context=self.context, assistant=self.assistant, **values
+        )
+
+    async def _wait(self, entity_id: str, matches: Callable[[Any], bool]) -> None:
+        ready = asyncio.Event()
+
+        @callback
+        def changed(event) -> None:
+            state = event.data.get("new_state")
+            if state is not None and matches(state):
+                ready.set()
+
+        unsubscribe = async_track_state_change_event(self._hass, [entity_id], changed)
+        try:
+            current = self._hass.states.get(entity_id)
+            if current is not None and matches(current):
+                return
+            async with asyncio.timeout(CONTROL_TIMEOUT):
+                await ready.wait()
+        finally:
+            unsubscribe()
+
+    async def prepare(self, media_id: str, volume: float | None) -> None:
+        """Wake verified companions and select the explicitly known audible input."""
+        self.media_id = media_id
+        output = self.output
+        if output.get("error"):
+            raise Problem(output["error"])
+        if not await self._permitted():
+            raise Problem("forbidden")
+        controllers = [
+            s.entity_id
+            for s in self._active[self._entity_id][0]
+            if s.platform == "androidtv_remote"
+        ]
+        if output.get("controller"):
+            controllers.append(output["controller"])
+        try:
+            for entity in dict.fromkeys(controllers):
+                if not any(s.entity_id == entity for s in self._active[self._entity_id][0]):
+                    raise Problem("playback_prepare_failed")
+                state = self._hass.states.get(entity)
+                if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+                    raise Problem("playback_prepare_failed")
+                if state.state == STATE_OFF:
+                    if (
+                        not state.attributes.get("supported_features", 0)
+                        & MediaPlayerEntityFeature.TURN_ON
+                    ):
+                        raise Problem("playback_prepare_failed")
+                    await self._control(entity, "turn_on")
+                    await self._wait(
+                        entity,
+                        lambda s: s.state not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN),
+                    )
+                    # HA can hide standby attributes. Capture them after wake, before overrides.
+                    awake = self._hass.states.get(entity)
+                    snapshot = next(
+                        s for s in self._active[self._entity_id][0] if s.entity_id == entity
+                    )
+                    for field, attribute in (
+                        ("source", "source"),
+                        ("volume", "volume_level"),
+                        ("muted", "is_volume_muted"),
+                    ):
+                        if getattr(snapshot, field) is None:
+                            setattr(snapshot, field, awake.attributes.get(attribute))
+            controller = output.get("controller", self._entity_id)
+            state = self._hass.states.get(controller)
+            if source := output.get("source"):
+                if state is None or source not in (state.attributes.get("source_list") or []):
+                    raise Problem("playback_prepare_failed")
+                if state.attributes.get("source") != source:
+                    await self._control(controller, "select_source", source=source)
+                    await self._wait(controller, lambda s: s.attributes.get("source") == source)
+            if state is not None:
+                features = state.attributes.get("supported_features", 0)
+                if volume is not None and features & MediaPlayerEntityFeature.VOLUME_SET:
+                    await self._control(controller, "volume_set", volume_level=volume)
+                if (
+                    state.attributes.get("is_volume_muted")
+                    and features & MediaPlayerEntityFeature.VOLUME_MUTE
+                ):
+                    await self._control(controller, "volume_mute", is_volume_muted=False)
+        except Problem:
+            raise
+        except Exception as err:
+            raise Problem("playback_prepare_failed") from err
+        if not await self._permitted():
+            raise Problem("forbidden")
+        self.evidence["interruption"] = {"prepared": True, "restore": "pending"}
+
+    async def _resume(self, snaps: list[Snapshot]) -> None:
+        original = next((s for s in snaps if s.entity_id == self._entity_id), None)
+        if original is None or original.state not in ("playing", "paused"):
+            return
+        if original.media_id:
+            previous = urlsplit(original.media_id)
+            if previous.path.startswith(("/api/roomcall/", "/api/tts_proxy/")) or (
+                previous.scheme == "media-source" and previous.netloc == "tts"
+            ):
+                return  # Never replay a previous announcement as background media.
+        android = next(
+            (
+                s
+                for s in snaps
+                if s.platform == "androidtv_remote"
+                and s.app_id
+                and s.app_id not in CAST_RECEIVER_APPS
+            ),
+            None,
+        )
+        if android is not None:
+            target = android.entity_id
+            await self._wait(target, lambda state: state.attributes.get("app_id") == android.app_id)
+        elif (
+            original.platform == "cast"
+            and original.media_id
+            and original.media_id.startswith(("http://", "https://", "media-source://"))
+            and original.media_type
+        ):
+            target = original.entity_id
+            extra: dict[str, Any] = {"autoplay": original.state == "playing"}
+            features = self._hass.states.get(target).attributes.get("supported_features", 0)
+            if original.position is not None and features & MediaPlayerEntityFeature.SEEK:
+                extra["current_time"] = original.position
+            await _call(
+                self._hass,
+                "play_media",
+                target,
+                media_content_id=original.media_id,
+                media_content_type=original.media_type,
+                context=self.context,
+                assistant=self.assistant,
+                extra=extra,
+            )
+        else:
+            return
+        current = self._hass.states.get(target)
+        feature = (
+            MediaPlayerEntityFeature.PLAY
+            if original.state == "playing"
+            else MediaPlayerEntityFeature.PAUSE
+        )
+        if current.attributes.get("supported_features", 0) & feature:
+            await _call(
+                self._hass,
+                "media_play" if original.state == "playing" else "media_pause",
+                target,
+                context=self.context,
+                assistant=self.assistant,
+            )
+
+    async def abort(self) -> None:
+        """Roll back failed preparation without waiting for audio that was never dispatched."""
+        await self._release(True)
+
+    async def _release(self, rollback: bool = False) -> None:
+        entry = self._active[self._entity_id]
+        entry[1] -= 1
+        if entry[1]:
+            return
+        try:
+            current = self._hass.states.get(self._entity_id)
+            original = next((s for s in entry[0] if s.entity_id == self._entity_id), None)
+            replaced = (
+                original is not None
+                and original.platform == "cast"
+                and current
+                and current.attributes.get("media_content_id")
+                not in (None, self.media_id, original.media_id)
+            )
+            output = self.output
+            controller = self._hass.states.get(output.get("controller", self._entity_id))
+            if self.evidence.get("interruption", {}).get("prepared") and output.get("source"):
+                replaced = (
+                    replaced
+                    or controller is None
+                    or controller.state == STATE_OFF
+                    or controller.attributes.get("source") not in (None, output["source"])
+                )
+            for snap in entry[0]:
+                if snap.platform == "androidtv_remote" and snap.app_id:
+                    current_app = self._hass.states.get(snap.entity_id)
+                    if current_app and current_app.attributes.get("app_id") not in {
+                        None,
+                        snap.app_id,
+                        *CAST_RECEIVER_APPS,
+                    }:
+                        replaced = True
+            if not await self._permitted() or (self.media_id and replaced):
+                self.evidence["interruption"] = {"restore": "skipped_external_change_or_permission"}
+                return
+            if self.restore_enabled or rollback:
+                failed = await restore(self._hass, entry[0], self.context, self.assistant)
+                try:
+                    if not rollback:
+                        await self._resume(entry[0])
+                except Exception:
+                    failed.append(self._entity_id)
+                self.evidence["interruption"] = {
+                    "restore": "failed" if failed else "requests_completed",
+                    "failed_entities": failed,
+                    "resume_semantics": "best_effort_not_exact_session",
+                }
+            else:
+                self.evidence["interruption"] = {"restore": "disabled"}
+        finally:
+            del self._active[self._entity_id]
+            if self.call_id:
+                self._hass.bus.async_fire("roomcall_delivery_updated", {"id": self.call_id})
+                self._hass.bus.async_fire("roomcall_job_updated", {"id": self.call_id})
+
     async def finish(
-        self, seconds: float | None, until: Callable[[], Awaitable[None]] | None = None
+        self,
+        seconds: float | None,
+        until: Callable[[], Awaitable[None]] | None = None,
+        *,
+        audio_seconds: Callable[[], float] | None = None,
     ) -> None:
         """Restore once the call is over.
 
         ``until`` waits for a live call to end; its length is unknown up front, and some
         receivers (HEOS) never report "playing", so guessing from their state cut calls off.
         """
-        entry = self._active[self._entity_id]
         try:
             if until is not None:
                 await until()
                 await asyncio.sleep(LIVE_TAIL_SECONDS)
-                await wait_until_done(self._hass, self._entity_id, 0)
+                await wait_until_done(
+                    self._hass, self._entity_id, audio_seconds() if audio_seconds else 0
+                )
             else:
                 await wait_until_done(self._hass, self._entity_id, seconds)
         finally:
-            entry[1] -= 1
-            if entry[1] == 0:
-                del self._active[self._entity_id]
-                await restore(self._hass, entry[0])
+            await self._release()

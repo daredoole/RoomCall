@@ -308,6 +308,15 @@ export class RoomCallControls {
     const result = await this.command("preview", this.targets());
     const names = result.endpoints.map((id) => this.capabilities.endpoints.find((e) => e.entity_id === id)?.name || id);
     this.result.textContent = `${names.join(", ")}\n${this.t("request_hint")}`;
+    for (const [id, plan] of Object.entries(result.interruptions || {})) {
+      const speaker = this.capabilities.endpoints.find(e => e.entity_id === id)?.name || id;
+      if (plan.controller) {
+        const controller = this.card._hass.states[plan.controller]?.attributes?.friendly_name || plan.controller;
+        this.result.textContent += `\n${this.t("preview_interruption", { speaker, controller, source: plan.source })}`;
+      }
+      if (!plan.restore_enabled) this.result.textContent += `\n${this.t("preview_restore_disabled", { speaker })}`;
+      else if (plan.android_app_reopen || plan.media_resume) this.result.textContent += `\n${this.t("preview_resume", { speaker })}`;
+    }
   }
   async send() {
     if (!this.input.value.trim()) return;
@@ -323,7 +332,7 @@ export class RoomCallControls {
     const job = await this.command(this.currentMode === "ask" ? "ask" : "send", request);
     this.watch(job.id);
   }
-  async watch(id, onDone) {
+  async watch(id, onDone, restoreDeadline = Date.now() + 180000) {
     if (this.closed) return;
     try {
       const job = await this.command("status", { id });
@@ -339,6 +348,11 @@ export class RoomCallControls {
       for (const [endpoint, evidence] of Object.entries(job.result?.evidence || {})) {
         if (endpoint === "human") continue;
         const name = this.capabilities?.endpoints.find(e => e.entity_id === endpoint)?.name || endpoint;
+        if (evidence.interruption?.restore) {
+          const row = document.createElement("li");
+          row.textContent = `${name}: ${this.t(`restore_${evidence.interruption.restore}`)}`;
+          this.timeline.append(row);
+        }
         for (const key of ["audio_fetched_ms", "playback_reported_ms"]) {
           if (evidence[key] == null) continue;
           const row = document.createElement("li");
@@ -346,16 +360,20 @@ export class RoomCallControls {
           this.timeline.append(row);
         }
       }
+      this.timeline.hidden = !this.timeline.children.length;
       this.jobActions.replaceChildren();
       if (job.state === "queued") this.jobActions.append(this.button("cancel", async () => {
         await this.command("cancel", { id });
       }));
       if (job.responses?.length) this.result.textContent += `\n${job.responses.map((r) => r.sentence || r.text || "").join("\n")}`;
       if (job.error) this.result.textContent += `\n${job.error.message}`;
-      if (["queued", "running", "waiting_ack"].includes(job.state)) {
-        const timer = setTimeout(() => { this.timers.delete(timer); this.watch(id, onDone); }, 700);
+      const active = ["queued", "running", "waiting_ack"].includes(job.state);
+      if (!active && onDone) { onDone(job); onDone = undefined; }
+      const restoring = Object.values(job.result?.evidence || {}).some(e => e.interruption?.restore === "pending");
+      if (active || (restoring && Date.now() < restoreDeadline)) {
+        const timer = setTimeout(() => { this.timers.delete(timer); this.watch(id, onDone, restoreDeadline); }, 700);
         this.timers.add(timer);
-      } else { onDone?.(job); this.card._loadHistory(); }
+      } else { this.card._loadHistory(); }
     } catch (error) { this.error(error); }
   }
   async refresh() {
