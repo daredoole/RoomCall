@@ -567,7 +567,8 @@
         "url_container": "Diese Adresse liegt im Standardbereich der Docker-Bridge und ist möglicherweise für Lautsprecher nicht erreichbar.",
         "url_certificate": "Das HTTPS-Zertifikat konnte nicht gegen öffentliche Zertifizierungsstellen validiert werden.",
         "url_tls_unverified": "Die HTTPS-Verbindung konnte nicht geprüft werden. Zertifikatsvertrauen und Lautsprecherzugriff sind unbekannt.",
-        "url_missing": "Nicht konfiguriert"
+        "url_missing": "Nicht konfiguriert",
+        "music_assistant_timeout": "Music Assistant hat die Anfrage nicht rechtzeitig beendet. Die Wiedergabe könnte begonnen haben; RoomCall hat sie nicht wiederholt, um eine doppelte Ansage zu vermeiden."
       }
     },
     "audio_processing": {

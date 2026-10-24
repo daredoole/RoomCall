@@ -567,7 +567,8 @@
         "url_container": "Esta dirección está en el rango del puente Docker predeterminado y puede ser inaccesible desde los altavoces.",
         "url_certificate": "El certificado HTTPS no superó la validación con las autoridades de certificación públicas.",
         "url_tls_unverified": "No se pudo comprobar la conexión HTTPS. Se desconoce la confianza del certificado y el acceso de los altavoces.",
-        "url_missing": "Sin configurar"
+        "url_missing": "Sin configurar",
+        "music_assistant_timeout": "Music Assistant no terminó la solicitud a tiempo. La reproducción podría haber comenzado; RoomCall no lo reintentó para evitar un anuncio duplicado."
       }
     },
     "audio_processing": {

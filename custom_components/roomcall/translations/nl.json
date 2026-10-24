@@ -567,7 +567,8 @@
         "url_container": "Dit adres valt in het standaard Docker-brugbereik en is mogelijk onbereikbaar voor luidsprekers.",
         "url_certificate": "Het HTTPS-certificaat kon niet worden gevalideerd bij openbare certificaatautoriteiten.",
         "url_tls_unverified": "De HTTPS-verbinding kon niet worden gecontroleerd. Certificaatvertrouwen en luidsprekertoegang zijn onbekend.",
-        "url_missing": "Niet ingesteld"
+        "url_missing": "Niet ingesteld",
+        "music_assistant_timeout": "Music Assistant heeft het verzoek niet op tijd voltooid. Het afspelen kan zijn begonnen; RoomCall heeft het niet opnieuw geprobeerd om een dubbele aankondiging te voorkomen."
       }
     },
     "audio_processing": {

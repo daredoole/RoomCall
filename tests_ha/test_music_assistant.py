@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import itertools
+import json
+from pathlib import Path
+
 import pytest
+from custom_components.roomcall import core
 from custom_components.roomcall.calls import CallRequest, place_call, place_recorded_call
 from custom_components.roomcall.capabilities import deduplicate, default_destination, physical_key
 from custom_components.roomcall.communication import execute
@@ -12,7 +18,7 @@ from custom_components.roomcall.playback import related
 from custom_components.roomcall.schema import vol
 from homeassistant.components.media_player import MediaPlayerEntityFeature as F
 from homeassistant.core import Context
-from homeassistant.exceptions import ServiceNotFound
+from homeassistant.exceptions import HomeAssistantError, ServiceNotFound
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -271,3 +277,100 @@ async def test_ma_preference_does_not_change_hdmi_receiver_deduplication(hass, h
     assert physical_key(hass, cast, {}) == physical_key(hass, heos, {})
     assert deduplicate(hass, [cast, heos], {})[0] == [cast]
     assert deduplicate(hass, [heos, cast], {})[0] == [heos]
+
+
+@pytest.mark.parametrize(
+    "native_room,ma_room", [("a", "b"), ("a", None), (None, "a"), (None, None)]
+)
+async def test_pair_preference_uses_one_canonical_room(hass, house, native_room, ma_room):
+    areas = {"a": house["kitchen"], "b": house["basement"], None: None}
+    native = player(hass, house["kitchen"], "sonos", "native")
+    ma = player(hass, house["basement"])
+    registry = er.async_get(hass)
+    registry.async_update_entity(native, area_id=areas[native_room])
+    registry.async_update_entity(ma, area_id=areas[ma_room])
+    aliases = {native: "speaker", ma: "speaker"}
+    for members in ([native, ma], [ma, native]):
+        expected = ma if native_room == "a" or (native_room is None and ma_room == "a") else native
+        assert deduplicate(hass, members, aliases, [house["kitchen"]])[0] == [expected]
+        if native_room == "a" and ma_room == "b":
+            assert deduplicate(hass, members, aliases, [house["basement"]])[0] == [native]
+
+
+async def test_preference_is_resolved_once_for_all_routes_of_a_physical_speaker(hass, house):
+    first = player(hass, house["kitchen"], "sonos", "a_native")
+    second = player(hass, house["basement"], "cast", "z_native")
+    ma = player(hass, house["basement"])
+    aliases = dict.fromkeys([first, second, ma], "one-output")
+    for members in itertools.permutations([first, second, ma]):
+        assert deduplicate(hass, list(members), aliases, [house["kitchen"]])[0] == [ma]
+    other_ma = player(hass, house["kitchen"], name="ma_other")
+    aliases[other_ma] = "one-output"
+    # Provider preference does not reorder MA-only copies of a known device.
+    assert deduplicate(hass, [other_ma, ma], aliases, [house["basement"]])[0] == [other_ma]
+
+
+@pytest.mark.parametrize("failure", [TimeoutError, HomeAssistantError])
+async def test_ambiguous_ma_error_is_not_automatically_replayed(hass, house, failure):
+    area = ar.async_get(hass).async_create("MA Timeout").id
+    ma = player(hass, area)
+    await _roomcall(hass, [ma])
+    data = hass.data["roomcall"]
+    assert data.retry  # The global native-speaker retry setting stays on.
+    calls = []
+
+    async def handler(call):
+        calls.append(call)
+        raise failure("Response lost after the announcement request")
+
+    hass.services.async_register("music_assistant", "play_announcement", handler)
+    native_calls = async_mock_service(hass, "media_player", "play_media")
+    record = await place_call(
+        hass,
+        data,
+        CallRequest(
+            targets=[area], media_id="http://ha.local/long.mp3", kind="recording", seconds=90
+        ),
+    )
+    assert len(calls) == 1 and not native_calls
+    assert not record.ok and record.results[0].attempts == 1
+    assert record.summary()["audible"] is None
+    assert record.evidence[ma]["request_accepted"] is False
+    if failure is TimeoutError:
+        assert "Playback may have started" in record.results[0].error
+        assert "did not retry" in record.results[0].error
+
+
+@pytest.mark.parametrize("seconds", [None, 90, 450])
+async def test_ma_response_budget_covers_long_recordings(hass, house, monkeypatch, seconds):
+    area = ar.async_get(hass).async_create("Long MA Clip").id
+    ma = player(hass, area)
+    await _roomcall(hass, [ma])
+    calls = async_mock_service(hass, "music_assistant", "play_announcement")
+    original_timeout = asyncio.timeout
+    budgets = []
+
+    def observe_timeout(delay):
+        budgets.append(delay)
+        return original_timeout(delay)
+
+    monkeypatch.setattr(core.asyncio, "timeout", observe_timeout)
+    record = await place_call(
+        hass,
+        hass.data["roomcall"],
+        CallRequest(
+            targets=[area], media_id="http://ha.local/long.mp3", kind="recording", seconds=seconds
+        ),
+    )
+    assert record.ok and len(calls) == 1
+    # This is the budget passed to the actual service await, through the call pipeline.
+    assert budgets[0] >= 300
+    if seconds:
+        assert budgets[0] > seconds
+
+
+def test_ma_library_is_not_a_roomcall_setup_requirement():
+    root = Path(__file__).parents[1] / "custom_components/roomcall"
+    manifest = json.loads((root / "manifest.json").read_text())
+    assert "music_assistant" not in [*manifest["dependencies"], *manifest["after_dependencies"]]
+    assert not any("music-assistant" in requirement for requirement in manifest["requirements"])

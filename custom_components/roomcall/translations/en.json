@@ -567,7 +567,8 @@
         "url_container": "This address is in the default Docker bridge range and may be unreachable from speakers.",
         "url_certificate": "The HTTPS certificate failed validation against public certificate authorities.",
         "url_tls_unverified": "The HTTPS connection could not be checked. Certificate trust and speaker access are unknown.",
-        "url_missing": "Not configured"
+        "url_missing": "Not configured",
+        "music_assistant_timeout": "Music Assistant did not finish the request in time. Playback may have started; RoomCall did not retry to avoid a duplicate announcement."
       }
     },
     "audio_processing": {

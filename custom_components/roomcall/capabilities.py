@@ -82,31 +82,43 @@ def deduplicate(
         else getattr(hass.data.get("roomcall"), "prefer_music_assistant", [])
     )
 
-    def rank(entity_id: str, other: str) -> tuple[bool, bool, bool, bool]:
+    def rank(entity_id: str, prefer_ma: bool | None) -> tuple[bool, bool, bool, bool]:
         state = hass.states.get(entity_id)
         return (
             state is not None and state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN),
             can_play(hass, entity_id),
-            (is_music_assistant(hass, entity_id) or is_music_assistant(hass, other))
-            and is_music_assistant(hass, entity_id)
-            == (speaker_area(hass, entity_id) in preferred_areas),
+            prefer_ma is not None and is_music_assistant(hass, entity_id) == prefer_ma,
             supports_announce(hass, entity_id),
         )
 
+    groups: dict[str, list[str]] = {}
     for entity_id in dict.fromkeys(entity_ids):
         entry = registry.async_get(entity_id)
         if entry and entry.disabled_by:
             skipped[entity_id] = "disabled"
             continue
-        key = physical_key(hass, entity_id, aliases)
-        previous = selected.get(key)
-        if previous is None:
-            selected[key] = entity_id
-        elif rank(entity_id, previous) > rank(previous, entity_id):
-            skipped[previous] = f"duplicate:{entity_id}"
-            selected[key] = entity_id
-        else:
-            skipped[entity_id] = f"duplicate:{previous}"
+        groups.setdefault(physical_key(hass, entity_id, aliases), []).append(entity_id)
+    for key, members in groups.items():
+        native = sorted(e for e in members if not is_music_assistant(hass, e))
+        ma = sorted(e for e in members if is_music_assistant(hass, e))
+        prefer_ma = None
+        if native and ma:
+            # Resolve once for the physical output, independent of iteration order.
+            # Native area wins; an MA area is the fallback when native has none.
+            area = next(
+                (area for entity in [*native, *ma] if (area := speaker_area(hass, entity))),
+                None,
+            )
+            prefer_ma = area in preferred_areas
+        for entity_id in members:
+            previous = selected.get(key)
+            if previous is None:
+                selected[key] = entity_id
+            elif rank(entity_id, prefer_ma) > rank(previous, prefer_ma):
+                skipped[previous] = f"duplicate:{entity_id}"
+                selected[key] = entity_id
+            else:
+                skipped[entity_id] = f"duplicate:{previous}"
     return list(selected.values()), skipped
 
 

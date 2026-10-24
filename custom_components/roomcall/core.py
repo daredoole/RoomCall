@@ -45,6 +45,8 @@ _LOGGER = logging.getLogger(__name__)
 
 PLAYABLE = {"audio/mpeg": "mp3", "audio/mp3": "mp3", "audio/wav": "wav", "audio/x-wav": "wav"}
 RETRY_DELAY_SECONDS = 1.0
+# MA can await playback and restoration before its service call returns.
+MA_ANNOUNCEMENT_TIMEOUT_SECONDS = 300.0
 
 
 class TranscodeError(Exception):
@@ -355,6 +357,8 @@ async def _play_once(
     entity_id: str,
     media_id: str,
     volume: float | None,
+    *,
+    seconds: float | None = None,
 ) -> None:
     from .playback import is_music_assistant
 
@@ -362,7 +366,8 @@ async def _play_once(
         announcement = {"entity_id": entity_id, "url": media_id, "use_pre_announce": False}
         if volume is not None:
             announcement["announce_volume"] = round(volume * 100)
-        async with asyncio.timeout(30):
+        timeout = max(MA_ANNOUNCEMENT_TIMEOUT_SECONDS, (seconds or 0) + 60)
+        async with asyncio.timeout(timeout):
             await hass.services.async_call(
                 "music_assistant", "play_announcement", announcement, blocking=True
             )
@@ -488,7 +493,7 @@ async def _play_one(
         if on_dispatch:
             on_dispatch()
         dispatched = True
-        result = await _attempt(hass, entity_id, media_id, volume, retry)
+        result = await _attempt(hass, entity_id, media_id, volume, retry, seconds=seconds)
         return result
     except Problem as err:
         from .localization import text
@@ -519,18 +524,29 @@ async def _attempt(
     media_id: str,
     volume: float | None,
     retry: bool,
+    *,
+    seconds: float | None = None,
 ) -> Delivery:
+    from .localization import text
+    from .playback import is_music_assistant
+
+    ma = is_music_assistant(hass, entity_id)
     started = time.perf_counter()
     attempts = 0
     error: str | None = None
-    for attempt in range(2 if retry else 1):
+    # An MA error may arrive after audio has already played. Never replay it automatically.
+    for attempt in range(2 if retry and not ma else 1):
         if attempt:
             await asyncio.sleep(RETRY_DELAY_SECONDS)
         attempts += 1
         try:
-            await _play_once(hass, entity_id, media_id, volume)
+            await _play_once(hass, entity_id, media_id, volume, seconds=seconds)
         except Exception as err:
-            error = str(err) or type(err).__name__
+            error = (
+                text(hass, "music_assistant_timeout")
+                if ma and isinstance(err, TimeoutError)
+                else str(err) or type(err).__name__
+            )
             _LOGGER.warning("RoomCall could not play on %s (try %d): %s", entity_id, attempts, err)
             continue
         error = None

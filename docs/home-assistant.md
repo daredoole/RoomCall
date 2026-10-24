@@ -122,7 +122,24 @@ aliases**, giving just those two entities the same value:
 Do not group distinct speakers under one alias. Selecting two uncertain copies without an
 alias can still play both; the room preference cannot safely infer that they are one device.
 A missing MA announcement service is reported as a failed request, without falling back to
-a second player or claiming audible delivery.
+a second player or claiming audible delivery. MA is optional; RoomCall does not load its
+integration or install its client library for households that do not use it.
+
+MA can keep the HA service call open through announcement playback and restoration. RoomCall
+allows at least five minutes, extending that budget for a longer known clip. An existing job
+expiry can still end the wait sooner. MA requests are not automatically retried, even when the
+global native-speaker retry setting is on: an error or timeout can arrive after playback has
+started. A timeout is reported as an unknown playback outcome, without replaying the clip.
+The card’s final request result may arrive after MA has finished the announcement.
+
+For a proven pair, the native entry’s area determines the room preference when available;
+an MA area is the fallback. Put both entries in the same HA area for room-targeted calls,
+since ordinary room routing still follows the configured entity/device areas.
+
+**Live streaming to MA players is unverified.** Use `live: false` in the card configuration
+to record the whole voice message before sending it. The tests cover recorded clips, not a
+real MA server consuming a growing live URL. Provider-specific ducking, group behavior and
+restoration still need a listening test; see [MA’s announcement documentation](https://www.music-assistant.io/integration/announcements/).
 
 ## 3. Add the push-to-talk card
 
