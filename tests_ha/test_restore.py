@@ -32,6 +32,9 @@ def _player(
         identifiers={(platform, object_id)},
         manufacturer=maker,
         model=model,
+        serial_number=attrs.pop(
+            "serial_number", f"{maker}-{model.removeprefix(maker + ' ')}-{area_id}"
+        ),
     )
     registry = er.async_get(hass)
     ent = registry.async_get_or_create(
@@ -59,10 +62,38 @@ def _record_services(hass: HomeAssistant, on_play=None) -> list[ServiceCall]:
 
     async def handler(call: ServiceCall) -> None:
         calls.append(call)
+        entity = call.data["entity_id"]
+        state = hass.states.get(entity)
+        if state is not None:
+            attrs = dict(state.attributes)
+            if call.service == "play_media" and call.data.get("media_content_type") == "app":
+                attrs["app_id"] = call.data["media_content_id"]
+                hass.states.async_set(entity, state.state, attrs)
+            values = {
+                "select_source": ("source", "source"),
+                "volume_set": ("volume_level", "volume_level"),
+                "volume_mute": ("is_volume_muted", "is_volume_muted"),
+            }
+            if call.service in values:
+                field, key = values[call.service]
+                attrs[field] = call.data[key]
+                hass.states.async_set(entity, state.state, attrs)
+            if call.service in ("turn_on", "turn_off"):
+                hass.states.async_set(entity, "on" if call.service == "turn_on" else "off", attrs)
         if call.service == "play_media" and on_play:
             on_play(call)
 
-    for service in ("play_media", "select_source", "volume_set", "turn_off"):
+    for service in (
+        "play_media",
+        "select_source",
+        "volume_set",
+        "volume_mute",
+        "turn_on",
+        "turn_off",
+        "media_seek",
+        "media_play",
+        "media_pause",
+    ):
         hass.services.async_register("media_player", service, handler)
     return calls
 
@@ -122,8 +153,11 @@ async def test_denon_goes_back_to_the_tv_input(hass: HomeAssistant, house):
 
     calls = _record_services(hass, play)
     await _broadcast(hass, living)
-    restores = [(c.service, c.data["entity_id"], c.data.get("source")) for c in calls[1:]]
-    assert restores == [("select_source", avr, "Living Room TV")]
+    assert [(c.service, c.data["entity_id"], c.data.get("source")) for c in calls] == [
+        ("select_source", avr, "HEOS Music"),
+        ("play_media", heos, None),
+        ("select_source", avr, "Living Room TV"),
+    ]
 
 
 async def test_receiver_that_was_off_is_turned_back_off(hass: HomeAssistant, house):
@@ -146,14 +180,22 @@ async def test_receiver_that_was_off_is_turned_back_off(hass: HomeAssistant, hou
         "Denon",
         "Denon AVR-X1800H",
         "off",
-        supported_features=F.SELECT_SOURCE | F.VOLUME_SET | F.TURN_OFF,
+        supported_features=F.SELECT_SOURCE | F.VOLUME_SET | F.TURN_OFF | F.TURN_ON,
+        source="Living Room TV",
+        source_list=["HEOS Music", "Living Room TV"],
     )
     await _roomcall(hass, [heos])
     calls = _record_services(
         hass, lambda call: hass.states.async_set(avr, "on", hass.states.get(avr).attributes)
     )
     await _broadcast(hass, living)
-    assert [(c.service, c.data["entity_id"]) for c in calls[1:]] == [("turn_off", avr)]
+    assert [(c.service, c.data["entity_id"]) for c in calls] == [
+        ("turn_on", avr),
+        ("select_source", avr),
+        ("play_media", heos),
+        ("select_source", avr),
+        ("turn_off", avr),
+    ]
 
 
 async def test_onn_box_reopens_the_app_that_was_playing(hass: HomeAssistant, house):

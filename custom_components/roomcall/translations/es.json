@@ -119,13 +119,15 @@
               "doorbell_rooms": "Salas donde suena",
               "speech_profiles": "Perfiles de voz",
               "household_profiles": "Perfiles del hogar",
-              "agent_policies": "Políticas de cuentas de agentes"
+              "agent_policies": "Políticas de cuentas de agentes",
+              "playback_routes": "Rutas de dispositivos de reproducción"
             },
             "data_description": {
               "talk_back": "Cuando alguien habla a una sala desde otra, un satélite de Assist en esa sala (Atom Echo, ESP32-S3, Home Assistant Voice) escucha una respuesta y la sala de origen la oye. Las respuestas se transcriben y se dicen con la voz configurada.",
               "doorbell_entity": "El botón o evento del timbre. Cuando suena, RoomCall dice quién está en la puerta, avisa a los teléfonos con un botón Contestar y muestra un aviso en las tarjetas de RoomCall.",
               "doorbell_camera": "Contestar abre la vista en directo de esta cámara, donde se puede hablar si la cámara lo admite.",
-              "doorbell_rooms": "Déjalo vacío para que suene en todas partes."
+              "doorbell_rooms": "Déjalo vacío para que suene en todas partes.",
+              "playback_routes": "Asigna una entidad de reproducción a un controlador y una fuente explícitos para su salida de audio. Las conexiones HDMI no se deducen de los nombres de las habitaciones. La restauración y la reanudación de aplicaciones dependen del dispositivo."
             }
           }
         }
@@ -133,7 +135,7 @@
     },
     "error": {
       "no_speakers": "Elige al menos un altavoz.",
-      "invalid_settings": "Revisa los alias, las preferencias y los adaptadores."
+      "invalid_settings": "Comprueba los alias, las preferencias, los adaptadores y las rutas de reproducción."
     }
   },
   "selector": {
@@ -194,7 +196,7 @@
         "translation_failed": "La traducción falló. No se envió el mensaje original.",
         "mixed_languages": "Envía mensajes separados para destinatarios con idiomas distintos.",
         "voicemail_disabled": "Activa primero el buzón de voz en RoomCall.",
-        "invalid_settings": "Revisa los alias, las preferencias y los adaptadores.",
+        "invalid_settings": "Comprueba los alias, las preferencias, los adaptadores y las rutas de reproducción.",
         "accepted": "Solicitudes de reproducción aceptadas: {count}. Audio sin confirmar.",
         "failed": "Falló la reproducción en {speakers}.",
         "partial": "{accepted} solicitudes aceptadas. Fallaron: {speakers}.",
@@ -532,7 +534,17 @@
         "ios_color_teal": "Verde azulado",
         "ios_color_coral": "Coral",
         "ios_color_pink": "Rosa",
-        "setup_speech_rate": "Velocidad de habla"
+        "setup_speech_rate": "Velocidad de habla",
+        "playback_prepare_failed": "No se pudo preparar el receptor o la entrada del televisor. Revisa la alimentación, la fuente, los permisos de los controles asociados y la conexión.",
+        "playback_controller_ambiguous": "Varios controles de receptor coinciden con este reproductor. Configura una ruta de reproducción explícita antes de enviar.",
+        "preview_interruption": "{speaker}: usar {controller} → {source}.",
+        "preview_resume": "{speaker}: restaurar el estado compatible del contenido o la aplicación cuando sea posible; no se garantiza recuperar la sesión exacta.",
+        "preview_restore_disabled": "{speaker}: la restauración automática está desactivada.",
+        "restore_pending": "Restauración pendiente.",
+        "restore_requests_completed": "Solicitudes de restauración completadas; la sesión se reanuda si es posible.",
+        "restore_failed": "La restauración falló. Revisa el dispositivo y sus permisos.",
+        "restore_skipped_external_change_or_permission": "Restauración omitida tras un cambio externo o de permisos.",
+        "restore_disabled": "La restauración automática está desactivada."
       }
     },
     "audio_processing": {

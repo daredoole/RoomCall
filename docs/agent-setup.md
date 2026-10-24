@@ -1,6 +1,6 @@
 # Guided setup for people and agents
 
-RoomCall 0.9 lets an authenticated Home Assistant administrator discover speakers,
+RoomCall lets an authenticated Home Assistant administrator discover speakers,
 review a persistent configuration plan, apply it, test audio, resume later, and
 undo it. The card and `roomcall__setup` tool use the same backend. Ordinary message
 tools keep their existing entity permissions and assistant exposure checks.
@@ -76,6 +76,18 @@ and explicitly confirmed undo. It uses native controls and HA theme colors.
 
 ![Guided setup on a phone](assets/ha-guided-setup.png)
 
+## Receiver and TV routes
+
+Discovery reports audio-URL eligibility separately from app/remote controls. Use
+Cast for Android TV audio and paired Android TV Remote for supported wake/app
+restoration. Check `endpoint.interruption` and `catalog.playback_routes` before
+planning an explicit receiver/HDMI route under `communication.playback_routes`.
+Controllers need their own HA permissions and assistant exposure. The shared setup
+plan validates these settings without playing audio; review the recipient preview
+and run a sound test after applying. Restoration observations are separate from
+request acceptance and do not guarantee recovery of a provider-owned session.
+See [routes and limits](communication.md#playback-device-routes).
+
 ## Announcement administration
 
 Use `roomcall__announcements`, restricted to authenticated administrators:
@@ -103,7 +115,8 @@ matching playback reports, unavailable/ambiguous TTS, and missing/HTTPS media UR
 URL findings link to HA's network settings; they do not prove network reachability.
 
 An alternative route is proposed only when an available eligible entity shares a
-registry device, stable MAC, or explicitly configured physical-speaker alias. Model
+registry device, stable MAC, verified manufacturer/model/serial identity, or explicitly
+configured physical-speaker alias. Model
 or room similarity is insufficient. To review one, call
 `{"action":"plan_route","speaker":"media_player.old","alternative":"media_player.alternate"}`.
 The returned setup plan must still be reviewed, applied, tested and verified.

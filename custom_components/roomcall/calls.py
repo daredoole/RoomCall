@@ -70,6 +70,7 @@ class CallRequest:
     audio_processing: str = "off"
     require_ack: bool = False
     notify: bool = True  # False when the caller sends its own phone notification
+    assistant: str | None = None
 
 
 @dataclass(slots=True)
@@ -157,9 +158,15 @@ async def place_call(
     prepared = prepared or prepare_call(hass, data, request)
     targets, routing = prepared.targets, prepared.routing
     from .communication import permitted
+    from .playback import controlled_entities
 
-    for entity_id in routing.entity_ids:
-        if not await permitted(hass, entity_id, Context(user_id=request.caller_user_id)):
+    controls = {
+        other for entity in routing.entity_ids for other in controlled_entities(hass, entity)
+    }
+    for entity_id in controls:
+        if not await permitted(
+            hass, entity_id, Context(user_id=request.caller_user_id), request.assistant
+        ):
             raise CallError("forbidden", 403, "forbidden")
     data.agent_policies.authorize(request.caller_user_id, "send")
     if request.kind == "talk":
@@ -202,6 +209,10 @@ async def place_call(
         media_ids=media_ids,
         deadline=request.deadline,
         on_dispatch=request.on_dispatch,
+        assistant=request.assistant,
+        audio_seconds=(lambda live=request.live: len(live.pcm) / 32000)
+        if request.live is not None
+        else None,
     )
     audio = request.audio
     if request.live is not None:

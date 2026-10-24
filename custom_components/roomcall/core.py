@@ -392,6 +392,10 @@ async def _play_one(
     deadline: float | None = None,
     on_dispatch: Callable[[], None] | None = None,
     priority: str = PRIORITY_NORMAL,
+    owner: str | None = None,
+    assistant: str | None = None,
+    record: CallRecord | None = None,
+    audio_seconds: Callable[[], float] | None = None,
 ) -> Delivery:
     if delay:
         await asyncio.sleep(delay)
@@ -431,22 +435,70 @@ async def _play_one(
             code = "dnd_blocked" if runtime.dnd else "quiet_hours_blocked"
             return Delivery(entity_id, friendly(hass, entity_id), False, 0, code, 0, code)
     guard = None
-    if restore and not supports_announce(hass, entity_id):
-        from .restore import Guard  # imported here to avoid an import cycle
+    dispatched = False
 
-        guard = Guard(hass, entity_id)
-        guard.start()
+    def authorize() -> None:
+        if runtime:
+            runtime.agent_policies.authorize(owner, "send")
+            runtime.agent_policies.playback(
+                hass, owner, guard.entities if guard else [entity_id], priority, volume
+            )
+
     try:
+        from homeassistant.core import Context
+
+        from .communication import permitted
+        from .errors import Problem
+        from .playback import route
+
+        if not await permitted(hass, entity_id, Context(user_id=owner), assistant):
+            raise Problem("forbidden")
+        if deadline is not None and hass.loop.time() >= deadline:
+            raise Problem("expired")
+        authorize()
+
+        if (restore and not supports_announce(hass, entity_id)) or route(hass, entity_id):
+            from .restore import Guard
+
+            guard = Guard(
+                hass,
+                entity_id,
+                owner=owner,
+                assistant=assistant,
+                restore_enabled=restore,
+                evidence=record.evidence.setdefault(entity_id, {}) if record else None,
+                call_id=record.call_id if record else None,
+            )
+            guard.start()
+            await guard.prepare(media_id, volume)
+        authorize()
+        if deadline is not None and hass.loop.time() >= deadline:
+            raise Problem("expired")
         if on_dispatch:
             on_dispatch()
+        dispatched = True
         result = await _attempt(hass, entity_id, media_id, volume, retry)
         return result
+    except Problem as err:
+        from .localization import text
+
+        return Delivery(
+            entity_id, friendly(hass, entity_id), False, 0, text(hass, err.code), 0, err.code
+        )
     finally:
-        if lock is not None:
-            scheduler.finish(lock, entity_id, guard, seconds, until)
+        if not dispatched:
+            try:
+                if guard is not None:
+                    await guard.abort()
+            finally:
+                if lock is not None:
+                    lock.release()
+        elif lock is not None:
+            scheduler.finish(lock, entity_id, guard, seconds, until, audio_seconds=audio_seconds)
         elif guard is not None:
             hass.async_create_background_task(
-                guard.finish(seconds, until), f"roomcall restore {entity_id}"
+                guard.finish(seconds, until, audio_seconds=audio_seconds),
+                f"roomcall restore {entity_id}",
             )
 
 
@@ -501,6 +553,8 @@ async def fan_out(
     media_ids: dict[str, str] | None = None,
     deadline: float | None = None,
     on_dispatch: Callable[[], None] | None = None,
+    assistant: str | None = None,
+    audio_seconds: Callable[[], float] | None = None,
 ) -> CallRecord:
     """Play on every speaker, starting each ``stagger`` seconds after the previous one.
 
@@ -522,6 +576,10 @@ async def fan_out(
                 deadline=deadline,
                 on_dispatch=on_dispatch,
                 priority=record.priority if record else PRIORITY_NORMAL,
+                owner=record.owner if record else None,
+                assistant=assistant,
+                record=record,
+                audio_seconds=audio_seconds,
             )
             for i, e in enumerate(entity_ids)
         )

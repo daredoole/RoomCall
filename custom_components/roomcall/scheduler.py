@@ -19,12 +19,15 @@ async def wait_for_playback(
     entity_id: str,
     seconds: float | None,
     until: Callable[[], Awaitable[None]] | None,
+    audio_seconds: Callable[[], float] | None = None,
 ) -> None:
     from .restore import LIVE_TAIL_SECONDS, wait_until_done
 
     if until is not None:
         await until()
         await asyncio.sleep(LIVE_TAIL_SECONDS)
+        if audio_seconds is not None:
+            seconds = audio_seconds()
     await wait_until_done(hass, entity_id, seconds)
 
 
@@ -56,13 +59,18 @@ class Scheduler:
         guard: Guard | None,
         seconds: float | None,
         until: Callable[[], Awaitable[None]] | None,
+        *,
+        audio_seconds: Callable[[], float] | None = None,
     ) -> None:
         async def release() -> None:
             try:
                 if guard is not None:
-                    await guard.finish(seconds, until)
+                    await guard.finish(seconds, until, audio_seconds=audio_seconds)
                 else:
-                    await wait_for_playback(self.hass, entity_id, seconds, until)
+                    if audio_seconds is None:
+                        await wait_for_playback(self.hass, entity_id, seconds, until)
+                    else:
+                        await wait_for_playback(self.hass, entity_id, seconds, until, audio_seconds)
             finally:
                 lock.release()
 

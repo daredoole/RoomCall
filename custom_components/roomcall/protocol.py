@@ -54,6 +54,8 @@ def next_actions(code: str) -> list[dict[str, Any]]:
         "dnd_blocked": ("diagnose", {}),
         "quiet_hours_blocked": ("diagnose", {}),
         "playback_failed": ("doctor", {}),
+        "playback_prepare_failed": ("doctor", {}),
+        "playback_controller_ambiguous": ("setup", {"action": "discover"}),
         "provider_failed": ("doctor", {}),
         "tts_preparation_failed": ("diagnose", {}),
     }.get(code, ("catalog", {}))
@@ -83,6 +85,28 @@ def catalog(hass: HomeAssistant) -> dict[str, Any]:
             for name, schema in SCHEMAS.items()
         },
         "setup_sequence": ["discover", "plan", "apply", "test", "confirm", "verify"],
+        "playback_routes": {
+            "settings_path": ["communication", "playback_routes"],
+            "max_entries": 32,
+            "key_pattern": r"^media_player\.[a-z0-9_]+$",
+            "value_schema": {
+                "type": "object",
+                "required": ["controller", "source"],
+                "additionalProperties": False,
+                "properties": {
+                    "controller": {"type": "string", "pattern": r"^media_player\.[a-z0-9_]+$"},
+                    "source": {"type": "string", "minLength": 1, "maxLength": 100},
+                },
+            },
+            "identity_evidence": [
+                "registry_device",
+                "mac",
+                "manufacturer_model_serial",
+                "explicit_alias",
+            ],
+            "room_name_is_identity": False,
+            "resume_semantics": "best_effort_not_exact_session",
+        },
         "shortcut_exports": {
             "recommended": {
                 "app": "Home Assistant",

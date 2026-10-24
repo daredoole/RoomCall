@@ -189,16 +189,45 @@ state after the playback lease:
 | Receiver off | Turned back off |
 | TV box in Netflix, YouTube… | The same app reopened (where you were in it is up to the app) |
 
-RoomCall finds the receiver's input and the box's foreground app through the other media players
-for the same device model in the same room: the receiver's `denonavr` entity and the box's
-**Android TV Remote** entity. Add both integrations for the best result, and pick the HEOS entity
-(receiver) or Cast entity (TV box) as the RoomCall speaker.
+RoomCall pairs controls using a shared registry device, MAC address, or a verified
+manufacturer/model/serial identity, or explicit physical-speaker aliases. A matching
+model and room alone are insufficient. For a receiver, choose its **HEOS** entity
+as the speaker and add **Denon AVR Network Receivers** for power/input control.
+For Android/Google TV, choose its **Cast** entity and add **Android TV Remote** for
+wake-up, app reopening and supported play/pause commands. Remote-control entities
+are not advertised as audio-URL players merely because they can launch apps.
+
+Before playback, RoomCall wakes a verified control when needed, selects the known
+input (HEOS Music for a paired HEOS receiver), and confirms the reported state.
+Preparation failure stops dispatch and attempts to undo the temporary changes.
+Power, input, volume and mute are saved for restoration. Attributes hidden in
+standby are captured after wake and before overrides. Lost connectivity can prevent
+restoration; its request outcome is separate from playback acceptance/audibility.
+
+**Preview recipients** identifies the controller/source and the restoration
+limitations. The delivery timeline reports pending, completed, failed or skipped
+restoration separately. A changed Cast session, externally changed receiver input,
+or revoked permission prevents RoomCall from overwriting that newer state.
+
+Plain replayable Cast media can be loaded at its last reported position where
+supported, preserving paused/playing state. Android apps can be reopened and sent
+supported transport commands. DRM, expired URLs and provider-owned sessions may
+prevent full recovery; reopening Netflix does not guarantee the same episode or
+timestamp. Recognizable RoomCall/TTS URLs are not resumed as background media.
 
 !!! tip "Receiver plus TV box in one room"
-    If the TV box plays through the receiver, add only the receiver as a speaker. The call then
-    interrupts the sound for a few seconds while the picture keeps going.
+    If a TV box plays through the receiver, select one audio route for that output.
+    HEOS uses the receiver’s network input; changing that input may also affect video.
+    To interrupt the box itself, use its Cast endpoint, paired Android controls and an
+    explicit receiver/HDMI route. Restoring the receiver input alone does not pause
+    or rewind a program running on another device.
 
 Turn this off under Configure → Delivery → *Put speakers back after a call*.
+An explicit/verified receiver route can still prepare its input when restoration
+is disabled; it then leaves that input selected. HDMI wiring requires an explicit
+[playback route](communication.md#playback-device-routes); it is not inferred from
+room names. Selecting multiple entities sharing the same output does not send
+duplicate audio, and calls using that output share a playback lease.
 
 ## Do Not Disturb and quiet hours
 

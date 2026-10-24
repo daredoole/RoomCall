@@ -119,13 +119,15 @@
               "doorbell_rooms": "Pièces où sonner",
               "speech_profiles": "Profils vocaux",
               "household_profiles": "Profils du foyer",
-              "agent_policies": "Règles des comptes agents"
+              "agent_policies": "Règles des comptes agents",
+              "playback_routes": "Itinéraires des appareils de lecture"
             },
             "data_description": {
               "talk_back": "Quand quelqu'un parle à une pièce depuis une autre, un satellite Assist de cette pièce (Atom Echo, ESP32-S3, Home Assistant Voice) écoute une réponse, que la pièce de l'appelant entend. Les réponses sont transcrites puis dites avec la voix choisie.",
               "doorbell_entity": "Le bouton ou l'événement de la sonnette. Quand elle sonne, RoomCall annonce qui est à la porte, prévient les téléphones avec un bouton Répondre et affiche un bandeau sur les cartes RoomCall.",
               "doorbell_camera": "Répondre ouvre le direct de cette caméra, où l'on peut parler si la caméra le permet.",
-              "doorbell_rooms": "Laisser vide pour sonner partout."
+              "doorbell_rooms": "Laisser vide pour sonner partout.",
+              "playback_routes": "Associez une entité de lecture à un contrôleur et une source explicites pour sa sortie audio. Les connexions HDMI ne sont pas déduites des noms de pièces. La restauration et la reprise des applications dépendent de l’appareil."
             }
           }
         }
@@ -133,7 +135,7 @@
     },
     "error": {
       "no_speakers": "Choisissez au moins une enceinte.",
-      "invalid_settings": "Vérifiez les alias, préférences et adaptateurs."
+      "invalid_settings": "Vérifiez les alias, les préférences, les adaptateurs et les itinéraires de lecture."
     }
   },
   "selector": {
@@ -194,7 +196,7 @@
         "translation_failed": "La traduction a échoué. Le message original n’a pas été envoyé.",
         "mixed_languages": "Envoyez des messages distincts aux destinataires de langues différentes.",
         "voicemail_disabled": "Activez d’abord la messagerie vocale dans RoomCall.",
-        "invalid_settings": "Vérifiez les alias, préférences et adaptateurs.",
+        "invalid_settings": "Vérifiez les alias, les préférences, les adaptateurs et les itinéraires de lecture.",
         "accepted": "Demandes de lecture acceptées : {count}. Audio non confirmé.",
         "failed": "La demande de lecture a échoué pour {speakers}.",
         "partial": "{accepted} demandes acceptées. Échec : {speakers}.",
@@ -532,7 +534,17 @@
         "ios_color_teal": "Bleu canard",
         "ios_color_coral": "Corail",
         "ios_color_pink": "Rose",
-        "setup_speech_rate": "Vitesse de parole"
+        "setup_speech_rate": "Vitesse de parole",
+        "playback_prepare_failed": "Impossible de préparer l’amplificateur ou l’entrée du téléviseur. Vérifiez l’alimentation, la source, les autorisations des commandes associées et la connexion.",
+        "playback_controller_ambiguous": "Plusieurs commandes d’amplificateur correspondent à ce lecteur. Configurez un itinéraire de lecture explicite avant l’envoi.",
+        "preview_interruption": "{speaker} : utiliser {controller} → {source}.",
+        "preview_resume": "{speaker} : restaurer si possible l’état pris en charge du média ou de l’application ; la session exacte n’est pas garantie.",
+        "preview_restore_disabled": "{speaker} : la restauration automatique est désactivée.",
+        "restore_pending": "Restauration en attente.",
+        "restore_requests_completed": "Demandes de restauration terminées ; reprise de session si possible.",
+        "restore_failed": "La restauration a échoué. Vérifiez l’appareil et ses autorisations.",
+        "restore_skipped_external_change_or_permission": "Restauration ignorée après un changement externe ou d’autorisations.",
+        "restore_disabled": "La restauration automatique est désactivée."
       }
     },
     "audio_processing": {

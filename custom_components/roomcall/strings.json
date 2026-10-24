@@ -119,13 +119,15 @@
               "doorbell_rooms": "Rooms to ring",
               "speech_profiles": "Speech profiles",
               "household_profiles": "Household profiles",
-              "agent_policies": "Agent account policies"
+              "agent_policies": "Agent account policies",
+              "playback_routes": "Playback device routes"
             },
             "data_description": {
               "talk_back": "After someone talks to a room from another room, an Assist satellite in that room (Atom Echo, ESP32-S3, Home Assistant Voice) listens for a reply and the caller's room hears it. Replies are transcribed, then spoken in your voice of choice.",
               "doorbell_entity": "The doorbell button or event. When it rings, RoomCall says who is at the door, notifies phones with an Answer button, and shows a banner on RoomCall cards.",
               "doorbell_camera": "Answer opens this camera's live view, where two-way talk works when the camera supports it.",
-              "doorbell_rooms": "Leave empty to ring everywhere."
+              "doorbell_rooms": "Leave empty to ring everywhere.",
+              "playback_routes": "Map a playback entity to an explicit controller and source for its audio output. HDMI connections are not inferred from room names. Restoration and app resumption depend on device support."
             }
           }
         }
@@ -133,7 +135,7 @@
     },
     "error": {
       "no_speakers": "Select at least one speaker.",
-      "invalid_settings": "Check aliases, preferences, and adapter settings."
+      "invalid_settings": "Check aliases, preferences, adapters and playback routes."
     }
   },
   "selector": {
@@ -194,7 +196,7 @@
         "translation_failed": "Translation failed. The original message was not sent.",
         "mixed_languages": "Send separate messages for recipients with different languages.",
         "voicemail_disabled": "Enable voicemail in RoomCall settings first.",
-        "invalid_settings": "Check aliases, preferences, and adapter settings.",
+        "invalid_settings": "Check aliases, preferences, adapters and playback routes.",
         "accepted": "Playback requests accepted: {count}. Audible playback is unconfirmed.",
         "failed": "Playback request failed for {speakers}.",
         "partial": "{accepted} playback requests accepted. Failed: {speakers}.",
@@ -532,7 +534,17 @@
         "ios_color_teal": "Teal",
         "ios_color_coral": "Coral",
         "ios_color_pink": "Pink",
-        "setup_speech_rate": "Speaking speed"
+        "setup_speech_rate": "Speaking speed",
+        "playback_prepare_failed": "Could not prepare the receiver or TV input. Check power, source, companion permissions and connectivity.",
+        "playback_controller_ambiguous": "Several receiver controls match this player. Configure an explicit playback route before sending.",
+        "preview_interruption": "{speaker}: use {controller} → {source}.",
+        "preview_resume": "{speaker}: restore supported media/app state where possible; exact session recovery is not guaranteed.",
+        "preview_restore_disabled": "{speaker}: automatic restoration is disabled.",
+        "restore_pending": "Restoration pending.",
+        "restore_requests_completed": "Restore requests completed; session resumption is best effort.",
+        "restore_failed": "Restoration failed. Check the device and its permissions.",
+        "restore_skipped_external_change_or_permission": "Restoration skipped after an external change or permission change.",
+        "restore_disabled": "Automatic restoration is disabled."
       }
     },
     "audio_processing": {

@@ -273,6 +273,9 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                             "aliases", default=communication.get("aliases", {})
                         ): selector.ObjectSelector(),
                         vol.Optional(
+                            "playback_routes", default=communication.get("playback_routes", {})
+                        ): selector.ObjectSelector(),
+                        vol.Optional(
                             "preferences", default=communication.get("preferences", {})
                         ): selector.ObjectSelector(),
                         vol.Optional(
@@ -373,6 +376,17 @@ def validate_communication(values: dict[str, Any]) -> None:
                 )
             },
             vol.Optional("aliases"): {cv_entity: vol.All(str, vol.Length(min=1, max=80))},
+            vol.Optional("playback_routes"): vol.All(
+                {
+                    cv_entity: vol.Schema(
+                        {
+                            vol.Required("controller"): cv_entity,
+                            vol.Required("source"): vol.All(str, vol.Length(min=1, max=100)),
+                        }
+                    )
+                },
+                vol.Length(max=32),
+            ),
             vol.Optional("preferences"): {
                 cv_person: vol.Schema(
                     {

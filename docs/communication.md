@@ -211,8 +211,8 @@ satellite's Assist pipeline and played in the caller's room as
 **Settings → Devices & services → RoomCall → Configure → Communication** includes:
 
 - **Physical speaker aliases:** an object mapping media-player IDs to a common
-  physical ID. Automatic deduplication uses shared registry devices or MAC
-  addresses; it never merges speakers just because their model/room matches.
+  physical ID. Automatic deduplication uses shared registry devices, MAC
+  addresses or verified manufacturer/model/serial identities; it never merges speakers just because their model/room matches.
   Explicitly give separate aliases to independent zones on a shared receiver.
 - **Person preferences:** objects with optional `room` and `language`. A configured
   room is an explicit fallback when fresh measured room presence is unavailable.
@@ -251,6 +251,67 @@ aliases:
 
 A person's preferred language selects the TTS language; translation is separately
 opted in. Send separate requests for recipients with different preferred languages.
+
+## Playback device routes
+
+The [recipient preview](assets/ha-playback-preview.png) shows the controller/input
+that will be interrupted. The [delivery timeline](assets/ha-playback-restoration.png)
+reports restoration separately from acceptance.
+
+
+Receiver/TV interruption uses a playback endpoint plus its verified controls.
+For Android/Google TV, select the Cast media player for audio and add Android TV
+Remote for wake-up and app/transport control. For a HEOS receiver, add the native
+Denon AVR integration for main-zone power/input control. Device names or room
+membership alone do not prove those controls belong together.
+
+RoomCall automatically pairs a unique HEOS/native receiver using shared registry
+identity, MAC, or manufacturer/model/serial evidence. It selects **HEOS Music**
+before dispatch instead of assuming a successfully fetched URL is audible.
+Disabled controls, secondary receiver zones and unrelated matching models are not
+automatically used. Placeholder serials are not identity evidence.
+
+For a TV/box feeding an AVR over HDMI, configure **Communication → Playback device
+routes** with the exact controller and source from its HA state. Enter this
+object as the value of **Playback device routes**:
+
+```yaml
+media_player.living_room_cast:
+  controller: media_player.living_room_receiver
+  source: HDMI 1
+```
+
+For an agent setup plan, nest this object under `communication.playback_routes`.
+This is an integration option, not a `configuration.yaml` entry.
+Agents discover the item schema in `catalog.playback_routes`, and apply it through
+the shared setup plan/options flow. The endpoint's `interruption` metadata reports
+the controller, source options, affected entity IDs and recovery capabilities.
+Previews report the same plan without switching inputs or playing audio.
+
+Controller permissions, scoped-account restrictions and assistant exposure apply
+in addition to the playback endpoint's permissions. All affected entities must be
+permitted/exposed. Discovery hides inaccessible companion details. Sources are
+selected by exact name; ambiguous or unconfirmed preparation fails without
+dispatching the announcement. Partially applied preparation is rolled back where
+possible; loss of connectivity or permissions can prevent restoration.
+
+Routes sharing an output are deduplicated and serialized through playback and
+restoration. Before an override, RoomCall captures supported input, volume, mute,
+power, app and media state. Standby-hidden values are captured after wake and
+before changing them. Restoration remains best effort: plain replayable Cast URLs
+can resume from their last reported position when supported, while Android apps
+can be reopened and sent supported play/pause requests. DRM/expired streams and
+provider-owned sessions may not recover the exact program or timestamp.
+Recognizable RoomCall/TTS URLs are not replayed as background media, and the Cast
+receiver app itself is not resumed as a substitute for a missing original session.
+
+The ordinary job result still means request acceptance. Independent
+`evidence[endpoint].interruption.restore` reports `pending`, `requests_completed`,
+`failed`, `disabled` or `skipped_external_change_or_permission`; none proves sound
+or exact session recovery. Changes to a Cast session, receiver input/power, or
+permissions stop restoration from overwriting the newer state. The card shows
+these observations separately, and owned-job subscribers receive updates.
+Durable jobs save late restoration observations without changing replay rules.
 
 ## SIP and doorbell adapters
 

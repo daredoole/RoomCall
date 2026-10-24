@@ -299,6 +299,80 @@ def check_tasks(browser, errors) -> None:
         context.close()
 
 
+def check_playback_restore(browser, errors) -> None:
+    """Acceptance stays separate from late restoration; failed restore never resends."""
+    for width in (240, 390, 900):
+        context = browser.new_context(viewport={"width": width, "height": 900})
+        page = context.new_page()
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        open_card(page, "mobile", "dark")
+        page.evaluate("""() => {
+          const card = document.querySelector('roomcall-card');
+          const original = card._hass.callApi.bind(card._hass);
+          card._hass.states['media_player.demo_receiver'] = {
+            state:'on',attributes:{friendly_name:'Living Room Receiver'}
+          };
+          window.qaRestoreStage = 'pending';
+          window.qaRestoreEnabled = true;
+          window.qaRestoreJobs = new Map();
+          window.qaRestoreStatusCalls = 0;
+          card._hass.callApi = async (method, path, body) => {
+            const result = await original(method, path, body);
+            if (body?.operation === 'preview') result.interruptions = Object.fromEntries(
+              result.endpoints.map(id => [id, {
+              controller:'media_player.demo_receiver',
+              source:'Living Room TV (shared HDMI audio path)',
+              restore_enabled:qaRestoreEnabled,android_app_reopen:true,media_resume:true
+            }]));
+            if (body?.operation === 'send') {
+              result.result = {delivered:['Living Room'],failed:{},evidence:{
+                'media_player.living_room':{
+                request_accepted:true,interruption:{prepared:true,restore:qaRestoreStage}
+              }}};
+              qaRestoreJobs.set(result.id,result);
+            }
+            if (body?.operation === 'status' && qaRestoreJobs.has(body.request.id)) {
+              qaRestoreStatusCalls++;
+              const job = qaRestoreJobs.get(body.request.id);
+              job.result.evidence['media_player.living_room'].interruption.restore = qaRestoreStage;
+              return job;
+            }
+            return result;
+          };
+        }""")
+        card = page.locator("roomcall-card")
+        card.locator(".rooms button").filter(has_text="Living Room").click()
+        card.locator('[data-mode="type"]').click()
+        card.get_by_role("textbox", name="Message", exact=True).fill("Dinner is ready")
+        card.get_by_role("button", name="Preview recipients", exact=True).click()
+        expect(card.locator(".result")).to_contain_text("Living Room Receiver")
+        expect(card.locator(".result")).to_contain_text("exact session recovery is not guaranteed")
+        if width == 390:
+            card.screenshot(path=OUT / "ha-playback-preview.png")
+        card.get_by_role("button", name="Send", exact=True).click()
+        timeline = card.get_by_role("list", name="Delivery timeline")
+        expect(timeline).to_contain_text("Restoration pending")
+        expect(card.locator(".result")).to_contain_text("accepted")
+        page.evaluate("qaRestoreStage = 'requests_completed'")
+        expect(timeline).to_contain_text("session resumption is best effort")
+        if width == 390:
+            card.screenshot(path=OUT / "ha-playback-restoration.png")
+        count = page.evaluate("qaRestoreStatusCalls")
+        page.wait_for_timeout(850)
+        assert page.evaluate("qaRestoreStatusCalls") == count
+        page.evaluate("qaRestoreStage = 'failed'")
+        card.get_by_role("button", name="Send", exact=True).click()
+        expect(timeline).to_contain_text("Restoration failed")
+        assert (
+            page.evaluate("ROOMCALL_HARNESS.requests.filter(r=>r.operation==='send').length") == 2
+        )
+        page.evaluate("qaRestoreEnabled = false")
+        card.get_by_role("button", name="Preview recipients", exact=True).click()
+        expect(card.locator(".result")).to_contain_text("automatic restoration is disabled")
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        context.close()
+
+
 def main() -> None:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
@@ -314,6 +388,7 @@ def main() -> None:
         check_large_text(browser)
         check_guided_setup(browser, errors)
         check_shortcuts(browser, errors)
+        check_playback_restore(browser, errors)
         check_tasks(browser, errors)
         check_task_added_later(browser, errors)
         check_doorbell(browser, errors)

@@ -117,7 +117,7 @@ Browser QA exercises keyboard controls and layouts from a 240 px column to a wal
 ### 🏠 Smart home and AI
 
 - **Automations** — `roomcall.broadcast`, a **notify entity per room** (`notify.roomcall_kitchen`), and ready-made **blueprints** for the doorbell, laundry, bedtime and arrivals.
-- **AV receivers and TV boxes** — Denon/HEOS and onn/Google TV play the call, then go back to the TV input, volume and app they were on. Sonos lowers the music instead of stopping it.
+- **AV receivers and TV boxes** — prepare verified receiver/Android controls, interrupt through HEOS or Cast, and restore supported power, input, volume, mute and media/app state. Exact session recovery depends on the device/provider ([routes and limits](docs/communication.md#playback-device-routes)).
 - **AI-ready** — Assist and MCP agents get explicit RoomCall tools: discover, preview, send, check status, manage announcements and tasks, and run guided setup with reviewable plans and undo ([AI guide](https://daredoole.github.io/RoomCall/ai/), [agent setup](https://daredoole.github.io/RoomCall/agent-setup/), [`llms.txt`](https://daredoole.github.io/RoomCall/llms.txt)). Agents respect Home Assistant permissions and exposure. Dedicated accounts can also have RoomCall operation/destination/hour/volume/rate limits and owned-job subscriptions. These limits do not scope unrelated HA services.
 - **Diagnostics and Repairs** — problems show up in Home Assistant, not as silent calls.
 - 🌍 English, Español, Deutsch, Français, Nederlands.
@@ -323,7 +323,7 @@ can reach, e.g. `http://192.168.1.10:8123`. See [troubleshooting](docs/troublesh
 RoomCall also runs on its own, discovering speakers over mDNS and serving a web app:
 
 ```bash
-pipx install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.18.2/roomcall-0.18.2-py3-none-any.whl"
+pipx install "roomcall[all] @ https://github.com/daredoole/RoomCall/releases/download/v0.21.0/roomcall-0.21.0-py3-none-any.whl"
 roomcall serve        # http://<this-machine>:8765
 ```
 

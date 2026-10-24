@@ -162,7 +162,9 @@ async def test_restoration_ignores_incomplete_and_offline_siblings(hass, setup_r
     entity = registry.async_get_or_create(
         "media_player", "test", "receiver", device_id=device.id, original_name="Receiver"
     )
-    assert restore._identity(hass, entity.entity_id) is None
+    from custom_components.roomcall.playback import identities
+
+    assert identities(hass, entity.entity_id) == {f"device:{device.id}"}
     devices.async_update_device(
         device.id, manufacturer="Acme", model="Receiver", area_id=house["kitchen"]
     )
