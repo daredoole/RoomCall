@@ -526,7 +526,7 @@ class Guard:
             if not await self._permitted() or (self.media_id and replaced):
                 self.evidence["interruption"] = {"restore": "skipped_external_change_or_permission"}
                 return
-            if self.restore_enabled or rollback:
+            if self.prepare_controls and (self.restore_enabled or rollback):
                 failed = await restore(self._hass, entry[0], self.context, self.assistant)
                 try:
                     if not rollback:

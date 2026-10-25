@@ -6,7 +6,7 @@ import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from custom_components.roomcall import communication, playback, restore
+from custom_components.roomcall import communication, core, playback, restore
 from custom_components.roomcall.agent_policy import AgentPolicies
 from custom_components.roomcall.capabilities import deduplicate, physical_key
 from custom_components.roomcall.config_flow import validate_communication
@@ -503,6 +503,54 @@ async def test_delay_only_overrides_preserve_announcement_owned_volume_and_mute(
     else:
         assert not calls and len(announcements) == 1
         assert announcements[0].data["announce_volume"] == 40
+
+
+@pytest.mark.parametrize("platform", ["sonos", "music_assistant"])
+@pytest.mark.parametrize("restoration", [False, True])
+async def test_expired_delay_only_call_keeps_user_volume_and_mute_changes(
+    hass, house, receiver_settling, platform, restoration
+):
+    area = ar.async_get(hass).async_create("Expired Announcement Room").id
+    speaker = _player(
+        hass,
+        platform,
+        "announce",
+        area,
+        "Example",
+        "Speaker",
+        "playing",
+        supported_features=F.PLAY_MEDIA | F.MEDIA_ANNOUNCE | F.VOLUME_SET | F.VOLUME_MUTE,
+        volume_level=0.1,
+        is_volume_muted=False,
+    )
+    await _roomcall(hass, [speaker])
+    hass.data["roomcall"].playback_delays = {speaker: {"startup_delay": 4}}
+    calls = _record_services(hass)
+    deadline = hass.loop.time() + 1
+
+    async def expire(seconds):
+        state = hass.states.get(speaker)
+        hass.states.async_set(
+            speaker, "playing", {**state.attributes, "volume_level": 0.7, "is_volume_muted": True}
+        )
+        await asyncio.sleep(max(0, deadline - hass.loop.time()) + 0.01)
+
+    receiver_settling.side_effect = expire
+    result = await core._play_one(
+        hass,
+        speaker,
+        "http://example.test/audio.mp3",
+        0.4,
+        retry=False,
+        restore=restoration,
+        deadline=deadline,
+    )
+    assert not result.ok and result.error_code == "expired"
+    receiver_settling.assert_awaited_once_with(4)
+    assert not calls and not hass.data["roomcall_restore_active"]
+    state = hass.states.get(speaker)
+    assert state.attributes["volume_level"] == 0.7
+    assert state.attributes["is_volume_muted"] is True
 
 
 @pytest.mark.parametrize("change", ["source", "power", "permission"])
