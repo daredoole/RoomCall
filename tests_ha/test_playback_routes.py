@@ -498,7 +498,7 @@ async def test_delay_only_overrides_preserve_announcement_owned_volume_and_mute(
     assert [args.args[0] for args in receiver_settling.await_args_list] == [4, 6]
     if platform == "sonos":
         assert [c.service for c in calls] == ["play_media"]
-        assert calls[0].data["extra"]["volume"] == 0.4
+        assert calls[0].data["extra"]["volume"] == 40
         assert not announcements
     else:
         assert not calls and len(announcements) == 1
