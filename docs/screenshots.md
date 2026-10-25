@@ -1,7 +1,8 @@
 # Screenshots and validation
 
-The documentation was audited against **RoomCall 0.21.0**, with the compatible
-**native 0.20.0 / build 4** client, on 2026-10-23. Home Assistant captures include
+Browser captures were refreshed from **RoomCall Unreleased (after 0.22.0)** on
+2026-10-25. Native captures retain the compatible **native 0.20.0 / build 4** client.
+Home Assistant captures include
 the Glass interface and receiver/TV interruption previews and restoration status. The captures illustrate real rendered interfaces with sample data;
 they do not demonstrate a particular household, physical speaker delivery or
 successful Apple signing. Room names, tasks, people and transcripts are examples.
