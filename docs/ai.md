@@ -183,6 +183,13 @@ keep their saved values; use setup discovery's current `settings_schema` before 
   a verified native receiver control for power/input preparation. `catalog.playback_routes`
   describes explicit HDMI mappings under `communication.playback_routes`. Preview
   before sending; permissions/exposure must include every affected controller.
+  `catalog.playback_delays` describes per-playback-entity startup and restore delays
+  under `communication.playback_delays` (0–60 seconds). Denon controllers default to
+  10 seconds after wake/input changes and a 2-second restore tail; explicit startup
+  overrides apply before every send. Inspect `evidence[endpoint].playback_delays`
+  for the delays applied to a call. HA reporting NET/on does not establish that the
+  amplifier is audible. Discovery retains unavailable audio endpoints seen within
+  24 hours, keeps saved selections editable, and marks Android TV Remote control-only.
   Inspect `evidence[endpoint].interruption.restore` after acceptance. Request completion
   and best-effort resumption do not prove audibility or recovery of an exact session.
 - **Repairs** explain unavailable speakers and unusable internal URLs.

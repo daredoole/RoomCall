@@ -586,14 +586,20 @@ class SetupWizard {
     this.discovery = discovery;
     this.speakers.querySelectorAll("label").forEach((label) => label.remove());
     for (const item of discovery.endpoints.filter(
-      (e) => e.eligible || e.selected,
+      (e) => e.eligible || e.selected || e.control_only,
     )) {
       const label = document.createElement("label"),
         input = document.createElement("input");
       input.type = "checkbox";
       input.value = item.entity_id;
-      input.checked = discovery.recommended.speakers.includes(item.entity_id);
-      label.append(input, document.createTextNode(` ${item.name}`));
+      input.checked = !item.control_only && discovery.recommended.speakers.includes(item.entity_id);
+      input.disabled = !!item.control_only;
+      const route = ["cast", "androidtv_remote", "denonavr", "music_assistant", "heos", "sonos"].includes(item.route)
+        ? this.t(`setup_route_${item.route}`) : this.t("setup_route_player");
+      const status = this.t(item.available ? "setup_available"
+        : item.recently_available ? "setup_recently_available" : "setup_saved_unavailable");
+      label.append(input, document.createTextNode(` ${item.name} · ${route} · ${status}`));
+      if (item.control_only) label.append(document.createTextNode(`. ${this.t("setup_control_only")}`));
       this.speakers.append(label);
     }
     this.engine.replaceChildren(

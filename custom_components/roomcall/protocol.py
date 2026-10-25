@@ -85,6 +85,20 @@ def catalog(hass: HomeAssistant) -> dict[str, Any]:
             for name, schema in SCHEMAS.items()
         },
         "setup_sequence": ["discover", "plan", "apply", "test", "confirm", "verify"],
+        "playback_delays": {
+            "settings_path": ["communication", "playback_delays"],
+            "max_entries": 32,
+            "key_pattern": r"^media_player\.[a-z0-9_]+$",
+            "value_schema": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    field: {"type": "number", "minimum": 0, "maximum": 60}
+                    for field in ("startup_delay", "restore_delay")
+                },
+            },
+            "denonavr_defaults": {"startup_after_wake_or_source_change": 10, "restore_delay": 2},
+        },
         "playback_routes": {
             "settings_path": ["communication", "playback_routes"],
             "max_entries": 32,

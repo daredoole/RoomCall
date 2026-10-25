@@ -97,8 +97,11 @@ class Setup:
     async def discover(self, context: Context, assistant: str | None) -> dict:
         from .communication import permitted
         from .config_flow import _options_schema
+        from .discovery import async_refresh, players
         from .protocol import json_schema
 
+        await async_refresh(self.hass)
+        recent = players(self.hass)
         entry = current_entry(self.hass)
         configured = {**entry.data, **entry.options} if entry else {}
         registry = er.async_get(self.hass)
@@ -112,8 +115,11 @@ class Setup:
                 continue
             if not await permitted(self.hass, state.entity_id, context, assistant):
                 continue
-            features = state.attributes.get("supported_features", 0)
-            eligible = bool(features & (512 | 1048576)) and not (
+            saved = state.entity_id in configured.get("speakers", [])
+            if not recent.recent(state.entity_id) and not saved:
+                continue
+            control_only = bool(item and item.platform in {"androidtv_remote", "denonavr"})
+            eligible = recent.audio_capable(state.entity_id) and not (
                 item and item.platform in {"dlna_dmr", "mobile_app"}
             )
             if eligible and default_destination(self.hass, state.entity_id, aliases):
@@ -125,7 +131,11 @@ class Setup:
                     "area_id": speaker_area(self.hass, state.entity_id),
                     "available": state.state not in {"unknown", "unavailable"},
                     "eligible": eligible,
-                    "selected": state.entity_id in configured.get("speakers", []),
+                    "selected": saved,
+                    "control_only": control_only,
+                    "route": item.platform if item else "media_player",
+                    "last_seen": recent.seen.get(state.entity_id, {}).get("at"),
+                    "recently_available": recent.recent(state.entity_id),
                 }
             )
         for entity_id in configured.get("speakers", []):

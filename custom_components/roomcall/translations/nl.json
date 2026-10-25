@@ -14,7 +14,8 @@
         "data_description": {
           "volume": "Leeg laten om het huidige volume van elke speaker te houden. Ondersteund door Sonos.",
           "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken.",
-          "speech_rate": "1 is het normale tempo van de stem. Verlaag dit als getypte berichten en aankondigingen te snel klinken; 0,85 is iets langzamer. De toonhoogte blijft gelijk."
+          "speech_rate": "1 is het normale tempo van de stem. Verlaag dit als getypte berichten en aankondigingen te snel klinken; 0,85 is iets langzamer. De toonhoogte blijft gelijk.",
+          "speakers": "Kies audiospelers die nu beschikbaar zijn of in de afgelopen 24 uur zijn gezien. Opgeslagen keuzes blijven zichtbaar zodat je ze kunt verwijderen. Kies voor Android/Google TV-audio Google Cast of Music Assistant, niet Android TV Remote."
         }
       }
     },
@@ -39,7 +40,8 @@
         "data_description": {
           "volume": "Leeg laten om het huidige volume van elke speaker te houden. Ondersteund door Sonos.",
           "gain_db": "Verhoog dit als opnames van de telefoon zacht klinken.",
-          "speech_rate": "1 is het normale tempo van de stem. Verlaag dit als getypte berichten en aankondigingen te snel klinken; 0,85 is iets langzamer. De toonhoogte blijft gelijk."
+          "speech_rate": "1 is het normale tempo van de stem. Verlaag dit als getypte berichten en aankondigingen te snel klinken; 0,85 is iets langzamer. De toonhoogte blijft gelijk.",
+          "speakers": "Kies audiospelers die nu beschikbaar zijn of in de afgelopen 24 uur zijn gezien. Opgeslagen keuzes blijven zichtbaar zodat je ze kunt verwijderen. Kies voor Android/Google TV-audio Google Cast of Music Assistant, niet Android TV Remote."
         },
         "sections": {
           "chime_options": {
@@ -121,7 +123,8 @@
               "household_profiles": "Huishoudprofielen",
               "agent_policies": "Beleid voor agentaccounts",
               "playback_routes": "Routes voor afspeelapparaten",
-              "prefer_music_assistant": "Music Assistant in deze kamers verkiezen"
+              "prefer_music_assistant": "Music Assistant in deze kamers verkiezen",
+              "playback_delays": "Start- en herstelvertragingen van speakers"
             },
             "data_description": {
               "talk_back": "Als iemand vanuit een andere ruimte tegen een ruimte praat, luistert een Assist-satelliet daar (Atom Echo, ESP32-S3, Home Assistant Voice) naar een antwoord, dat in de ruimte van de beller klinkt. Antwoorden worden uitgeschreven en uitgesproken met de ingestelde stem.",
@@ -129,7 +132,8 @@
               "doorbell_camera": "Opnemen opent het livebeeld van deze camera, waar terugpraten werkt als de camera dat ondersteunt.",
               "doorbell_rooms": "Leeg laten om overal te bellen.",
               "playback_routes": "Koppel een afspeelentiteit aan een expliciete controller en bron voor de audio-uitvoer. HDMI-verbindingen worden niet afgeleid van kamernamen. Herstel en hervatting van apps hangen af van het apparaat.",
-              "prefer_music_assistant": "Geef bij geverifieerde vermeldingen van dezelfde fysieke luidspreker de voorkeur aan Music Assistant. Onbekende MA-identiteiten vereisen handmatige selectie; apparaten worden nooit op kamer of naam gekoppeld."
+              "prefer_music_assistant": "Geef bij geverifieerde vermeldingen van dezelfde fysieke luidspreker de voorkeur aan Music Assistant. Onbekende MA-identiteiten vereisen handmatige selectie; apparaten worden nooit op kamer of naam gekoppeld.",
+              "playback_delays": "Optionele waarden per speaker in seconden: startup_delay wacht voor het verzenden van audio; restore_delay wacht na het afspelen voordat ingang, volume en voeding worden hersteld. Gebruik waarden van 0 tot 60. Denon-AVRs wachten standaard 10 seconden na inschakelen of een ingangsverandering en 2 seconden voor herstel."
             }
           }
         }
@@ -137,7 +141,7 @@
     },
     "error": {
       "no_speakers": "Kies minstens één speaker.",
-      "invalid_settings": "Controleer aliassen, voorkeuren, adapters en afspeelroutes."
+      "invalid_settings": "Controleer aliassen, voorkeuren, adapters, afspeelroutes en vertragingen."
     }
   },
   "selector": {
@@ -284,7 +288,7 @@
         "setup_not_ready": "Sommige installatiecontroles vragen aandacht. Bekijk de diagnose voor details.",
         "setup_started": "Instellingen opgeslagen. Controleer nadat Home Assistant klaar is met herladen.",
         "test_pending": "Test aangevraagd. Wacht tot deze klaar is en bevestig wat je hoorde.",
-        "setup_scan_count": "{count} luidsprekeruitgangen gevonden.",
+        "setup_scan_count": "{count} apparaten gevonden.",
         "setup_keep_volume": "Apparaatvolume behouden",
         "setup_draft": "Concept",
         "setup_applying": "Bezig met toepassen",
@@ -568,7 +572,18 @@
         "url_certificate": "Het HTTPS-certificaat kon niet worden gevalideerd bij openbare certificaatautoriteiten.",
         "url_tls_unverified": "De HTTPS-verbinding kon niet worden gecontroleerd. Certificaatvertrouwen en luidsprekertoegang zijn onbekend.",
         "url_missing": "Niet ingesteld",
-        "music_assistant_timeout": "Music Assistant heeft het verzoek niet op tijd voltooid. Het afspelen kan zijn begonnen; RoomCall heeft het niet opnieuw geprobeerd om een dubbele aankondiging te voorkomen."
+        "music_assistant_timeout": "Music Assistant heeft het verzoek niet op tijd voltooid. Het afspelen kan zijn begonnen; RoomCall heeft het niet opnieuw geprobeerd om een dubbele aankondiging te voorkomen.",
+        "setup_available": "Beschikbaar",
+        "setup_recently_available": "Niet beschikbaar; gezien in de afgelopen 24 uur",
+        "setup_saved_unavailable": "Opgeslagen; niet beschikbaar",
+        "setup_control_only": "Alleen bediening. Selecteer voor audio de Google Cast- of Music Assistant-speler van de tv.",
+        "setup_route_player": "Mediaspeler",
+        "setup_route_cast": "Google Cast",
+        "setup_route_androidtv_remote": "Android TV Remote",
+        "setup_route_denonavr": "Denon AVR",
+        "setup_route_music_assistant": "Music Assistant",
+        "setup_route_heos": "HEOS",
+        "setup_route_sonos": "Sonos"
       }
     },
     "audio_processing": {

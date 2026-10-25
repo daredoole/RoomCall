@@ -141,7 +141,13 @@
           if(request.action==="discover")return {ok:true,discovery:{
             configured:true,settings:setupSettings,recommended:setupSettings,
             endpoints:ROOMS.map(r=>({entity_id:`media_player.${r.area_id}`,name:r.name,eligible:true,
-              selected:setupSettings.speakers.includes(`media_player.${r.area_id}`),available:true})),
+              selected:setupSettings.speakers.includes(`media_player.${r.area_id}`),available:true})).concat(
+                params.get("discovery")==="tv" ? [
+                  {entity_id:"media_player.google_tv",name:"Living Room TV",route:"cast",eligible:true,
+                    available:false,recently_available:true,selected:false},
+                  {entity_id:"media_player.google_tv_remote",name:"Living Room TV",route:"androidtv_remote",
+                    eligible:false,available:true,control_only:true,selected:false}
+                ] : []),
             tts_engines:[{entity_id:"tts.piper",name:"Piper"}],questions:[]}};
           if(request.action==="list")return {ok:true,plans:[...setupPlans.values()]};
           if(request.action==="plan") {

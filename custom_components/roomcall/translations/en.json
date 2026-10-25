@@ -14,7 +14,8 @@
         "data_description": {
           "volume": "Leave empty to keep each speaker's current volume. Supported by Sonos.",
           "gain_db": "Raise this if phone recordings sound quiet.",
-          "speech_rate": "1 is the voice's normal pace. Lower it if typed messages and announcements sound too fast; 0.85 is a little slower. Pitch stays the same."
+          "speech_rate": "1 is the voice's normal pace. Lower it if typed messages and announcements sound too fast; 0.85 is a little slower. Pitch stays the same.",
+          "speakers": "Choose audio players available now or seen in the past 24 hours. Saved selections remain listed so you can remove them. For Android/Google TV audio, select Google Cast or Music Assistant, not Android TV Remote."
         }
       }
     },
@@ -39,7 +40,8 @@
         "data_description": {
           "volume": "Leave empty to keep each speaker's current volume. Supported by Sonos.",
           "gain_db": "Raise this if phone recordings sound quiet.",
-          "speech_rate": "1 is the voice's normal pace. Lower it if typed messages and announcements sound too fast; 0.85 is a little slower. Pitch stays the same."
+          "speech_rate": "1 is the voice's normal pace. Lower it if typed messages and announcements sound too fast; 0.85 is a little slower. Pitch stays the same.",
+          "speakers": "Choose audio players available now or seen in the past 24 hours. Saved selections remain listed so you can remove them. For Android/Google TV audio, select Google Cast or Music Assistant, not Android TV Remote."
         },
         "sections": {
           "chime_options": {
@@ -121,7 +123,8 @@
               "household_profiles": "Household profiles",
               "agent_policies": "Agent account policies",
               "playback_routes": "Playback device routes",
-              "prefer_music_assistant": "Prefer Music Assistant in these rooms"
+              "prefer_music_assistant": "Prefer Music Assistant in these rooms",
+              "playback_delays": "Speaker startup and restore delays"
             },
             "data_description": {
               "talk_back": "After someone talks to a room from another room, an Assist satellite in that room (Atom Echo, ESP32-S3, Home Assistant Voice) listens for a reply and the caller's room hears it. Replies are transcribed, then spoken in your voice of choice.",
@@ -129,7 +132,8 @@
               "doorbell_camera": "Answer opens this camera's live view, where two-way talk works when the camera supports it.",
               "doorbell_rooms": "Leave empty to ring everywhere.",
               "playback_routes": "Map a playback entity to an explicit controller and source for its audio output. HDMI connections are not inferred from room names. Restoration and app resumption depend on device support.",
-              "prefer_music_assistant": "For verified copies of the same physical speaker, prefer its Music Assistant player. Unknown MA identities still need manual selection; this setting never matches devices by room or name."
+              "prefer_music_assistant": "For verified copies of the same physical speaker, prefer its Music Assistant player. Unknown MA identities still need manual selection; this setting never matches devices by room or name.",
+              "playback_delays": "Optional per-speaker overrides in seconds: startup_delay waits before sending audio; restore_delay waits after playback before restoring input, volume and power. Use values from 0 to 60. Denon AVRs default to 10 seconds after wake or input changes and 2 seconds before restore."
             }
           }
         }
@@ -137,7 +141,7 @@
     },
     "error": {
       "no_speakers": "Select at least one speaker.",
-      "invalid_settings": "Check aliases, preferences, adapters and playback routes."
+      "invalid_settings": "Check aliases, preferences, adapters, playback routes and delays."
     }
   },
   "selector": {
@@ -284,7 +288,7 @@
         "setup_not_ready": "Some setup checks still need attention. Use diagnostics for details.",
         "setup_started": "Settings saved. Verify after Home Assistant finishes reloading.",
         "test_pending": "Test requested. Wait for completion, then confirm what you heard.",
-        "setup_scan_count": "Found {count} speaker endpoints.",
+        "setup_scan_count": "Found {count} devices.",
         "setup_keep_volume": "Keep device volume",
         "setup_draft": "Draft",
         "setup_applying": "Applying",
@@ -568,7 +572,18 @@
         "url_certificate": "The HTTPS certificate failed validation against public certificate authorities.",
         "url_tls_unverified": "The HTTPS connection could not be checked. Certificate trust and speaker access are unknown.",
         "url_missing": "Not configured",
-        "music_assistant_timeout": "Music Assistant did not finish the request in time. Playback may have started; RoomCall did not retry to avoid a duplicate announcement."
+        "music_assistant_timeout": "Music Assistant did not finish the request in time. Playback may have started; RoomCall did not retry to avoid a duplicate announcement.",
+        "setup_available": "Available",
+        "setup_recently_available": "Unavailable; seen in the past 24 hours",
+        "setup_saved_unavailable": "Saved; unavailable",
+        "setup_control_only": "Control only. For audio, select the TV’s Google Cast or Music Assistant player.",
+        "setup_route_player": "Media player",
+        "setup_route_cast": "Google Cast",
+        "setup_route_androidtv_remote": "Android TV Remote",
+        "setup_route_denonavr": "Denon AVR",
+        "setup_route_music_assistant": "Music Assistant",
+        "setup_route_heos": "HEOS",
+        "setup_route_sonos": "Sonos"
       }
     },
     "audio_processing": {

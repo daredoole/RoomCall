@@ -474,7 +474,11 @@ async def _play_one(
             raise Problem("expired")
         authorize()
 
-        if (restore and not supports_announce(hass, entity_id)) or route(hass, entity_id):
+        if (
+            (restore and not supports_announce(hass, entity_id))
+            or route(hass, entity_id)
+            or getattr(runtime, "playback_delays", {}).get(entity_id)
+        ):
             from .restore import Guard
 
             guard = Guard(

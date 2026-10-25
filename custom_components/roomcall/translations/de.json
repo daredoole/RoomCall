@@ -14,7 +14,8 @@
         "data_description": {
           "volume": "Leer lassen, um die aktuelle Lautstärke jedes Lautsprechers zu behalten. Von Sonos unterstützt.",
           "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen.",
-          "speech_rate": "1 ist das normale Tempo der Stimme. Verringere den Wert, wenn getippte Nachrichten und Durchsagen zu schnell klingen; 0,85 ist etwas langsamer. Die Tonhöhe bleibt gleich."
+          "speech_rate": "1 ist das normale Tempo der Stimme. Verringere den Wert, wenn getippte Nachrichten und Durchsagen zu schnell klingen; 0,85 ist etwas langsamer. Die Tonhöhe bleibt gleich.",
+          "speakers": "Wähle Audioplayer, die jetzt verfügbar sind oder in den letzten 24 Stunden gesehen wurden. Gespeicherte Auswahlen bleiben zum Entfernen sichtbar. Wähle für Android-/Google-TV-Audio Google Cast oder Music Assistant, nicht Android TV Remote."
         }
       }
     },
@@ -39,7 +40,8 @@
         "data_description": {
           "volume": "Leer lassen, um die aktuelle Lautstärke jedes Lautsprechers zu behalten. Von Sonos unterstützt.",
           "gain_db": "Erhöhen, wenn Aufnahmen vom Handy zu leise klingen.",
-          "speech_rate": "1 ist das normale Tempo der Stimme. Verringere den Wert, wenn getippte Nachrichten und Durchsagen zu schnell klingen; 0,85 ist etwas langsamer. Die Tonhöhe bleibt gleich."
+          "speech_rate": "1 ist das normale Tempo der Stimme. Verringere den Wert, wenn getippte Nachrichten und Durchsagen zu schnell klingen; 0,85 ist etwas langsamer. Die Tonhöhe bleibt gleich.",
+          "speakers": "Wähle Audioplayer, die jetzt verfügbar sind oder in den letzten 24 Stunden gesehen wurden. Gespeicherte Auswahlen bleiben zum Entfernen sichtbar. Wähle für Android-/Google-TV-Audio Google Cast oder Music Assistant, nicht Android TV Remote."
         },
         "sections": {
           "chime_options": {
@@ -121,7 +123,8 @@
               "household_profiles": "Haushaltsprofile",
               "agent_policies": "Richtlinien für Agentenkonten",
               "playback_routes": "Wiedergabegeräterouten",
-              "prefer_music_assistant": "Music Assistant in diesen Räumen bevorzugen"
+              "prefer_music_assistant": "Music Assistant in diesen Räumen bevorzugen",
+              "playback_delays": "Start- und Wiederherstellungsverzögerungen"
             },
             "data_description": {
               "talk_back": "Spricht jemand aus einem anderen Raum in einen Raum, hört ein Assist-Satellit dort (Atom Echo, ESP32-S3, Home Assistant Voice) auf eine Antwort, die im Raum des Anrufers zu hören ist. Antworten werden transkribiert und mit der eingestellten Stimme gesprochen.",
@@ -129,7 +132,8 @@
               "doorbell_camera": "Annehmen öffnet die Live-Ansicht dieser Kamera, in der Gegensprechen funktioniert, wenn die Kamera es unterstützt.",
               "doorbell_rooms": "Leer lassen, um überall zu klingeln.",
               "playback_routes": "Ordne einer Wiedergabeentität einen ausdrücklichen Controller und eine Quelle für die Audioausgabe zu. HDMI-Verbindungen werden nicht aus Raumnamen abgeleitet. Wiederherstellung und App-Fortsetzung hängen vom Gerät ab.",
-              "prefer_music_assistant": "Bei bestätigten Einträgen desselben physischen Lautsprechers wird Music Assistant bevorzugt. Unbekannte MA-Identitäten müssen manuell gewählt werden; Geräte werden niemals nach Raum oder Name zugeordnet."
+              "prefer_music_assistant": "Bei bestätigten Einträgen desselben physischen Lautsprechers wird Music Assistant bevorzugt. Unbekannte MA-Identitäten müssen manuell gewählt werden; Geräte werden niemals nach Raum oder Name zugeordnet.",
+              "playback_delays": "Optionale Werte je Lautsprecher in Sekunden: startup_delay wartet vor dem Senden des Audios; restore_delay wartet nach der Wiedergabe vor dem Wiederherstellen von Eingang, Lautstärke und Stromzustand. Werte von 0 bis 60. Denon-AVRs warten standardmäßig 10 Sekunden nach Einschalten oder Eingangswechsel und 2 Sekunden vor dem Wiederherstellen."
             }
           }
         }
@@ -137,7 +141,7 @@
     },
     "error": {
       "no_speakers": "Wähle mindestens einen Lautsprecher.",
-      "invalid_settings": "Prüfe Aliase, Einstellungen, Adapter und Wiedergaberouten."
+      "invalid_settings": "Prüfe Aliase, Einstellungen, Adapter, Wiedergaberouten und Verzögerungen."
     }
   },
   "selector": {
@@ -284,7 +288,7 @@
         "setup_not_ready": "Einige Einrichtungsprüfungen benötigen Aufmerksamkeit. Nutze die Diagnose für Details.",
         "setup_started": "Einstellungen gespeichert. Prüfe nach Abschluss des Neuladens von Home Assistant.",
         "test_pending": "Test angefordert. Warte auf den Abschluss und bestätige, was du gehört hast.",
-        "setup_scan_count": "{count} Lautsprecherendpunkte gefunden.",
+        "setup_scan_count": "{count} Geräte gefunden.",
         "setup_keep_volume": "Gerätelautstärke beibehalten",
         "setup_draft": "Entwurf",
         "setup_applying": "Wird angewendet",
@@ -568,7 +572,18 @@
         "url_certificate": "Das HTTPS-Zertifikat konnte nicht gegen öffentliche Zertifizierungsstellen validiert werden.",
         "url_tls_unverified": "Die HTTPS-Verbindung konnte nicht geprüft werden. Zertifikatsvertrauen und Lautsprecherzugriff sind unbekannt.",
         "url_missing": "Nicht konfiguriert",
-        "music_assistant_timeout": "Music Assistant hat die Anfrage nicht rechtzeitig beendet. Die Wiedergabe könnte begonnen haben; RoomCall hat sie nicht wiederholt, um eine doppelte Ansage zu vermeiden."
+        "music_assistant_timeout": "Music Assistant hat die Anfrage nicht rechtzeitig beendet. Die Wiedergabe könnte begonnen haben; RoomCall hat sie nicht wiederholt, um eine doppelte Ansage zu vermeiden.",
+        "setup_available": "Verfügbar",
+        "setup_recently_available": "Nicht verfügbar; in den letzten 24 Stunden gesehen",
+        "setup_saved_unavailable": "Gespeichert; nicht verfügbar",
+        "setup_control_only": "Nur Steuerung. Wähle für Audio den Google-Cast- oder Music-Assistant-Player des Fernsehers.",
+        "setup_route_player": "Mediaplayer",
+        "setup_route_cast": "Google Cast",
+        "setup_route_androidtv_remote": "Android TV Remote",
+        "setup_route_denonavr": "Denon AVR",
+        "setup_route_music_assistant": "Music Assistant",
+        "setup_route_heos": "HEOS",
+        "setup_route_sonos": "Sonos"
       }
     },
     "audio_processing": {

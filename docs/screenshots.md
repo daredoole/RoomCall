@@ -66,6 +66,11 @@ these buttons record the user’s answer, never an inferred playback result.
 
 ![Room-by-room listening check with sample data](assets/ha-room-listening.png)
 
+The device-discovery capture (`assets/ha-device-discovery.png`) shows a recently
+available Cast TV and its Android TV Remote control. The audio checkbox remains
+enabled for the recent Cast endpoint; the remote control is labelled and disabled
+as an audio destination. Browser QA checks this state at 240, 390 and 600 pixels.
+
 ## What remains a hardware check
 
 CI covers browser communication/layout behavior, native unit/UI/screenshot tests,

@@ -163,6 +163,7 @@ class RoomCallData:
     chime_cache: dict[str, bytes] = field(default_factory=dict)
     aliases: dict[str, str] = field(default_factory=dict)
     playback_routes: dict[str, dict[str, str]] = field(default_factory=dict)
+    playback_delays: dict[str, dict[str, float]] = field(default_factory=dict)
     prefer_music_assistant: list[str] = field(default_factory=list)
     preferences: dict[str, dict[str, Any]] = field(default_factory=dict)
     adapters: dict[str, dict[str, str]] = field(default_factory=dict)
@@ -241,6 +242,7 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
         homekit_port=int(homekit.get(CONF_HOMEKIT_PORT, DEFAULT_HOMEKIT_PORT)),
         aliases=dict(communication.get("aliases") or {}),
         playback_routes=dict(communication.get("playback_routes") or {}),
+        playback_delays=dict(communication.get("playback_delays") or {}),
         prefer_music_assistant=list(communication.get("prefer_music_assistant") or []),
         preferences=dict(communication.get("preferences") or {}),
         adapters=dict(communication.get("adapters") or {}),
@@ -261,6 +263,9 @@ def settings_from_options(opts: dict[str, Any]) -> RoomCallData:
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register HTTP views, the dashboard card and the broadcast action once."""
     await localization.async_load(hass)
+    from .discovery import async_refresh
+
+    await async_refresh(hass)
     setup = Setup(hass)
     await setup.load()
     hass.data[SETUP_KEY] = setup

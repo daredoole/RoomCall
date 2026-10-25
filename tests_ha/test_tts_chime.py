@@ -14,6 +14,7 @@ from custom_components.roomcall.messages import request_for
 from homeassistant.core import Context
 from homeassistant.helpers.network import NoURLAvailableError
 from pytest_homeassistant_custom_component.common import async_mock_service
+from yarl import URL
 
 
 def energy(samples, frequency):
@@ -30,7 +31,7 @@ def energy(samples, frequency):
 
 
 async def test_typed_and_siri_messages_have_real_chime_once_per_fanout(
-    hass, setup_roomcall, house, tts_audio
+    hass, setup_roomcall, house, tts_audio, hass_client_no_auth
 ):
     playback = async_mock_service(hass, "media_player", "play_media")
     hass.states.async_set("tts.piper", "unknown")
@@ -44,10 +45,16 @@ async def test_typed_and_siri_messages_have_real_chime_once_per_fanout(
     assert response["ok"] and response["audible"] is None
     assert len(playback) == 2 and tts_audio.await_count == 1
     urls = [call.data["media_content_id"] for call in playback]
-    assert urls[0].split("?")[0] == urls[1].split("?")[0]
+    assert len({URL(url).name.split(".", 1)[0] for url in urls}) == 1
+    assert urls[0] != urls[1]  # Separate endpoint identities share one composed clip.
     record = hass.data["roomcall"].history.records()[0]
     audio = hass.data["roomcall"].history.audio(record.call_id)
     assert audio is not None
+    client = await hass_client_no_auth()
+    for url in urls:
+        assert set(URL(url).query) == {"authSig"}
+        fetched = await client.get(URL(url).path_qs)
+        assert fetched.status == 200 and await fetched.read() == audio.data
     pcm = await to_speech_pcm("ffmpeg", audio.data)
     samples = struct.unpack("<" + "h" * (len(pcm) // 2), pcm)
     assert len(pcm) / 32000 > 1.3

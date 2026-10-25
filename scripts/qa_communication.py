@@ -83,6 +83,41 @@ def check_guided_setup(browser, errors) -> None:
         context.close()
 
 
+def check_device_discovery(browser, errors) -> None:
+    """Audio routes and controls stay distinct, including a recent unavailable Cast TV."""
+    for width in (240, 390, 600):
+        context = browser.new_context(viewport={"width": width, "height": 950})
+        page = context.new_page()
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        open_card(page, "mobile", "dark", "&discovery=tv")
+        card = page.locator("roomcall-card")
+        card.get_by_role("button", name="Settings", exact=True).click()
+        wizard = card.locator(".setup-wizard")
+        audio = wizard.get_by_role("checkbox", name="Living Room TV · Google Cast", exact=False)
+        remote = wizard.get_by_role(
+            "checkbox", name="Living Room TV · Android TV Remote", exact=False
+        )
+        expect(audio).to_be_enabled()
+        expect(remote).to_be_disabled()
+        expect(wizard).to_contain_text("Unavailable; seen in the past 24 hours")
+        expect(wizard).to_contain_text("Control only. For audio")
+        if width == 390:
+            remote.scroll_into_view_if_needed()
+            card.get_by_role("dialog", name="Settings", exact=True).screenshot(
+                path=OUT / "ha-device-discovery.png"
+            )
+        for checkbox in wizard.locator('fieldset input[type="checkbox"]').all():
+            if checkbox.is_enabled():
+                checkbox.uncheck()
+        audio.check()
+        wizard.get_by_role("button", name="Review setup plan", exact=True).click()
+        assert page.evaluate(
+            "ROOMCALL_HARNESS.requests.findLast(r=>r.request?.action==='plan').request.settings.speakers"
+        ) == ["media_player.google_tv"]
+        assert wizard.evaluate("e=>e.scrollWidth<=e.clientWidth")
+        context.close()
+
+
 def check_room_listening(browser, errors) -> None:
     """One speaker at a time; No/Skip persist without becoming audible success."""
     for width in (240, 390, 600):
@@ -448,6 +483,7 @@ def main() -> None:
         check_large_text(browser)
         check_guided_setup(browser, errors)
         check_room_listening(browser, errors)
+        check_device_discovery(browser, errors)
         check_shortcuts(browser, errors)
         check_playback_restore(browser, errors)
         check_tasks(browser, errors)

@@ -11,6 +11,7 @@ import pytest
 from custom_components.roomcall.live import LiveStream
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import async_mock_service
+from yarl import URL
 
 DOMAIN = "roomcall"
 FFMPEG = shutil.which("ffmpeg")
@@ -77,9 +78,16 @@ async def test_live_call_over_websocket(
     # The speaker fetches the live URL while the caller is still talking.
     url = played[0].data["media_content_id"]
     assert "/api/roomcall/live/" in url
+    signed = URL(url)
+    assert set(signed.query) == {"authSig"}
     speaker = await hass_client_no_auth()
+    data = hass.data[DOMAIN]
+    record = next(iter(data.evidence.tokens.values()))[0]
+    assert (await speaker.head(signed.path_qs)).status == 200
+    assert "audio_fetched_ms" not in record.evidence.get("media_player.basement_sonos", {})
     response = await speaker.get(url.removeprefix("http://ha.local:8123"))
     assert response.status == 200
+    assert record.evidence["media_player.basement_sonos"]["audio_fetched_ms"] >= 0
     assert response.headers["Content-Type"] == "audio/mpeg"
     first = await response.content.read(1024)
     assert first
