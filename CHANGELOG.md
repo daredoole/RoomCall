@@ -4,7 +4,7 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.22.1 — 2026-10-25
 
 - Show audio-capable devices online now or seen within 24 hours in the speaker picker,
   including standby Cast TVs. Keep saved selections editable and identify Android TV
@@ -14,6 +14,8 @@ All notable changes are listed here. The format follows
   overrides under Communication → Speaker startup and restore delays.
 - Keep the short-lived audio signature as the only URL query parameter so HEOS receivers
   that strip query separators can fetch authenticated clips and live audio.
+- Preserve Sonos and Music Assistant session volume/mute when only timing overrides
+  are set, including user changes made while a pending announcement expires.
 
 ## 0.22.0 — 2026-10-24
 
