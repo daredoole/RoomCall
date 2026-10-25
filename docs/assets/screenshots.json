@@ -1,13 +1,13 @@
 {
   "schema": 1,
-  "capture_base_commit": "833122e1cca0bb5ec4b6a216f0e4b0f4ffff2d7a",
+  "capture_base_commit": "6b37e513d47b97cbe5c468693b03f69f88741357",
   "ios_source_commit": "7f1a3069bb4b89d89ebc63404dd3c3d663e20758",
   "ios_run": "https://github.com/daredoole/RoomCall/actions/runs/40035013972",
   "sample_data": true,
   "groups": {
     "home_assistant": {
       "images": {
-        "docs/assets/demo.gif": "86e924263550a55290571a1ffaca3f57613f07db58782e0381053a0db6dfe7b6",
+        "docs/assets/demo.gif": "4852b303284fd612ae0ffe225cb961a38147e2c2abffa1e26ef8215ec283f1ff",
         "docs/assets/ha-card-ask.png": "3e0838fd223f685b09bd9fc3bf946d0d8d6a5c286b18861289cc85ee82384861",
         "docs/assets/ha-card-compact.png": "fb00518617d208bf1f4ab8b27c8e36a4104a309037014a47d612e9b0897dc35c",
         "docs/assets/ha-card-delivered.png": "6cebc0d0309b4090363df5373a96f7bbd88b1eb5103e1b8cf7ecf4912a2cb57f",
@@ -19,12 +19,12 @@
         "docs/assets/ha-card-reply.png": "11972c00c8e0a744056ac5e1daaf758b33790d3d0e8f8a1bb228859a2c242876",
         "docs/assets/ha-card-setup.png": "e0c9e6a57e4ab72773ed7c59b3dbbfebce201039cbc2492e737056b625362c0c",
         "docs/assets/ha-card-simple.png": "4238f8be2f1f8e0d2f00efd5e4030a8f43b041e16c5d640a09d0bb90031d334c",
-        "docs/assets/ha-card-talking.png": "a54bddb22ffd4a015e85f4fd30695f42c7cf1aa0fb6461b9c3b717250575da64",
+        "docs/assets/ha-card-talking.png": "981eb357f7e21bf922a4c3b5a3a3722126da01fe72de8526a2b7a1dde93fad24",
         "docs/assets/ha-card-tasks.png": "bb32529ae395fb4adf652391b781e7116aebdd4a6ccbdda7494b2a9a0dd430da",
         "docs/assets/ha-card-type.png": "f38f0d14fe9a2ce11f1e1943fd742c64bdf9ad7cb6728599419ef307b98779f5",
         "docs/assets/ha-dashboard-desktop.png": "2808552d063f0b546a8a2644e6f4824ca361efe29b619c1b94c84818ccfbb40b",
         "docs/assets/ha-device-discovery.png": "446e9ecc0de206a70b57e9ef7470b789b6cfd290561040f679e2e92530a837b1",
-        "docs/assets/ha-guided-setup.png": "604768183498f492137231f8680c9b9c8fbd51d0c198a141b666620cb2f64082",
+        "docs/assets/ha-guided-setup.png": "e9b5c47d69d7790a521edeae56f7a9deaaa99f69adaea118b855ac2bae9af6c8",
         "docs/assets/ha-playback-preview.png": "10aa5ea03fe0163b4da7f7a87a1b6ba12e8c1247387274398c0ac40df19f9242",
         "docs/assets/ha-playback-restoration.png": "c1d903db1fe3641fa30bdbdb704e459617d9e91305f933bae0d409e196ceb4db",
         "docs/assets/ha-room-listening.png": "ecf732d1bdaa52deb2ab03103c545bb22e3cdbeb137d1906b4474ca0372e7a76",
@@ -36,7 +36,7 @@
         "docs/assets/ha-siri-shortcuts.png": "bef6e264a01e69c89913a0f9466642d60cc25d80b9c83e7775d442eff14fa37c"
       },
       "inputs": {
-        "custom_components/roomcall/frontend/roomcall-card.js": "0ae9ff58799a66796a69d9a24a040d7d93dc4107508ea232fbe97bc48b20a65d",
+        "custom_components/roomcall/frontend/roomcall-card.js": "4d59c6b98d05ed4c63227e540d4a6d9d8de192880ef6faa89964283bc9fc7c96",
         "custom_components/roomcall/frontend/roomcall-controls.js": "eede997d4bac52614995bc363e40e9517916711bc390c63ca0a5185540b0721c",
         "custom_components/roomcall/frontend/roomcall-qr.js": "b8fdb1a738c36b7989ebacad214540ab143065b04f6bf270d3ca29d0d5cadc2d",
         "custom_components/roomcall/strings.json": "7f183bb8b16f91dadf4ae4a24b99ec16d7f1ee7074b4ea12f63c64eb6b6dd870",
@@ -47,11 +47,11 @@
     },
     "standalone": {
       "images": {
-        "docs/assets/screenshot-delivered.png": "b064dcee3832df5157e39c2f86a47a220870299cfb3bdddca7c3dc970d4d2bbe",
+        "docs/assets/screenshot-delivered.png": "449b1f187f41bcea9f3f2c2ca5f1e0527cb243f25b695f2cabc60aed7244e8a9",
         "docs/assets/screenshot-desktop.png": "6ac364f4e4356e2bff9b863a0ba62fc70976c0eaae72e912add62037a993f71e",
         "docs/assets/screenshot-mobile-light.png": "8491c47997449169b26639c052aeb377d69cfa8abbff0572096637094a66f1f5",
         "docs/assets/screenshot-mobile.png": "ef78b8e9f6291dbf2e0e1e5d283f4baa8e86fb555f1a0c8c0e1aca28adfd5a71",
-        "docs/assets/screenshot-talking.png": "69db74a96d225f2dacedb03e9b2beb2790a734a784373886e892cd0fcf50e1da"
+        "docs/assets/screenshot-talking.png": "24f84e35f3441d7e283b536b5e63a2517fd35f6da513400ba7b14318ff1f088f"
       },
       "inputs": {
         "scripts/screenshots.py": "ac4cc98183417faab21c779727ec8bff21289e0b6f4e90eeb55663f40bc3449d",
