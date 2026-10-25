@@ -48,6 +48,12 @@ def base_url(hass: HomeAssistant) -> str:
     return get_url(hass, allow_internal=True, allow_external=True, prefer_external=False)
 
 
+def _fetch_token(request: web.Request, media: str) -> str | None:
+    """New signed filenames carry evidence IDs; accept the earlier signed query form too."""
+    parts = media.split(".")
+    return parts[1] if len(parts) == 3 else request.query.get("roomcall_token")
+
+
 async def _read_body(request: web.Request, limit: int = MAX_UPLOAD_BYTES) -> bytes:
     """Read the whole upload, stopping just past the size limit.
 
@@ -172,7 +178,7 @@ class ClipView(HomeAssistantView):
         found = _data(request).clips.get(clip.split(".", 1)[0])
         if found is None:
             return web.Response(status=404)
-        _data(request).evidence.fetched(request.query.get("roomcall_token"), request.path)
+        _data(request).evidence.fetched(_fetch_token(request, clip), request.path)
         return web.Response(
             body=found.data,
             content_type=found.content_type,
@@ -187,15 +193,15 @@ class LiveView(HomeAssistantView):
     name = "api:roomcall:live"
 
     async def head(self, request: web.Request, stream: str) -> web.Response:
-        if _data(request).live.get(stream.removesuffix(".mp3")) is None:
+        if _data(request).live.get(stream.split(".", 1)[0]) is None:
             return web.Response(status=404)
         return web.Response(content_type="audio/mpeg", headers={"Cache-Control": "no-store"})
 
     async def get(self, request: web.Request, stream: str) -> web.StreamResponse:
-        live = _data(request).live.get(stream.removesuffix(".mp3"))
+        live = _data(request).live.get(stream.split(".", 1)[0])
         if live is None:
             return web.Response(status=404)
-        _data(request).evidence.fetched(request.query.get("roomcall_token"), request.path)
+        _data(request).evidence.fetched(_fetch_token(request, stream), request.path)
         response = web.StreamResponse(
             headers={"Content-Type": "audio/mpeg", "Cache-Control": "no-store"}
         )

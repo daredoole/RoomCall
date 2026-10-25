@@ -14,7 +14,8 @@
         "data_description": {
           "volume": "Laissez vide pour garder le volume actuel de chaque enceinte. Pris en charge par Sonos.",
           "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles.",
-          "speech_rate": "1 est le rythme normal de la voix. Baissez-la si les messages tapés et les annonces semblent trop rapides ; 0,85 est un peu plus lent. La hauteur de la voix reste la même."
+          "speech_rate": "1 est le rythme normal de la voix. Baissez-la si les messages tapés et les annonces semblent trop rapides ; 0,85 est un peu plus lent. La hauteur de la voix reste la même.",
+          "speakers": "Choisissez les lecteurs audio disponibles ou vus au cours des dernières 24 heures. Les sélections enregistrées restent visibles pour pouvoir les retirer. Pour le son Android/Google TV, choisissez Google Cast ou Music Assistant, pas Android TV Remote."
         }
       }
     },
@@ -39,7 +40,8 @@
         "data_description": {
           "volume": "Laissez vide pour garder le volume actuel de chaque enceinte. Pris en charge par Sonos.",
           "gain_db": "Augmentez-le si les enregistrements du téléphone sont trop faibles.",
-          "speech_rate": "1 est le rythme normal de la voix. Baissez-la si les messages tapés et les annonces semblent trop rapides ; 0,85 est un peu plus lent. La hauteur de la voix reste la même."
+          "speech_rate": "1 est le rythme normal de la voix. Baissez-la si les messages tapés et les annonces semblent trop rapides ; 0,85 est un peu plus lent. La hauteur de la voix reste la même.",
+          "speakers": "Choisissez les lecteurs audio disponibles ou vus au cours des dernières 24 heures. Les sélections enregistrées restent visibles pour pouvoir les retirer. Pour le son Android/Google TV, choisissez Google Cast ou Music Assistant, pas Android TV Remote."
         },
         "sections": {
           "chime_options": {
@@ -121,7 +123,8 @@
               "household_profiles": "Profils du foyer",
               "agent_policies": "Règles des comptes agents",
               "playback_routes": "Itinéraires des appareils de lecture",
-              "prefer_music_assistant": "Préférer Music Assistant dans ces pièces"
+              "prefer_music_assistant": "Préférer Music Assistant dans ces pièces",
+              "playback_delays": "Délais de démarrage et de restauration des enceintes"
             },
             "data_description": {
               "talk_back": "Quand quelqu'un parle à une pièce depuis une autre, un satellite Assist de cette pièce (Atom Echo, ESP32-S3, Home Assistant Voice) écoute une réponse, que la pièce de l'appelant entend. Les réponses sont transcrites puis dites avec la voix choisie.",
@@ -129,7 +132,8 @@
               "doorbell_camera": "Répondre ouvre le direct de cette caméra, où l'on peut parler si la caméra le permet.",
               "doorbell_rooms": "Laisser vide pour sonner partout.",
               "playback_routes": "Associez une entité de lecture à un contrôleur et une source explicites pour sa sortie audio. Les connexions HDMI ne sont pas déduites des noms de pièces. La restauration et la reprise des applications dépendent de l’appareil.",
-              "prefer_music_assistant": "Pour les entrées vérifiées d’une même enceinte physique, préfère son lecteur Music Assistant. Les identités MA inconnues nécessitent une sélection manuelle ; ce réglage ne rapproche jamais les appareils par pièce ou par nom."
+              "prefer_music_assistant": "Pour les entrées vérifiées d’une même enceinte physique, préfère son lecteur Music Assistant. Les identités MA inconnues nécessitent une sélection manuelle ; ce réglage ne rapproche jamais les appareils par pièce ou par nom.",
+              "playback_delays": "Réglages facultatifs par enceinte en secondes : startup_delay attend avant l’envoi du son ; restore_delay attend après la lecture avant de rétablir l’entrée, le volume et l’alimentation. Valeurs de 0 à 60. Les amplificateurs Denon attendent par défaut 10 secondes après l’allumage ou un changement d’entrée et 2 secondes avant la restauration."
             }
           }
         }
@@ -137,7 +141,7 @@
     },
     "error": {
       "no_speakers": "Choisissez au moins une enceinte.",
-      "invalid_settings": "Vérifiez les alias, les préférences, les adaptateurs et les itinéraires de lecture."
+      "invalid_settings": "Vérifiez les alias, les préférences, les adaptateurs, les itinéraires de lecture et les délais."
     }
   },
   "selector": {
@@ -284,7 +288,7 @@
         "setup_not_ready": "Certaines vérifications nécessitent une intervention. Consultez le diagnostic.",
         "setup_started": "Paramètres enregistrés. Vérifiez après le rechargement de Home Assistant.",
         "test_pending": "Test demandé. Attendez la fin puis confirmez ce que vous avez entendu.",
-        "setup_scan_count": "{count} points de sortie audio trouvés.",
+        "setup_scan_count": "{count} appareils trouvés.",
         "setup_keep_volume": "Conserver le volume de l’appareil",
         "setup_draft": "Brouillon",
         "setup_applying": "Application en cours",
@@ -568,7 +572,18 @@
         "url_certificate": "Le certificat HTTPS n’a pas pu être validé auprès des autorités de certification publiques.",
         "url_tls_unverified": "La connexion HTTPS n’a pas pu être vérifiée. La confiance du certificat et l’accès des enceintes sont inconnus.",
         "url_missing": "Non configurée",
-        "music_assistant_timeout": "Music Assistant n’a pas terminé la demande à temps. La lecture a pu commencer ; RoomCall n’a pas réessayé pour éviter une annonce en double."
+        "music_assistant_timeout": "Music Assistant n’a pas terminé la demande à temps. La lecture a pu commencer ; RoomCall n’a pas réessayé pour éviter une annonce en double.",
+        "setup_available": "Disponible",
+        "setup_recently_available": "Indisponible ; vu au cours des dernières 24 heures",
+        "setup_saved_unavailable": "Enregistré ; indisponible",
+        "setup_control_only": "Commande uniquement. Pour le son, sélectionnez le lecteur Google Cast ou Music Assistant du téléviseur.",
+        "setup_route_player": "Lecteur multimédia",
+        "setup_route_cast": "Google Cast",
+        "setup_route_androidtv_remote": "Android TV Remote",
+        "setup_route_denonavr": "Denon AVR",
+        "setup_route_music_assistant": "Music Assistant",
+        "setup_route_heos": "HEOS",
+        "setup_route_sonos": "Sonos"
       }
     },
     "audio_processing": {

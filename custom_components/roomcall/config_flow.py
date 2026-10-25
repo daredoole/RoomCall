@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.media_player import MediaPlayerEntityFeature
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -85,6 +84,9 @@ _SKIP_PLATFORMS_BY_DEFAULT = {"dlna_dmr", "mobile_app"}
 
 
 def suggested_speakers(hass: HomeAssistant, current: dict | None = None) -> list[str]:
+    from .discovery import players
+
+    recent = players(hass)
     registry = er.async_get(hass)
     communication = (current or {}).get("communication", {})
     aliases = communication.get("aliases", {})
@@ -93,9 +95,10 @@ def suggested_speakers(hass: HomeAssistant, current: dict | None = None) -> list
         entry = registry.async_get(state.entity_id)
         if entry and (entry.disabled_by or entry.platform in _SKIP_PLATFORMS_BY_DEFAULT):
             continue
-        features = state.attributes.get("supported_features", 0)
-        if features & MediaPlayerEntityFeature.MEDIA_ANNOUNCE and default_destination(
-            hass, state.entity_id, aliases
+        if (
+            recent.recent(state.entity_id)
+            and recent.audio_capable(state.entity_id)
+            and default_destination(hass, state.entity_id, aliases)
         ):
             out.append(state.entity_id)
     return deduplicate(hass, sorted(out), aliases, communication.get("prefer_music_assistant", []))[
@@ -116,11 +119,23 @@ def _volume_slider() -> selector.NumberSelector:
 
 
 def _main_fields(hass: HomeAssistant, defaults: dict[str, Any]) -> dict[Any, Any]:
+    from .discovery import speaker_choices
+
+    choices = speaker_choices(hass, defaults.get(CONF_SPEAKERS, []))
     return {
         vol.Required(
             CONF_SPEAKERS, default=defaults.get(CONF_SPEAKERS, suggested_speakers(hass, defaults))
         ): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="media_player", multiple=True)
+            selector.EntitySelectorConfig(
+                domain="media_player",
+                multiple=True,
+                include_entities=choices,
+                exclude_entities=[
+                    entity
+                    for entity in hass.states.async_entity_ids("media_player")
+                    if entity not in choices
+                ],
+            )
         ),
         vol.Optional(
             CONF_VOLUME, description=_suggest(defaults.get(CONF_VOLUME))
@@ -285,6 +300,9 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
                             "playback_routes", default=communication.get("playback_routes", {})
                         ): selector.ObjectSelector(),
                         vol.Optional(
+                            "playback_delays", default=communication.get("playback_delays", {})
+                        ): selector.ObjectSelector(),
+                        vol.Optional(
                             "preferences", default=communication.get("preferences", {})
                         ): selector.ObjectSelector(),
                         vol.Optional(
@@ -362,6 +380,13 @@ def _options_schema(hass: HomeAssistant, current: dict[str, Any]) -> vol.Schema:
     )
 
 
+def _delay_seconds(value: Any) -> float:
+    value = vol.Any(int, float)(value)
+    if not 0 <= value <= 60:
+        raise vol.Invalid("Delay must be between 0 and 60 seconds")
+    return float(value)
+
+
 def validate_communication(values: dict[str, Any]) -> None:
     """Validate freeform mappings before they enter the runtime configuration."""
     from .agent_policy import validate as validate_agent_policies
@@ -392,6 +417,17 @@ def validate_communication(values: dict[str, Any]) -> None:
                         {
                             vol.Required("controller"): cv_entity,
                             vol.Required("source"): vol.All(str, vol.Length(min=1, max=100)),
+                        }
+                    )
+                },
+                vol.Length(max=32),
+            ),
+            vol.Optional("playback_delays"): vol.All(
+                {
+                    cv_entity: vol.Schema(
+                        {
+                            vol.Optional("startup_delay"): _delay_seconds,
+                            vol.Optional("restore_delay"): _delay_seconds,
                         }
                     )
                 },
@@ -453,6 +489,9 @@ class RoomCallConfigFlow(ConfigFlow, domain=DOMAIN):
         # Opening HA's normal config flow bootstraps the API and setup UI, even
         # before a RoomCall entry exists. Installation stays with HA/HACS.
         await async_setup_component(self.hass, DOMAIN, {})
+        from .discovery import async_refresh
+
+        await async_refresh(self.hass)
         errors: dict[str, str] = {}
         if user_input is not None:
             if not user_input.get(CONF_SPEAKERS):
@@ -483,6 +522,9 @@ class RoomCallConfigFlow(ConfigFlow, domain=DOMAIN):
 
 class RoomCallOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        from .discovery import async_refresh
+
+        await async_refresh(self.hass)
         errors: dict[str, str] = {}
         if user_input is not None:
             if not user_input.get(CONF_SPEAKERS):

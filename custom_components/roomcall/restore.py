@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from asyncio import sleep as settling_delay
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
@@ -23,7 +24,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_track_state_change_event
 
 from .errors import Problem
-from .playback import controlled_entities, route
+from .playback import controlled_entities, route, source_matches
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +35,9 @@ LIVE_TAIL_SECONDS = 5.0
 # Unknown length and never reported "playing": assume a short message took about this long.
 UNSEEN_PLAYING_SECONDS = 12.0
 CONTROL_TIMEOUT = 10.0
+# HA's "on"/NET state can precede the amplifier's audible output by several seconds.
+AVR_STARTUP_SECONDS = 10.0
+AVR_RESTORE_SECONDS = 2.0
 _ACTIVE = "roomcall_restore_active"
 CAST_RECEIVER_APPS = {"com.google.android.apps.mediashell", "com.google.cast.receiver"}
 
@@ -234,6 +238,7 @@ class Guard:
         owner: str | None = None,
         assistant: str | None = None,
         restore_enabled: bool = True,
+        prepare_controls: bool = True,
         evidence: dict[str, Any] | None = None,
         call_id: str | None = None,
     ) -> None:
@@ -243,15 +248,20 @@ class Guard:
         self.owner, self.assistant = owner, assistant
         self.context = Context(user_id=owner)
         self.restore_enabled = restore_enabled
+        self.prepare_controls = prepare_controls
         self.evidence = evidence if evidence is not None else {}
         self.media_id = ""
         self.call_id = call_id
         self.entities: list[str] = []
         self.output: dict[str, str] = {}
+        self.delays: dict[str, float] = {}
 
     def start(self) -> None:
         self.entities = controlled_entities(self._hass, self._entity_id)
         self.output = route(self._hass, self._entity_id)
+        self.delays = dict(
+            getattr(self._hass.data.get("roomcall"), "playback_delays", {}).get(self._entity_id, {})
+        )
         if entry := self._active.get(self._entity_id):
             entry[1] += 1
         else:
@@ -305,10 +315,11 @@ class Guard:
         controllers = [
             s.entity_id
             for s in self._active[self._entity_id][0]
-            if s.platform == "androidtv_remote"
+            if self.prepare_controls and s.platform == "androidtv_remote"
         ]
         if output.get("controller"):
             controllers.append(output["controller"])
+        changed = False
         try:
             for entity in dict.fromkeys(controllers):
                 if not any(s.entity_id == entity for s in self._active[self._entity_id][0]):
@@ -323,6 +334,7 @@ class Guard:
                     ):
                         raise Problem("playback_prepare_failed")
                     await self._control(entity, "turn_on")
+                    changed = True
                     await self._wait(
                         entity,
                         lambda s: s.state not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN),
@@ -342,12 +354,33 @@ class Guard:
             controller = output.get("controller", self._entity_id)
             state = self._hass.states.get(controller)
             if source := output.get("source"):
-                if state is None or source not in (state.attributes.get("source_list") or []):
+                sources = state.attributes.get("source_list") or [] if state else []
+                selected_source = (
+                    source
+                    if source in sources
+                    else next(
+                        (
+                            item
+                            for item in sources
+                            if source_matches(self._hass, controller, source, item)
+                        ),
+                        None,
+                    )
+                )
+                if state is None or selected_source is None:
                     raise Problem("playback_prepare_failed")
-                if state.attributes.get("source") != source:
-                    await self._control(controller, "select_source", source=source)
-                    await self._wait(controller, lambda s: s.attributes.get("source") == source)
-            if state is not None:
+                if not source_matches(
+                    self._hass, controller, source, state.attributes.get("source")
+                ):
+                    await self._control(controller, "select_source", source=selected_source)
+                    changed = True
+                    await self._wait(
+                        controller,
+                        lambda s: source_matches(
+                            self._hass, controller, source, s.attributes.get("source")
+                        ),
+                    )
+            if self.prepare_controls and state is not None:
                 features = state.attributes.get("supported_features", 0)
                 if volume is not None and features & MediaPlayerEntityFeature.VOLUME_SET:
                     await self._control(controller, "volume_set", volume_level=volume)
@@ -360,9 +393,29 @@ class Guard:
             raise
         except Exception as err:
             raise Problem("playback_prepare_failed") from err
+        entry = er.async_get(self._hass).async_get(output.get("controller", self._entity_id))
+        avr = bool(entry and entry.platform == "denonavr")
+        startup = self.delays.get("startup_delay", AVR_STARTUP_SECONDS if avr and changed else 0)
+        self.delays.setdefault("restore_delay", AVR_RESTORE_SECONDS if avr else 0)
+        self.evidence["interruption"] = {"prepared": True, "restore": "pending"}
+        if startup:
+            await settling_delay(startup)
         if not await self._permitted():
             raise Problem("forbidden")
-        self.evidence["interruption"] = {"prepared": True, "restore": "pending"}
+        # Do not dispatch after somebody turns the receiver off or changes inputs during warm-up.
+        state = self._hass.states.get(output.get("controller", self._entity_id))
+        if output.get("source") and (
+            state is None
+            or state.state in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN)
+            or not source_matches(
+                self._hass, state.entity_id, output["source"], state.attributes.get("source")
+            )
+        ):
+            raise Problem("playback_prepare_failed")
+        self.evidence["playback_delays"] = {
+            "startup_delay": startup,
+            "restore_delay": self.delays["restore_delay"],
+        }
 
     async def _resume(self, snaps: list[Snapshot]) -> None:
         original = next((s for s in snaps if s.entity_id == self._entity_id), None)
@@ -451,7 +504,15 @@ class Guard:
                     replaced
                     or controller is None
                     or controller.state == STATE_OFF
-                    or controller.attributes.get("source") not in (None, output["source"])
+                    or (
+                        controller.attributes.get("source") is not None
+                        and not source_matches(
+                            self._hass,
+                            controller.entity_id,
+                            output["source"],
+                            controller.attributes.get("source"),
+                        )
+                    )
                 )
             for snap in entry[0]:
                 if snap.platform == "androidtv_remote" and snap.app_id:
@@ -465,7 +526,7 @@ class Guard:
             if not await self._permitted() or (self.media_id and replaced):
                 self.evidence["interruption"] = {"restore": "skipped_external_change_or_permission"}
                 return
-            if self.restore_enabled or rollback:
+            if self.prepare_controls and (self.restore_enabled or rollback):
                 failed = await restore(self._hass, entry[0], self.context, self.assistant)
                 try:
                     if not rollback:
@@ -506,5 +567,7 @@ class Guard:
                 )
             else:
                 await wait_until_done(self._hass, self._entity_id, seconds)
+            if self.delays.get("restore_delay"):
+                await settling_delay(self.delays["restore_delay"])
         finally:
             await self._release()

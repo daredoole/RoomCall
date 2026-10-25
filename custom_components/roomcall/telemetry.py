@@ -7,7 +7,7 @@ import time
 from collections import Counter, OrderedDict, defaultdict, deque
 from datetime import timedelta
 from typing import Any
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import urlsplit
 
 from homeassistant.components.http.auth import async_sign_path
 from homeassistant.core import HomeAssistant
@@ -97,15 +97,22 @@ class Evidence:
         if not parts.path.startswith(("/api/roomcall/clip/", "/api/roomcall/live/")):
             return url
         token = secrets.token_urlsafe(24)
-        self.tokens[token] = (record, entity_id, parts.path, time.monotonic())
+        directory, filename = parts.path.rsplit("/", 1)
+        stem, separator, extension = filename.rpartition(".")
+        if not separator:
+            stem, extension = filename, "mp3"
+        stem = f"{directory}/{stem}"
+        path = f"{stem}.{token}.{extension}"
+        self.tokens[token] = (record, entity_id, path, time.monotonic())
         while len(self.tokens) > 2048:
             self.tokens.popitem(last=False)
-        query = f"{parts.query}&" if parts.query else ""
         # Speakers cannot sign in: they get a short-lived signed path, the way Home Assistant
         # serves media sources, and the clip/live views keep requiring authentication.
+        # HEOS receivers can strip ampersands from URLs. Bind endpoint evidence in the
+        # filename so authSig is the only query parameter, with no separator to corrupt.
         signed = async_sign_path(
             hass,
-            f"{parts.path}?{query}{urlencode({'roomcall_token': token})}",
+            path,
             timedelta(seconds=CLIP_TTL_SECONDS),
             use_content_user=True,
         )

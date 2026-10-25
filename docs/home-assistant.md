@@ -75,8 +75,22 @@ Pick your speakers. Everything else is under **Configure** on the integration:
 !!! tip "One entity per speaker"
     A physical speaker often has several media players (native Sonos plus Music Assistant, Cast
     plus Android TV…). Pick one per speaker so messages do not play twice. RoomCall suggests
-    announce-capable routes, favors native players within a known physical pair, and leaves
+    audio-capable routes, favors native players within a known physical pair, and leaves
     uncertain Music Assistant identities unchecked until you select them.
+
+The speaker picker offers devices available now or last available within **24 hours**.
+An `off` Cast speaker is still available in standby. Old unavailable devices are hidden
+unless already saved in RoomCall, so you can remove or replace existing selections.
+Recent availability is tracked across restarts and bootstrapped from HA recorder history
+when available; a restored entity or an unavailable-state heartbeat does not count as online.
+
+For an Android/Google TV, add **Google Cast** and select its Cast media player.
+**Android TV Remote** can turn the box on and launch apps, but cannot play RoomCall audio
+URLs. Guided setup identifies it as a control, with a disabled audio checkbox. Cast and
+remote entities are paired only through verified device identity or an explicit alias;
+matching room names alone do not establish that they are the same box.
+
+![Recent Google Cast speaker and Android TV companion control](assets/ha-device-discovery.png)
 
 !!! info "Rooms come from areas"
     Each speaker's room is its entity area, or its device area. Speakers without
@@ -277,10 +291,32 @@ are not advertised as audio-URL players merely because they can launch apps.
 
 Before playback, RoomCall wakes a verified control when needed, selects the known
 input (HEOS Music for a paired HEOS receiver), and confirms the reported state.
+Denon’s underlying **NET** report is accepted as the same input. After waking or changing
+the input on a Denon AVR, RoomCall waits **10 seconds** before sending audio, because HA can
+report the new state before the amplifier becomes audible. It waits another **2 seconds**
+after playback before restoring the input, volume and power.
 Preparation failure stops dispatch and attempts to undo the temporary changes.
 Power, input, volume and mute are saved for restoration. Attributes hidden in
 standby are captured after wake and before overrides. Lost connectivity can prevent
 restoration; its request outcome is separate from playback acceptance/audibility.
+
+To tune a slow receiver or another speaker, open **Configure → Communication → Speaker
+startup and restore delays**. Enter overrides keyed by the selected playback entity:
+
+```yaml
+media_player.living_room_heos:
+  startup_delay: 12
+  restore_delay: 3
+media_player.office_cast:
+  startup_delay: 4
+  restore_delay: 1
+```
+
+Each value is seconds, from **0 to 60**. An explicit startup override applies before every
+send, including when the device is already on. Omitted fields use the defaults above for
+paired Denon receivers and zero for other players. Setting zero disables that extra delay;
+RoomCall still waits for playback to finish. These delays do not prove audibility or change
+Music Assistant’s own announcement completion semantics.
 
 **Preview recipients** identifies the controller/source and the restoration
 limitations. The delivery timeline reports pending, completed, failed or skipped

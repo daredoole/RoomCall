@@ -4,6 +4,17 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- Show audio-capable devices online now or seen within 24 hours in the speaker picker,
+  including standby Cast TVs. Keep saved selections editable and identify Android TV
+  Remote controls separately from Google Cast audio endpoints.
+- Accept Denon’s NET report for its HEOS Music input. Wait 10 seconds after waking or
+  switching a Denon AVR and 2 seconds before restoration, with per-device startup/restore
+  overrides under Communication → Speaker startup and restore delays.
+- Keep the short-lived audio signature as the only URL query parameter so HEOS receivers
+  that strip query separators can fetch authenticated clips and live audio.
+
 ## 0.22.0 — 2026-10-24
 
 - Add a **simple** card layout: rooms, the talk button and the latest call, with Urgent,

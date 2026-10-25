@@ -411,15 +411,44 @@ async def test_delivery_tokens_do_not_claim_audibility(hass, setup_roomcall, has
     anon = await hass_client_no_auth()
     # Speakers get a short-lived signed path; the clip itself still requires authentication.
     url = URL(played[0].data["media_content_id"])
-    assert url.host == "ha.local" and "authSig" in url.query
+    assert url.host == "ha.local" and set(url.query) == {"authSig"}
+    assert f".{token}.mp3" in url.path
+    # The observed HEOS URL corruption strips '&'; a single-query URL survives unchanged.
+    assert url.path_qs.replace("&", "") == url.path_qs
     unsigned = f"/api/roomcall/clip/{clip}.mp3?roomcall_token={token}"
     assert (await anon.get(unsigned)).status == 401
-    tampered = url.update_query(roomcall_token="other")
+    tampered = url.with_path(url.path.replace(token, "other"), keep_query=True)
     assert (await anon.get(tampered.path_qs)).status == 401
     assert "audio_fetched_ms" not in record.evidence["media_player.basement_sonos"]
     response = await anon.get(url.path_qs)
     assert response.status == 200
     assert record.evidence["media_player.basement_sonos"]["audio_fetched_ms"] >= 0
+    assert record.summary()["audible"] is None
+
+
+async def test_clip_fetch_identity_is_bound_to_each_endpoint_and_signed_path(
+    hass, setup_roomcall, hass_client_no_auth
+):
+    from custom_components.roomcall.core import CallRecord
+
+    data = hass.data["roomcall"]
+    record = CallRecord(target="kitchen", kind="talk", results=[])
+    clip = data.clips.add(b"audio", "audio/mpeg")
+    # Extension-free internal URLs remain supported and gain a safe filename extension.
+    a = URL(data.evidence.url(hass, f"http://ha.local:8123/api/roomcall/clip/{clip}", record, "a"))
+    b = URL(
+        data.evidence.url(hass, f"http://ha.local:8123/api/roomcall/clip/{clip}.mp3", record, "b")
+    )
+    assert a.path != b.path and a.query["authSig"] != b.query["authSig"]
+    assert set(a.query) == set(b.query) == {"authSig"}
+    tokens = list(data.evidence.tokens)
+    data.evidence.fetched(tokens[-1], a.path)
+    assert not record.evidence
+    anon = await hass_client_no_auth()
+    assert (await anon.get(a.path_qs)).status == 200
+    assert "audio_fetched_ms" in record.evidence["a"] and "b" not in record.evidence
+    assert (await anon.get(b.path_qs)).status == 200
+    assert "audio_fetched_ms" in record.evidence["b"]
     assert record.summary()["audible"] is None
 
 

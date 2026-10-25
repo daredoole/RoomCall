@@ -15,6 +15,14 @@ def is_music_assistant(hass: HomeAssistant, entity_id: str) -> bool:
     return bool(entry and entry.platform == "music_assistant")
 
 
+def source_matches(hass: HomeAssistant, entity_id: str, wanted: str, actual: str | None) -> bool:
+    """Denon selects HEOS Music but can report its underlying NET input."""
+    entry = er.async_get(hass).async_get(entity_id)
+    return actual == wanted or bool(
+        entry and entry.platform == "denonavr" and {wanted, actual} == {"HEOS Music", "NET"}
+    )
+
+
 def identities(hass: HomeAssistant, entity_id: str) -> set[str]:
     runtime = hass.data.get("roomcall")
     aliases = getattr(runtime, "aliases", {})
@@ -128,6 +136,9 @@ def describe(hass: HomeAssistant, entity_id: str) -> dict[str, Any]:
         else [],
         "entities": entries,
         "restore_enabled": getattr(hass.data.get("roomcall"), "restore", False),
+        "playback_delays": dict(
+            getattr(hass.data.get("roomcall"), "playback_delays", {}).get(entity_id, {})
+        ),
         "android_app_reopen": bool(android),
         "media_resume": bool(
             registry.async_get(entity_id)

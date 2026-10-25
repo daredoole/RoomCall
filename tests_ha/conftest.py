@@ -79,6 +79,14 @@ async def setup_roomcall(hass: HomeAssistant, house: dict[str, str]) -> MockConf
 
 
 @pytest.fixture(autouse=True)
+def receiver_settling(monkeypatch):
+    """Hardware settling is a clock delay; timing tests explicitly gate dispatch/restore."""
+    delay = AsyncMock()
+    monkeypatch.setattr("custom_components.roomcall.restore.settling_delay", delay)
+    return delay
+
+
+@pytest.fixture(autouse=True)
 def mock_native_playback_duration(monkeypatch):
     """Mocked media players do not produce playback events; queue tests set their own gate.
 

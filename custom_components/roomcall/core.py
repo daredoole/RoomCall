@@ -474,7 +474,10 @@ async def _play_one(
             raise Problem("expired")
         authorize()
 
-        if (restore and not supports_announce(hass, entity_id)) or route(hass, entity_id):
+        prepare_controls = (restore and not supports_announce(hass, entity_id)) or bool(
+            route(hass, entity_id)
+        )
+        if prepare_controls or getattr(runtime, "playback_delays", {}).get(entity_id):
             from .restore import Guard
 
             guard = Guard(
@@ -482,7 +485,8 @@ async def _play_one(
                 entity_id,
                 owner=owner,
                 assistant=assistant,
-                restore_enabled=restore,
+                restore_enabled=restore and prepare_controls,
+                prepare_controls=prepare_controls,
                 evidence=record.evidence.setdefault(entity_id, {}) if record else None,
                 call_id=record.call_id if record else None,
             )

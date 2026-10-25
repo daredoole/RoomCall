@@ -6,7 +6,7 @@ import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from custom_components.roomcall import communication, playback, restore
+from custom_components.roomcall import communication, core, playback, restore
 from custom_components.roomcall.agent_policy import AgentPolicies
 from custom_components.roomcall.capabilities import deduplicate, physical_key
 from custom_components.roomcall.config_flow import validate_communication
@@ -76,6 +76,56 @@ async def test_verified_heos_prepares_wake_source_volume_mute_and_restores(hass,
     assert record.ok and record.evidence[heos]["interruption"]["restore"] == "requests_completed"
     assert record.summary()["audible"] is None
     assert not data.scheduler.pending and not hass.data["roomcall_restore_active"]
+
+
+@pytest.mark.parametrize("sources", [["HEOS Music", "TV"], ["NET", "TV"]])
+async def test_denon_net_report_dispatches_audio_and_restores_original_state(hass, house, sources):
+    area, heos, native = pair(hass, state="off")
+    state = hass.states.get(native)
+    hass.states.async_set(native, "off", {**state.attributes, "source_list": sources})
+    await _roomcall(hass, [heos])
+    calls = _record_services(hass)
+
+    async def source(call):
+        calls.append(call)
+        wanted = call.data["source"]
+        hass.states.async_set(
+            native,
+            "on",
+            {
+                **hass.states.get(native).attributes,
+                "source": "NET" if wanted == "HEOS Music" else wanted,
+            },
+        )
+
+    hass.services.async_register("media_player", "select_source", source)
+    await _broadcast(hass, area)
+    record = hass.data["roomcall"].history.records()[0]
+    assert record.ok and record.evidence[heos]["request_accepted"]
+    assert record.evidence[heos]["interruption"]["restore"] == "requests_completed"
+    assert [c.data["source"] for c in calls if c.service == "select_source"] == [sources[0], "TV"]
+    assert any(c.service == "play_media" and c.data["entity_id"] == heos for c in calls)
+    assert hass.states.get(native).state == "off"
+    assert hass.states.get(native).attributes["source"] == "TV"
+    assert record.summary()["audible"] is None
+
+
+@pytest.mark.parametrize(
+    "platform,wanted,actual,expected",
+    [
+        ("denonavr", "HEOS Music", "NET", True),
+        ("denonavr", "NET", "HEOS Music", True),
+        ("denonavr", "TV", "NET", False),
+        ("denonavr", "HEOS Music", None, False),
+        ("androidtv_remote", "HEOS Music", "NET", False),
+    ],
+)
+async def test_source_aliases_are_limited_to_denon_network_input(
+    hass, platform, wanted, actual, expected
+):
+    ent = er.async_get(hass).async_get_or_create("media_player", platform, "source-test")
+    assert playback.source_matches(hass, ent.entity_id, wanted, actual) is expected
+    assert not playback.source_matches(hass, "media_player.missing", wanted, actual)
 
 
 async def test_same_model_is_not_identity_and_zones_are_not_overridden(hass, house):
@@ -334,6 +384,223 @@ def test_route_configuration_is_bounded_and_validated():
     ]:
         with pytest.raises(vol.Invalid):
             validate_communication({"playback_routes": invalid})
+
+
+async def test_avr_settles_before_dispatch_and_holds_before_restore(hass, house, receiver_settling):
+    area, heos, native = pair(hass, state="off")
+    await _roomcall(hass, [heos])
+    calls = _record_services(hass)
+    warming, draining = asyncio.Event(), asyncio.Event()
+    ready, finished = asyncio.Event(), asyncio.Event()
+
+    async def delay(seconds):
+        if seconds == 10:
+            warming.set()
+            await ready.wait()
+        else:
+            assert seconds == 2
+            draining.set()
+            await finished.wait()
+
+    receiver_settling.side_effect = delay
+    task = asyncio.create_task(_broadcast(hass, area))
+    await asyncio.wait_for(warming.wait(), 5)
+    assert not any(c.service == "play_media" for c in calls)
+    assert hass.states.get(native).attributes["source"] == "HEOS Music"
+    ready.set()
+    await asyncio.wait_for(draining.wait(), 5)
+    assert any(c.service == "play_media" for c in calls)
+    assert not any(c.service == "turn_off" for c in calls)
+    finished.set()
+    await task
+    assert calls[-1].service == "turn_off"
+    evidence = hass.data["roomcall"].history.records()[0].evidence[heos]
+    assert evidence["playback_delays"] == {"startup_delay": 10, "restore_delay": 2}
+
+
+async def test_avr_already_on_network_does_not_wait_for_wake(hass, house, receiver_settling):
+    area, heos, _native = pair(hass, source="NET")
+    await _roomcall(hass, [heos])
+    _record_services(hass)
+    await _broadcast(hass, area)
+    receiver_settling.assert_awaited_once_with(2)
+
+
+async def test_manual_delays_apply_to_an_announce_player_without_restore(
+    hass, house, receiver_settling
+):
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    speaker = "media_player.basement_sonos"
+    entry = MockConfigEntry(
+        domain="roomcall",
+        data={"speakers": [speaker]},
+        options={
+            "delivery": {"restore": False},
+            "communication": {
+                "playback_delays": {speaker: {"startup_delay": 4, "restore_delay": 6}}
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    calls = _record_services(hass)
+    await _broadcast(hass, house["basement"])
+    assert [args.args[0] for args in receiver_settling.await_args_list] == [4, 6]
+    assert [c.service for c in calls] == ["play_media"]
+    assert hass.data["roomcall"].history.records()[0].evidence[speaker]["interruption"] == {
+        "restore": "disabled"
+    }
+
+
+@pytest.mark.parametrize("platform", ["sonos", "music_assistant"])
+@pytest.mark.parametrize("restoration", [False, True])
+async def test_delay_only_overrides_preserve_announcement_owned_volume_and_mute(
+    hass, house, receiver_settling, platform, restoration
+):
+    area = ar.async_get(hass).async_create("Announcement Room").id
+    speaker = _player(
+        hass,
+        platform,
+        "announce",
+        area,
+        "Example",
+        "Speaker",
+        "playing",
+        supported_features=F.PLAY_MEDIA | F.MEDIA_ANNOUNCE | F.VOLUME_SET | F.VOLUME_MUTE,
+        volume_level=0.1,
+        is_volume_muted=True,
+    )
+    await _roomcall(hass, [speaker])
+    data = hass.data["roomcall"]
+    data.restore, data.volume = restoration, 0.4
+    data.playback_delays = {speaker: {"startup_delay": 4, "restore_delay": 6}}
+    calls = _record_services(hass)
+    announcements = []
+
+    def unchanged():
+        state = hass.states.get(speaker)
+        assert state.attributes["volume_level"] == 0.1
+        assert state.attributes["is_volume_muted"] is True
+
+    async def settle(seconds):
+        unchanged()
+
+    async def announcement(call):
+        unchanged()
+        announcements.append(call)
+
+    receiver_settling.side_effect = settle
+    hass.services.async_register("music_assistant", "play_announcement", announcement)
+    await _broadcast(hass, area)
+    unchanged()
+    assert [args.args[0] for args in receiver_settling.await_args_list] == [4, 6]
+    if platform == "sonos":
+        assert [c.service for c in calls] == ["play_media"]
+        assert calls[0].data["extra"]["volume"] == 40
+        assert not announcements
+    else:
+        assert not calls and len(announcements) == 1
+        assert announcements[0].data["announce_volume"] == 40
+
+
+@pytest.mark.parametrize("platform", ["sonos", "music_assistant"])
+@pytest.mark.parametrize("restoration", [False, True])
+async def test_expired_delay_only_call_keeps_user_volume_and_mute_changes(
+    hass, house, receiver_settling, platform, restoration
+):
+    area = ar.async_get(hass).async_create("Expired Announcement Room").id
+    speaker = _player(
+        hass,
+        platform,
+        "announce",
+        area,
+        "Example",
+        "Speaker",
+        "playing",
+        supported_features=F.PLAY_MEDIA | F.MEDIA_ANNOUNCE | F.VOLUME_SET | F.VOLUME_MUTE,
+        volume_level=0.1,
+        is_volume_muted=False,
+    )
+    await _roomcall(hass, [speaker])
+    hass.data["roomcall"].playback_delays = {speaker: {"startup_delay": 4}}
+    calls = _record_services(hass)
+    deadline = hass.loop.time() + 1
+
+    async def expire(seconds):
+        state = hass.states.get(speaker)
+        hass.states.async_set(
+            speaker, "playing", {**state.attributes, "volume_level": 0.7, "is_volume_muted": True}
+        )
+        await asyncio.sleep(max(0, deadline - hass.loop.time()) + 0.01)
+
+    receiver_settling.side_effect = expire
+    result = await core._play_one(
+        hass,
+        speaker,
+        "http://example.test/audio.mp3",
+        0.4,
+        retry=False,
+        restore=restoration,
+        deadline=deadline,
+    )
+    assert not result.ok and result.error_code == "expired"
+    receiver_settling.assert_awaited_once_with(4)
+    assert not calls and not hass.data["roomcall_restore_active"]
+    state = hass.states.get(speaker)
+    assert state.attributes["volume_level"] == 0.7
+    assert state.attributes["is_volume_muted"] is True
+
+
+@pytest.mark.parametrize("change", ["source", "power", "permission"])
+async def test_change_during_warmup_blocks_audio_and_preserves_user_change(
+    hass, house, receiver_settling, change
+):
+    area, heos, native = pair(hass, state="off")
+    await _roomcall(hass, [heos])
+    calls = _record_services(hass)
+
+    async def changed(seconds):
+        if change == "permission":
+            permission.return_value = False
+        else:
+            state = hass.states.get(native)
+            hass.states.async_set(
+                native,
+                "off" if change == "power" else "on",
+                {**state.attributes, "source": "TV" if change == "source" else "HEOS Music"},
+            )
+
+    receiver_settling.side_effect = changed
+    with patch.object(restore.Guard, "_permitted", AsyncMock(return_value=True)) as permission:
+        await _broadcast(hass, area)
+    assert not any(c.service == "play_media" for c in calls)
+    assert not hass.data["roomcall_restore_active"]
+    record = hass.data["roomcall"].history.records()[0]
+    assert not record.ok
+    assert (
+        record.evidence[heos]["interruption"]["restore"] == "skipped_external_change_or_permission"
+    )
+
+
+def test_delay_configuration_is_bounded_and_validated():
+    validate_communication(
+        {"playback_delays": {"media_player.avr": {"startup_delay": 10, "restore_delay": 0}}}
+    )
+    for invalid in [
+        {"light.tv": {"startup_delay": 10}},
+        {"media_player.tv": {"startup_delay": -1}},
+        {"media_player.tv": {"restore_delay": 61}},
+        {"media_player.tv": {"startup_delay": "wait"}},
+        {"media_player.tv": {"startup_delay": "10"}},
+        {"media_player.tv": {"startup_delay": float("nan")}},
+        {"media_player.tv": {"restore_delay": float("inf")}},
+        {"media_player.tv": {"unknown_delay": 10}},
+        {f"media_player.tv_{i}": {} for i in range(33)},
+    ]:
+        with pytest.raises(vol.Invalid):
+            validate_communication({"playback_delays": invalid})
 
 
 @pytest.mark.parametrize("change", ["source", "power", "removed"])

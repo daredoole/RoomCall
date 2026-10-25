@@ -1,7 +1,8 @@
 # Screenshots and validation
 
-The documentation was audited against **RoomCall 0.21.0**, with the compatible
-**native 0.20.0 / build 4** client, on 2026-10-23. Home Assistant captures include
+Browser captures were refreshed from **RoomCall Unreleased (after 0.22.0)** on
+2026-10-25. Native captures retain the compatible **native 0.20.0 / build 4** client.
+Home Assistant captures include
 the Glass interface and receiver/TV interruption previews and restoration status. The captures illustrate real rendered interfaces with sample data;
 they do not demonstrate a particular household, physical speaker delivery or
 successful Apple signing. Room names, tasks, people and transcripts are examples.
@@ -65,6 +66,11 @@ It shows a simulated second-room listening question with Yes / No / Skip control
 these buttons record the user’s answer, never an inferred playback result.
 
 ![Room-by-room listening check with sample data](assets/ha-room-listening.png)
+
+The device-discovery capture (`assets/ha-device-discovery.png`) shows a recently
+available Cast TV and its Android TV Remote control. The audio checkbox remains
+enabled for the recent Cast endpoint; the remote control is labelled and disabled
+as an audio destination. Browser QA checks this state at 240, 390 and 600 pixels.
 
 ## What remains a hardware check
 
