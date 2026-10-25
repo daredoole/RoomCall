@@ -238,6 +238,7 @@ class Guard:
         owner: str | None = None,
         assistant: str | None = None,
         restore_enabled: bool = True,
+        prepare_controls: bool = True,
         evidence: dict[str, Any] | None = None,
         call_id: str | None = None,
     ) -> None:
@@ -247,6 +248,7 @@ class Guard:
         self.owner, self.assistant = owner, assistant
         self.context = Context(user_id=owner)
         self.restore_enabled = restore_enabled
+        self.prepare_controls = prepare_controls
         self.evidence = evidence if evidence is not None else {}
         self.media_id = ""
         self.call_id = call_id
@@ -313,7 +315,7 @@ class Guard:
         controllers = [
             s.entity_id
             for s in self._active[self._entity_id][0]
-            if s.platform == "androidtv_remote"
+            if self.prepare_controls and s.platform == "androidtv_remote"
         ]
         if output.get("controller"):
             controllers.append(output["controller"])
@@ -378,7 +380,7 @@ class Guard:
                             self._hass, controller, source, s.attributes.get("source")
                         ),
                     )
-            if state is not None:
+            if self.prepare_controls and state is not None:
                 features = state.attributes.get("supported_features", 0)
                 if volume is not None and features & MediaPlayerEntityFeature.VOLUME_SET:
                     await self._control(controller, "volume_set", volume_level=volume)

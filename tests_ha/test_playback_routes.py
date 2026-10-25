@@ -454,6 +454,57 @@ async def test_manual_delays_apply_to_an_announce_player_without_restore(
     }
 
 
+@pytest.mark.parametrize("platform", ["sonos", "music_assistant"])
+@pytest.mark.parametrize("restoration", [False, True])
+async def test_delay_only_overrides_preserve_announcement_owned_volume_and_mute(
+    hass, house, receiver_settling, platform, restoration
+):
+    area = ar.async_get(hass).async_create("Announcement Room").id
+    speaker = _player(
+        hass,
+        platform,
+        "announce",
+        area,
+        "Example",
+        "Speaker",
+        "playing",
+        supported_features=F.PLAY_MEDIA | F.MEDIA_ANNOUNCE | F.VOLUME_SET | F.VOLUME_MUTE,
+        volume_level=0.1,
+        is_volume_muted=True,
+    )
+    await _roomcall(hass, [speaker])
+    data = hass.data["roomcall"]
+    data.restore, data.volume = restoration, 0.4
+    data.playback_delays = {speaker: {"startup_delay": 4, "restore_delay": 6}}
+    calls = _record_services(hass)
+    announcements = []
+
+    def unchanged():
+        state = hass.states.get(speaker)
+        assert state.attributes["volume_level"] == 0.1
+        assert state.attributes["is_volume_muted"] is True
+
+    async def settle(seconds):
+        unchanged()
+
+    async def announcement(call):
+        unchanged()
+        announcements.append(call)
+
+    receiver_settling.side_effect = settle
+    hass.services.async_register("music_assistant", "play_announcement", announcement)
+    await _broadcast(hass, area)
+    unchanged()
+    assert [args.args[0] for args in receiver_settling.await_args_list] == [4, 6]
+    if platform == "sonos":
+        assert [c.service for c in calls] == ["play_media"]
+        assert calls[0].data["extra"]["volume"] == 0.4
+        assert not announcements
+    else:
+        assert not calls and len(announcements) == 1
+        assert announcements[0].data["announce_volume"] == 40
+
+
 @pytest.mark.parametrize("change", ["source", "power", "permission"])
 async def test_change_during_warmup_blocks_audio_and_preserves_user_change(
     hass, house, receiver_settling, change
