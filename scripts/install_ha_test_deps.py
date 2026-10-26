@@ -13,4 +13,6 @@ requirements = []
 for domain in ("conversation", "tts"):
     manifest = Path(homeassistant.__file__).parent / f"components/{domain}/manifest.json"
     requirements.extend(json.loads(manifest.read_text())["requirements"])
+manifest = Path(__file__).resolve().parents[1] / "custom_components/roomcall/manifest.json"
+requirements.extend(json.loads(manifest.read_text())["requirements"])
 subprocess.run(["uv", "pip", "install", "--python", sys.executable, *requirements], check=True)

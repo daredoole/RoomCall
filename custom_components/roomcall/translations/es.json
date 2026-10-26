@@ -583,7 +583,21 @@
         "setup_route_denonavr": "Denon AVR",
         "setup_route_music_assistant": "Music Assistant",
         "setup_route_heos": "HEOS",
-        "setup_route_sonos": "Sonos"
+        "setup_route_sonos": "Sonos",
+        "echo_calls": "Llamadas Echo",
+        "echo_speaker": "Altavoz Echo",
+        "echo_host": "Dirección IP del Echo",
+        "echo_word": "Clave de la casa",
+        "echo_pair": "Vincular Echo",
+        "echo_call": "Llamar al Echo",
+        "echo_remove": "Eliminar vínculo",
+        "echo_pair_help": "Introduce la misma clave en la página de configuración del Echo. Responde con el botón de acción.",
+        "echo_ringing": "El Echo está sonando. Pulsa su botón de acción para responder.",
+        "voice_call_pattern": "(roomcall|room call) {area}",
+        "voice_announce_pattern": "anuncia en {area} que {message}",
+        "voice_queued": "Anuncio en cola para {room}.",
+        "voice_calling": "Llamando a {room}.",
+        "voice_call_help": "Abre una estación de RoomCall en {room} o selecciona el Echo en Estaciones."
       }
     },
     "audio_processing": {

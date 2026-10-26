@@ -32,6 +32,10 @@ FILES = {
         ROOT / "custom_components/roomcall/frontend/roomcall-qr.js",
         "text/javascript",
     ),
+    "/roomcall-echo.js": (
+        ROOT / "custom_components/roomcall/frontend/roomcall-echo.js",
+        "text/javascript",
+    ),
     "/strings.json": (ROOT / "custom_components/roomcall/strings.json", "application/json"),
     "/logo.svg": (OUT / "logo.svg", "image/svg+xml"),
 }

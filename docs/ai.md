@@ -4,6 +4,16 @@ RoomCall is built so an AI agent can set it up and run it on any Home Assistant 
 Home Assistant's own APIs, with no RoomCall-specific credentials. This page is the reference an
 agent needs. A machine-readable summary is at [`/llms.txt`](llms.txt).
 
+## Local voice commands and Echo calls
+
+The built-in Home Assistant conversation agent recognizes “announce to Basement that
+Dinner is ready” and “RoomCall Kitchen”. Announcements use the normal queue and policy.
+A live-call command spoken at a paired TECHO5 Echo invites the single open browser
+station in the destination area; its user must press Answer. Outside a paired Echo,
+use **Settings → Room stations → Echo calls** to choose and call an Echo.
+See [Echo pairing and live-call consent](communication.md#converted-echo-live-calls).
+Do not report queued messages, returned PCM or device states as confirmed audibility.
+
 ## 1. Talk through Assist (any LLM conversation agent)
 
 RoomCall explicitly contributes `roomcall__*` tools through Home Assistant's LLM

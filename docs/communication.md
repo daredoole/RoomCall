@@ -16,6 +16,53 @@ marks a test as heard. Results survive integration reloads and HA restarts.
 
 ![Typed message](assets/ha-card-type.png)
 
+## Converted Echo live calls
+
+TECHO5 Echo devices support live microphone and speaker audio through their encrypted
+intercom protocol. This requires a TECHO5 build with `techo5-intercom/1` support; the
+stock Amazon firmware and an ordinary ESPHome media player are insufficient.
+
+1. Select the Echo's **native ESPHome speaker** in RoomCall setup, rather than its
+   Music Assistant mirror, and assign the Echo to its current Home Assistant area.
+2. In the Echo's official setup page, under **Sound & Voice → Announcements**, set
+   a private house word of 16–63 characters. Then close its setup page again.
+3. As a Home Assistant administrator, open **Settings → Room stations → Echo calls**.
+   Choose the speaker and enter its private LAN IP and the same house word. Press
+   **Pair Echo**. Reserve that IP in DHCP; edit the pairing if it changes.
+4. On the phone or tablet, open the RoomCall dashboard using trusted HTTPS, choose
+   the Echo and press **Call Echo**. Allow the microphone. The Echo rings until
+   someone presses its **Action** button; only then does live audio flow.
+5. Press **Hang up**, close the card, or close the browser to stop the microphone
+   and disconnect. No audio is recorded. Calls are limited to 15 minutes and end
+   if the connection stops delivering audio for five seconds after acceptance.
+
+For calls initiated at the Echo, first enable a browser **Room station** in the
+phone's or tablet's current room and leave the page open in the foreground. Say
+“Alexa, RoomCall Kitchen” at the paired Echo. With exactly one open Kitchen station,
+it offers **Answer** on that browser. Pressing Answer opens its microphone and
+connects to the originating Echo. This explicit voice request and browser answer
+authorize answering that return connection; ordinary incoming Echo calls still
+require its Action button. Always-on Drop In is not enabled. Multiple open stations
+in the same room require choosing a destination from the browser instead.
+
+The built-in local Assist agent also understands “announce to Basement that dinner
+is ready”. It queues a normal RoomCall announcement, including normal permissions,
+Do Not Disturb and quiet hours. “RoomCall Basement” requests a live call; include
+“announce … that …” when you want a spoken message. A queued response is not proof
+that someone heard it. No language model or cloud conversation agent is required.
+
+The browser must support AudioWorklet and microphone access. Mobile browsers may
+suspend audio in the background or when the screen locks. Native iOS app builds do
+not include this browser calling interface. Browser-to-browser stations continue to
+use WebRTC; TECHO5 calls instead use authenticated Home Assistant WebSocket messages
+and one outbound encrypted TCP connection from HA to the Echo on port 8181.
+No SIP server, public port forwarding or router changes are required.
+
+Pairing is administrator-only and stores the shared word in a separate HA store.
+Discovery and diagnostics never return it. Only users with control permission for
+the selected Echo may call it; one call per Echo is allowed. Remove pairing from the
+same settings page to revoke RoomCall access and disconnect its active call.
+
 ## What delivery means
 
 RoomCall records independent evidence:

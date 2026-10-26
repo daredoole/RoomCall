@@ -583,7 +583,21 @@
         "setup_route_denonavr": "Denon AVR",
         "setup_route_music_assistant": "Music Assistant",
         "setup_route_heos": "HEOS",
-        "setup_route_sonos": "Sonos"
+        "setup_route_sonos": "Sonos",
+        "echo_calls": "Echo calls",
+        "echo_speaker": "Echo speaker",
+        "echo_host": "Echo IP address",
+        "echo_word": "House word",
+        "echo_pair": "Pair Echo",
+        "echo_call": "Call Echo",
+        "echo_remove": "Remove pairing",
+        "echo_pair_help": "Enter the same house word in the Echo setup page. Calls ring until answered with its Action button.",
+        "echo_ringing": "Ringing the Echo. Press its Action button to answer.",
+        "voice_call_pattern": "(roomcall|room call) {area}",
+        "voice_announce_pattern": "announce to {area} that {message}",
+        "voice_queued": "Announcement queued for {room}.",
+        "voice_calling": "Calling {room}.",
+        "voice_call_help": "Open a RoomCall room station in {room}, or select the Echo under Room stations."
       }
     },
     "audio_processing": {

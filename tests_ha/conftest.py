@@ -30,6 +30,16 @@ def auto_enable_custom_integrations(enable_custom_integrations):
     yield
 
 
+@pytest.fixture(autouse=True)
+async def assistant_exposure_registry(hass):
+    """Conversation is a real dependency; initialize its normal Core prerequisite."""
+    from homeassistant.components.homeassistant.exposed_entities import ExposedEntities
+
+    registry = ExposedEntities(hass)
+    await registry.async_initialize()
+    hass.data["homeassistant.exposed_entities"] = registry
+
+
 @pytest.fixture
 async def house(hass: HomeAssistant) -> dict[str, str]:
     """Two areas, three speakers: two in the kitchen, one in the basement."""

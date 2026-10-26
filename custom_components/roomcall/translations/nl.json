@@ -583,7 +583,21 @@
         "setup_route_denonavr": "Denon AVR",
         "setup_route_music_assistant": "Music Assistant",
         "setup_route_heos": "HEOS",
-        "setup_route_sonos": "Sonos"
+        "setup_route_sonos": "Sonos",
+        "echo_calls": "Echo-oproepen",
+        "echo_speaker": "Echo-luidspreker",
+        "echo_host": "IP-adres van de Echo",
+        "echo_word": "Huiswachtwoord",
+        "echo_pair": "Echo koppelen",
+        "echo_call": "Echo bellen",
+        "echo_remove": "Koppeling verwijderen",
+        "echo_pair_help": "Vul hetzelfde huiswachtwoord in op de instelpagina van de Echo. Beantwoord met de actieknop.",
+        "echo_ringing": "De Echo gaat over. Druk op de actieknop om op te nemen.",
+        "voice_call_pattern": "(roomcall|room call) {area}",
+        "voice_announce_pattern": "kondig in {area} aan dat {message}",
+        "voice_queued": "Aankondiging voor {room} in de wachtrij.",
+        "voice_calling": "{room} wordt gebeld.",
+        "voice_call_help": "Open een RoomCall-kamerstation in {room}, of kies de Echo onder Kamerstations."
       }
     },
     "audio_processing": {

@@ -183,6 +183,7 @@ class RoomCallData:
     scheduler: Scheduler | None = None
     jobs: Jobs | None = None
     stations: Stations | None = None
+    echoes: Any = None  # Paired encrypted TECHO5 calls; secrets stay outside discovery/options.
     mailbox: Mailbox | None = None
     sound_tests: dict[str, Any] = field(default_factory=dict)
     tests: dict[str, tuple[str, float, str | None]] = field(default_factory=dict)
@@ -355,6 +356,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data.scheduler = Scheduler(hass, data.aliases)
     data.jobs = Jobs(hass, data)
     data.stations = Stations(hass)
+    from .echo import Echoes
+
+    data.echoes = Echoes(hass, data)
+    await data.echoes.load()
+    from .voice import register as register_voice
+
+    await register_voice(hass, entry, data)
     data.mailbox = Mailbox(hass, entry.entry_id, data.voicemail_enabled, data.voicemail_retention)
     await data.mailbox.load()
     data.setup_store = Store(hass, 1, f"roomcall.{entry.entry_id}.setup")
@@ -447,6 +455,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await current.live.close()
         await current.scheduler.close()
         current.stations.close()
+        await current.echoes.close()
         current.evidence.close()
         current.mailbox.close()
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

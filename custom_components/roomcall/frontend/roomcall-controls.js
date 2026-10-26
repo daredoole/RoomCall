@@ -10,7 +10,7 @@ export class RoomCallControls {
     style.textContent = `
       .communication { display:grid; gap:10px; min-width:0 }
       .communication nav { display:flex; gap:6px; flex-wrap:wrap }
-      .communication textarea,.communication select,.shortcut-builder input[type=password] { font:inherit; color:var(--primary-text-color);
+      .communication textarea,.communication select,.communication input[type=text],.communication input[type=password] { font:inherit; color:var(--primary-text-color);
         background:var(--card-background-color); border:1px solid var(--divider-color);
         border-radius:8px; padding:10px; width:100%; box-sizing:border-box; min-width:0 }
       .communication textarea { min-height:80px; resize:vertical }
@@ -430,6 +430,35 @@ export class RoomCallControls {
       })),
       this.section("call_station", empty, peers, call),
       this.button("refresh", () => this.refresh()));
+    const echoes = this.capabilities.echoes || [];
+    const echoPeer = this.select("echo_speaker");
+    echoPeer.append(...echoes.map(e => new Option(e.name, e.speaker)));
+    const echoCall = this.button("echo_call", async () => {
+      await this.startEcho(echoPeer.value);
+      this.dialog.close();
+    });
+    echoCall.disabled = !echoes.length;
+    const echoSection = this.section("echo_calls", echoPeer, echoCall);
+    if (this.card._hass.user?.is_admin) {
+      const speaker = this.select("echo_speaker");
+      speaker.append(...this.capabilities.endpoints.filter(e => e.selected && e.route === "esphome")
+        .map(e => new Option(e.name, e.entity_id)));
+      const host = document.createElement("input");
+      host.type = "text"; host.autocomplete = "off";
+      const word = document.createElement("input");
+      word.type = "password"; word.autocomplete = "new-password"; word.minLength = 16; word.maxLength = 63;
+      echoSection.append(this.note(this.t("echo_pair_help")), this.field("echo_speaker", speaker),
+        this.field("echo_host", host), this.field("echo_word", word), this.button("echo_pair", async () => {
+          await this.card._hass.callWS({type: "roomcall/echo_pair", speaker: speaker.value,
+            host: host.value.trim(), word: word.value});
+          word.value = ""; await this.refresh();
+        }));
+      if (echoes.length) echoSection.append(this.button("echo_remove", async () => {
+        await this.card._hass.callWS({type: "roomcall/echo_pair", speaker: echoPeer.value, remove: true});
+        await this.refresh();
+      }));
+    }
+    this.setup.append(echoSection);
     this.settingsTabs.querySelector('[data-panel="voicemail"]').hidden = !this.capabilities.features.voicemail;
     if (this.capabilities.features.voicemail) {
       const mail = await this.command("voicemail");
@@ -460,10 +489,19 @@ export class RoomCallControls {
     for (const timer of this.timers) clearTimeout(timer);
     this.timers.clear();
     this.station?.close();
+    this.echoCall?.close();
     this.wizard.closed = true;
     this.dialog.close();
     this.settingsRoot.remove();
     this.root.remove();
+  }
+  async startEcho(speaker, invitation) {
+    const request = this.echoRequest = (this.echoRequest || 0) + 1;
+    await this.echoCall?.close();
+    const { EchoClient } = await import(`./roomcall-echo.js${new URL(import.meta.url).search}`);
+    if (this.closed || request !== this.echoRequest) return;
+    this.echoCall = new EchoClient(this);
+    await this.echoCall.call(speaker, invitation);
   }
 }
 
@@ -884,7 +922,13 @@ class StationClient {
     } catch (error) { await this.hangup(); throw error; }
   }
   async event(event) {
-    if (event.type === "incoming") {
+    if (event.type === "echo_incoming") {
+      this.controls.result.textContent = this.controls.t("incoming", {name: event.from});
+      this.panel.replaceChildren(this.controls.button("answer", async () => {
+        await this.controls.startEcho(event.speaker, event.id);
+        this.panel.replaceChildren();
+      }), this.controls.button("cancel", () => this.panel.replaceChildren()));
+    } else if (event.type === "incoming") {
       this.session = event.id;
       this.controls.result.textContent = this.controls.t("incoming", { name: event.from });
       this.panel.replaceChildren(this.controls.button("answer", async () => {

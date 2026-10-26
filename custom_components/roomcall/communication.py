@@ -333,6 +333,11 @@ async def _execute(hass, operation, values, context, *, assistant=None):
             from .shortcuts import room_choices
 
             result = discover(hass, data)
+            result["echoes"] = [
+                peer
+                for peer in result["echoes"]
+                if await permitted(hass, peer["speaker"], context, assistant)
+            ]
             from .profiles import available
 
             result["profiles"] = await available(hass, data, context, assistant)

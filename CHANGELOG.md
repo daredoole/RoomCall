@@ -4,6 +4,21 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.23.0 — 2026-10-26
+
+- Add answered, live two-way audio between a RoomCall browser and a TECHO5 Echo.
+  Pair a selected native ESPHome speaker under Settings → Room stations using its
+  private LAN IP and the same house word as its official setup page. Calls use
+  encrypted PCM; the Echo's Action button answers incoming calls. Hangup, browser
+  disconnect and integration unload stop microphone capture and close the call.
+- Add local Assist sentences: “announce to Basement that dinner is ready” queues
+  an announcement; “RoomCall Kitchen” spoken at a paired Echo invites the single
+  open browser station in Kitchen. The browser must press Answer. Ordinary speaker
+  announcements and browser-to-browser WebRTC continue to use their existing paths.
+- Keep pairing keys in a separate Home Assistant store, outside discovery, options,
+  diagnostics and events. Pairing requires an administrator; calling respects Home
+  Assistant entity permissions. Calls expire and do not record audio.
+
 ## 0.22.1 — 2026-10-25
 
 - Show audio-capable devices online now or seen within 24 hours in the speaker picker,
