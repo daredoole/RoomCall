@@ -4,6 +4,14 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.23.1 — 2026-10-26
+
+- Start Echo browser audio within the Call/Answer button gesture, before loading
+  the audio module. Show the call controls immediately and release microphone
+  capture with an actionable error if playback cannot start.
+- Explain when live calls need HTTPS or localhost, and exercise Firefox capture,
+  playback, hangup and failed audio startup alongside the Chromium checks.
+
 ## 0.23.0 — 2026-10-26
 
 - Add answered, live two-way audio between a RoomCall browser and a TECHO5 Echo.

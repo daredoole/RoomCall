@@ -597,7 +597,9 @@
         "voice_announce_pattern": "announce to {area} that {message}",
         "voice_queued": "Announcement queued for {room}.",
         "voice_calling": "Calling {room}.",
-        "voice_call_help": "Open a RoomCall room station in {room}, or select the Echo under Room stations."
+        "voice_call_help": "Open a RoomCall room station in {room}, or select the Echo under Room stations.",
+        "echo_secure_required": "Open Home Assistant over HTTPS or localhost to use live Echo calls.",
+        "echo_audio_unavailable": "Browser audio could not start. Check microphone and sound permissions, then try Call Echo again."
       }
     },
     "audio_processing": {

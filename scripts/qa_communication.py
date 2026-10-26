@@ -467,11 +467,12 @@ def check_playback_restore(browser, errors) -> None:
         context.close()
 
 
-def check_echo_calls(browser, errors) -> None:
+def check_echo_calls(browser, errors, *, capture=True) -> None:
     """Real AudioWorklet PCM, consent gating, remote playback and microphone teardown."""
     for width in (240, 390, 600):
         context = browser.new_context(viewport={"width": width, "height": 844})
-        context.grant_permissions(["microphone"], origin=ORIGIN)
+        if browser.browser_type.name != "firefox":
+            context.grant_permissions(["microphone"], origin=ORIGIN)
         page = context.new_page()
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.add_init_script("""
@@ -521,7 +522,7 @@ def check_echo_calls(browser, errors) -> None:
         expect(card.locator("button.talk")).to_be_hidden()
         expect(card.locator(".communication h3").filter(has_text="Basement Echo")).to_be_visible()
         assert page.evaluate("echoQA.frames.length") == 0
-        if width == 390:
+        if width == 390 and capture:
             card.locator(".result").scroll_into_view_if_needed()
             page.screenshot(path=OUT / "ha-echo-call.png")
         page.evaluate("""() => {
@@ -566,6 +567,44 @@ def check_echo_calls(browser, errors) -> None:
         page.wait_for_function("qaTracks.every(t=>t.readyState==='ended')")
         assert page.evaluate("echoQA.opened") == 2
         context.close()
+
+    # A browser/device that never starts playback must report an actionable
+    # error, close capture, and never ring the Echo with unusable audio.
+    context = browser.new_context()
+    if browser.browser_type.name != "firefox":
+        context.grant_permissions(["microphone"], origin=ORIGIN)
+    page = context.new_page()
+    page.add_init_script("""
+      window.qaTracks=[];
+      AudioContext.prototype.resume=()=>new Promise(()=>{});
+      const capture=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+      navigator.mediaDevices.getUserMedia=async(...args)=>{
+        const stream=await capture(...args);qaTracks.push(...stream.getTracks());return stream;
+      };
+    """)
+    open_card(page, "mobile", "dark")
+    page.evaluate("""() => {
+      const hass=document.querySelector('roomcall-card')._hass;
+      const api=hass.callApi.bind(hass);
+      hass.callApi=async(...args)=>{
+        const result=await api(...args);
+        if(args[2]?.operation==='discover')
+          result.echoes=[{speaker:'media_player.basement',name:'Basement Echo'}];
+        return result;
+      };
+      window.echoOpened=0;
+      hass.connection.subscribeMessage=async()=>{echoOpened++;return ()=>{};};
+    }""")
+    card = page.locator("roomcall-card")
+    card.get_by_role("button", name="Settings", exact=True).click()
+    card.get_by_role("tab", name="Room stations", exact=True).click()
+    card.get_by_role("button", name="Call Echo", exact=True).click()
+    expect(card.get_by_role("dialog")).not_to_be_visible()
+    expect(card.locator(".result")).to_contain_text("Browser audio could not start", timeout=12000)
+    page.wait_for_function("qaTracks.length>0&&qaTracks.every(t=>t.readyState==='ended')")
+    assert page.evaluate("echoOpened") == 0
+    expect(card.get_by_role("button", name="Hang up", exact=True)).to_have_count(0)
+    context.close()
 
 
 def main() -> None:

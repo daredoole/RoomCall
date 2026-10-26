@@ -40,8 +40,8 @@ const WORKLET = `class Duplex extends AudioWorkletProcessor {
 } registerProcessor('roomcall-echo-duplex',Duplex);`;
 
 export class EchoClient {
-  constructor(controls) {
-    this.controls=controls;this.accepted=false;this.inflight=0;
+  constructor(controls,context) {
+    this.controls=controls;this.context=context;this.accepted=false;this.inflight=0;
     this.panel=document.createElement('div');controls.root.append(this.panel);
     this.panel.className='panel-section';
     this.heading=document.createElement('h3');this.panel.append(this.heading);
@@ -49,18 +49,23 @@ export class EchoClient {
       this.controls.result.textContent=this.controls.t('ended');this.close();
     }));
   }
-  async call(speaker,invitation) {
+  async call(speaker,invitation,ready) {
     try {
       const peer=this.controls.capabilities.echoes?.find(peer=>peer.speaker===speaker);
       this.heading.textContent=`${this.controls.t('echo_calls')} · ${peer?.name||speaker}`;
       this.controls.card._stop({preventDefault(){}});
       this.controls.card.setAttribute('echo-call','');
       this.controls.result.textContent=this.controls.t('calling');
-      this.context=new AudioContext();await this.context.resume();
-      if(this.closed)return;
       this.stream=await navigator.mediaDevices.getUserMedia({audio:{
         echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
       if(this.closed){this.stream.getTracks().forEach(track=>track.stop());return;}
+      let timer;
+      try {
+        await Promise.race([ready,new Promise((_,reject)=>{
+          timer=setTimeout(()=>reject(new Error(this.controls.t('echo_audio_unavailable'))),8000);
+        })]);
+      } finally {clearTimeout(timer);}
+      if(this.closed)return;
       const url=URL.createObjectURL(new Blob([WORKLET],{type:'text/javascript'}));
       try {await this.context.audioWorklet.addModule(url);}
       finally {URL.revokeObjectURL(url);}

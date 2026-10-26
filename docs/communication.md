@@ -53,7 +53,11 @@ Do Not Disturb and quiet hours. “RoomCall Basement” requests a live call; in
 “announce … that …” when you want a spoken message. A queued response is not proof
 that someone heard it. No language model or cloud conversation agent is required.
 
-The browser must support AudioWorklet and microphone access. Mobile browsers may
+The browser must support AudioWorklet and microphone access. Call/Answer starts
+playback within the button gesture, including Firefox; if playback cannot start,
+RoomCall releases the microphone and reports an error instead of waiting forever.
+Use trusted HTTPS on a phone or tablet; localhost is also supported on the computer
+running Home Assistant access or a local tunnel. Mobile browsers may
 suspend audio in the background or when the screen locks. Native iOS app builds do
 not include this browser calling interface. Browser-to-browser stations continue to
 use WebRTC; TECHO5 calls instead use authenticated Home Assistant WebSocket messages

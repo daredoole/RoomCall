@@ -219,8 +219,11 @@ export class RoomCallControls {
   }
 
   t(key, values = {}) {
+    // A frontend-only update can precede the next HA restart/catalog refresh.
+    const fallback = ["echo_secure_required", "echo_audio_unavailable"].includes(key)
+      ? "provider_failed" : key;
     return Object.entries(values).reduce((value, [name, replacement]) =>
-      value.replaceAll(`{${name}}`, String(replacement)), this.strings[key] || key);
+      value.replaceAll(`{${name}}`, String(replacement)), this.strings[key] || this.strings[fallback] || key);
   }
   button(key, action) {
     const button = document.createElement("button");
@@ -228,7 +231,12 @@ export class RoomCallControls {
     button.className = "chip small";
     if (["send", "apply_plan", "create_plan", "connect_station"].includes(key)) button.classList.add("primary-action");
     button.textContent = this.t(key);
-    button.addEventListener("click", () => Promise.resolve().then(action).catch((e) => this.error(e)));
+    button.addEventListener("click", () => {
+      // Keep browser media APIs in the trusted click, including Firefox's
+      // shorter user-activation lifetime. Catch synchronous actions as well.
+      try { Promise.resolve(action()).catch((e) => this.error(e)); }
+      catch (error) { this.error(error); }
+    });
     return button;
   }
   select(key) {
@@ -438,8 +446,8 @@ export class RoomCallControls {
     const echoPeer = this.select("echo_speaker");
     echoPeer.append(...echoes.map(e => new Option(e.name, e.speaker)));
     const echoCall = this.button("echo_call", async () => {
-      await this.startEcho(echoPeer.value);
       this.dialog.close();
+      await this.startEcho(echoPeer.value);
     });
     echoCall.disabled = !echoes.length;
     const echoSection = this.section("echo_calls", echoPeer, echoCall);
@@ -501,11 +509,23 @@ export class RoomCallControls {
   }
   async startEcho(speaker, invitation) {
     const request = this.echoRequest = (this.echoRequest || 0) + 1;
-    await this.echoCall?.close();
-    const { EchoClient } = await import(`./roomcall-echo.js${new URL(import.meta.url).search}`);
-    if (this.closed || request !== this.echoRequest) return;
-    this.echoCall = new EchoClient(this);
-    await this.echoCall.call(speaker, invitation);
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error(this.t("echo_secure_required"));
+    // Authorize playback synchronously, before closing the previous call or
+    // loading the audio module yields control outside the click gesture.
+    const context = new AudioContext();
+    const ready = context.resume();
+    ready.catch(() => {});
+    try {
+      await this.echoCall?.close();
+      const { EchoClient } = await import(`./roomcall-echo.js${new URL(import.meta.url).search}`);
+      if (this.closed || request !== this.echoRequest) {
+        await context.close(); return;
+      }
+      this.echoCall = new EchoClient(this, context);
+      await this.echoCall.call(speaker, invitation, ready);
+    } catch (error) {
+      await context.close().catch(() => {}); throw error;
+    }
   }
 }
 

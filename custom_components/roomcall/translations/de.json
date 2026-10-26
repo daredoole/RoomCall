@@ -597,7 +597,9 @@
         "voice_announce_pattern": "sage in {area} dass {message}",
         "voice_queued": "Durchsage für {room} eingereiht.",
         "voice_calling": "{room} wird angerufen.",
-        "voice_call_help": "Eine RoomCall-Raumstation in {room} öffnen oder den Echo unter Raumstationen auswählen."
+        "voice_call_help": "Eine RoomCall-Raumstation in {room} öffnen oder den Echo unter Raumstationen auswählen.",
+        "echo_secure_required": "Öffne Home Assistant über HTTPS oder localhost, um Echo-Liveanrufe zu nutzen.",
+        "echo_audio_unavailable": "Browser-Audio konnte nicht gestartet werden. Prüfe die Mikrofon- und Tonberechtigungen und rufe den Echo erneut an."
       }
     },
     "audio_processing": {

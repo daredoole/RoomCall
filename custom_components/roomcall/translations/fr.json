@@ -597,7 +597,9 @@
         "voice_announce_pattern": "annonce dans {area} que {message}",
         "voice_queued": "Annonce mise en attente pour {room}.",
         "voice_calling": "Appel de {room}.",
-        "voice_call_help": "Ouvrez une station RoomCall dans {room}, ou sélectionnez l’Echo dans Stations."
+        "voice_call_help": "Ouvrez une station RoomCall dans {room}, ou sélectionnez l’Echo dans Stations.",
+        "echo_secure_required": "Ouvrez Home Assistant via HTTPS ou localhost pour appeler l’Echo en direct.",
+        "echo_audio_unavailable": "Le son du navigateur n’a pas pu démarrer. Vérifiez les autorisations du microphone et du son, puis rappelez l’Echo."
       }
     },
     "audio_processing": {

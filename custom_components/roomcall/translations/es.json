@@ -597,7 +597,9 @@
         "voice_announce_pattern": "anuncia en {area} que {message}",
         "voice_queued": "Anuncio en cola para {room}.",
         "voice_calling": "Llamando a {room}.",
-        "voice_call_help": "Abre una estación de RoomCall en {room} o selecciona el Echo en Estaciones."
+        "voice_call_help": "Abre una estación de RoomCall en {room} o selecciona el Echo en Estaciones.",
+        "echo_secure_required": "Abre Home Assistant mediante HTTPS o localhost para usar llamadas en directo al Echo.",
+        "echo_audio_unavailable": "No se pudo iniciar el audio del navegador. Revisa los permisos del micrófono y del sonido y vuelve a llamar al Echo."
       }
     },
     "audio_processing": {

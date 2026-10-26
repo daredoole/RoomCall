@@ -597,7 +597,9 @@
         "voice_announce_pattern": "kondig in {area} aan dat {message}",
         "voice_queued": "Aankondiging voor {room} in de wachtrij.",
         "voice_calling": "{room} wordt gebeld.",
-        "voice_call_help": "Open een RoomCall-kamerstation in {room}, of kies de Echo onder Kamerstations."
+        "voice_call_help": "Open een RoomCall-kamerstation in {room}, of kies de Echo onder Kamerstations.",
+        "echo_secure_required": "Open Home Assistant via HTTPS of localhost om live met de Echo te bellen.",
+        "echo_audio_unavailable": "De browseraudio kon niet starten. Controleer de microfoon- en geluidsrechten en bel de Echo opnieuw."
       }
     },
     "audio_processing": {
