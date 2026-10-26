@@ -516,7 +516,14 @@ def check_echo_calls(browser, errors) -> None:
         assert card.get_by_role("dialog").evaluate("e=>e.scrollWidth<=e.clientWidth")
         card.get_by_role("button", name="Call Echo", exact=True).click()
         expect(card.locator(".result")).to_contain_text("Action button")
+        expect(card.locator(".destination")).to_be_hidden()
+        expect(card.locator(".recipients")).to_be_hidden()
+        expect(card.locator("button.talk")).to_be_hidden()
+        expect(card.locator(".communication h3").filter(has_text="Basement Echo")).to_be_visible()
         assert page.evaluate("echoQA.frames.length") == 0
+        if width == 390:
+            card.locator(".result").scroll_into_view_if_needed()
+            page.screenshot(path=OUT / "ha-echo-call.png")
         page.evaluate("""() => {
           echoQA.cb({type:'accepted',id:'echo-call'});
           const call=document.querySelector('roomcall-card')._communication.echoCall;

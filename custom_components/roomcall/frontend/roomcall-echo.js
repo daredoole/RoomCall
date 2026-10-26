@@ -43,9 +43,19 @@ export class EchoClient {
   constructor(controls) {
     this.controls=controls;this.accepted=false;this.inflight=0;
     this.panel=document.createElement('div');controls.root.append(this.panel);
+    this.panel.className='panel-section';
+    this.heading=document.createElement('h3');this.panel.append(this.heading);
+    this.panel.append(this.controls.button('hangup',()=>{
+      this.controls.result.textContent=this.controls.t('ended');this.close();
+    }));
   }
   async call(speaker,invitation) {
     try {
+      const peer=this.controls.capabilities.echoes?.find(peer=>peer.speaker===speaker);
+      this.heading.textContent=`${this.controls.t('echo_calls')} · ${peer?.name||speaker}`;
+      this.controls.card._stop({preventDefault(){}});
+      this.controls.card.setAttribute('echo-call','');
+      this.controls.result.textContent=this.controls.t('calling');
       this.context=new AudioContext();await this.context.resume();
       if(this.closed)return;
       this.stream=await navigator.mediaDevices.getUserMedia({audio:{
@@ -85,15 +95,13 @@ export class EchoClient {
       this.controls.result.textContent=this.controls.t(event.reason==='ended'?'ended':event.reason);
       this.close();
     } else {
-      this.controls.result.textContent=this.controls.t('echo_ringing');
-      this.panel.replaceChildren(this.controls.button('hangup',()=>{
-        this.controls.result.textContent=this.controls.t('ended');this.close();
-      }));
+      this.controls.result.textContent=this.controls.t(event.type==='ringing'?'echo_ringing':'calling');
     }
   }
   async close() {
     if(this.closed)return;
     this.closed=true;this.accepted=false;
+    this.controls.card.removeAttribute('echo-call');
     this.node?.disconnect();
     this.stream?.getTracks().forEach(track=>track.stop());
     this.unsubscribe?.();this.panel.remove();

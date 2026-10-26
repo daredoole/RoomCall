@@ -36,6 +36,8 @@ stock Amazon firmware and an ordinary ESPHome media player are insufficient.
    and disconnect. No audio is recorded. Calls are limited to 15 minutes and end
    if the connection stops delivering audio for five seconds after acceptance.
 
+![Echo call waiting for its Action button, with sample data](assets/ha-echo-call.png)
+
 For calls initiated at the Echo, first enable a browser **Room station** in the
 phone's or tablet's current room and leave the page open in the foreground. Say
 “Alexa, RoomCall Kitchen” at the paired Echo. With exactly one open Kitchen station,

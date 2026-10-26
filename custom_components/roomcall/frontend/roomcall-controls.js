@@ -24,6 +24,10 @@ export class RoomCallControls {
       .communication ol { min-width:0; margin:0; padding-inline-start:24px; overflow-wrap:anywhere; }
       .communication button { min-height:44px; min-width:44px }
       .communication button:disabled { opacity:.5; cursor:not-allowed }
+      :host([echo-call]) .recipients,:host([echo-call]) .toggles,
+      :host([echo-call]) .destination,:host([echo-call]) .wrap,:host([echo-call]) .status,
+      :host([echo-call]) .communication form,:host([echo-call]) .communication nav[data-toolbar] {
+        display:none!important }
       .communication nav[data-toolbar] { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 44px; gap:4px;
         background:var(--secondary-background-color,var(--card-background-color)); padding:4px; border-radius:14px; }
       .communication nav[data-toolbar] button { justify-content:center; padding:6px; border-color:transparent; border-radius:10px; }
