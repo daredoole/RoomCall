@@ -1,5 +1,14 @@
 # RoomCall
 
+TECHO5 Echo live calls: pair the native selected ESPHome speaker by private LAN IP
+and a 16–63 character house word under Settings → Room stations → Echo calls.
+The word must match the device's official setup page; discovery never returns it.
+Call Echo from the browser; its Action button answers. No recording or always-on Drop In.
+Local Assist: "announce to Basement that dinner is ready" queues a message;
+"RoomCall Kitchen" from a paired Echo invites the single open Kitchen browser station.
+Its user must press Answer. Keep mobile browsers in the foreground over trusted HTTPS.
+See communication.md#converted-echo-live-calls for consent, limits and native iOS scope.
+
 > RoomCall is a Home Assistant custom integration (HACS) that turns the speakers Home Assistant
 > already controls (Sonos, Google Cast/Nest, AirPlay, HEOS receivers, Android TV boxes) into an
 > intercom and announcement system, organised by Home Assistant areas.

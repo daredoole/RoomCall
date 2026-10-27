@@ -1,6 +1,24 @@
 import XCTest
 
 final class RoomCallUITests: XCTestCase {
+    func testIncomingEchoShowsAnswerAndDecline() {
+        executionTimeAllowance = 120
+        let app = launch(["-RoomCallDemo", "-RoomCallDemoIncoming", "-RoomCallDemoAppearance", "light"])
+        XCTAssertTrue(app.buttons["echo-answer"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.staticTexts["Basement Echo"].exists)
+        XCTAssertTrue(app.buttons["echo-decline"].exists)
+        keep("ios-incoming-echo-light")
+        app.buttons["echo-decline"].tap()
+        XCTAssertFalse(app.buttons["echo-answer"].waitForExistence(timeout: 3))
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["echo-answer"].waitForExistence(timeout: 30))
+        app.buttons["echo-answer"].tap()
+        XCTAssertTrue(app.buttons["echo-hangup"].waitForExistence(timeout: 10))
+        app.buttons["echo-hangup"].tap()
+        XCTAssertFalse(app.buttons["echo-hangup"].waitForExistence(timeout: 3))
+    }
+
     func testSignInRequiresAValidServerAtAccessibilityTextSize() {
         // A cold CI automation session can consume most of the one-minute default.
         executionTimeAllowance = 120

@@ -14,6 +14,7 @@
   ],
   "config_flow": true,
   "dependencies": [
+    "conversation",
     "http",
     "ffmpeg",
     "media_player",
@@ -25,8 +26,9 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/daredoole/RoomCall/issues",
   "requirements": [
-    "HAP-python>=5.0.0"
+    "HAP-python>=5.0.0",
+    "noiseprotocol==0.3.1"
   ],
   "single_config_entry": true,
-  "version": "0.22.1"
+  "version": "0.24.0"
 }

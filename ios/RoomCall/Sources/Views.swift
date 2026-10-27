@@ -10,6 +10,7 @@ struct RootView: View {
     @AppStorage(ThemeSettings.styleKey, store: RoomCache.defaults) private var style = AppStyle.glass
     @AppStorage(ThemeSettings.accentKey, store: RoomCache.defaults) private var accent = ThemeSettings.defaultAccent
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.scenePhase) private var scenePhase
 
     private var palette: Palette {
         var style = self.style, accent = self.accent
@@ -29,6 +30,23 @@ struct RootView: View {
             if model.connected { MainTabs(model: model, talk: model.talk) } else { SignInView(model: model) }
         }
         .overlay(alignment: .bottom) { Toast(model: model) }
+        .safeAreaInset(edge: .top) {
+            EchoCallBanner(echo: model.echo, talk: model.talk) { await model.connectEcho() }
+        }
+        .task(id: model.connected) {
+            if model.connected { await model.connectEcho() }
+        }
+        .onChange(of: scenePhase) {
+            if scenePhase == .active, model.connected, !model.echo.active {
+                Task { await model.connectEcho() }
+            } else if scenePhase == .background, !model.echo.active {
+                model.echo.disconnect()
+            }
+        }
+        .onChange(of: model.myRoom) { Task { await model.connectEcho() } }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { _ in
+            if model.echo.active { Task { await model.echo.hangup() } }
+        }
         .sheet(item: Binding(get: { model.doorbell.map(DoorbellItem.init) },
                              set: { if $0 == nil { model.doorbell = nil } })) { item in
             DoorbellSheet(model: model, bell: item.bell)
@@ -54,7 +72,7 @@ struct MainTabs: View {
 
     var body: some View {
         TabView(selection: $model.tab) {
-            TalkScreen(model: model, talk: talk)
+            TalkScreen(model: model, talk: talk, echo: model.echo)
                 .tabItem { Label("ios_tab_talk", systemImage: "mic.fill") }.tag(Tab.talk)
             MessageScreen(model: model)
                 .tabItem { Label("ios_tab_message", systemImage: "text.bubble.fill") }.tag(Tab.message)
@@ -76,6 +94,7 @@ struct MainTabs: View {
 struct TalkScreen: View {
     @ObservedObject var model: AppModel
     @ObservedObject var talk: TalkController
+    @ObservedObject var echo: EchoController
 
     var body: some View {
         NavigationStack {
@@ -83,6 +102,7 @@ struct TalkScreen: View {
                 VStack(alignment: .leading, spacing: 20) {
                     ForEach(model.openTasks) { task in TaskBanner(model: model, task: task) }
                     TargetPicker(model: model)
+                    EchoCallPanel(echo: echo, talk: talk)
                     VStack(spacing: 14) {
                         Text(verbatim: String(format: L("ios_to"), model.target.name))
                             .font(.headline)
@@ -91,6 +111,7 @@ struct TalkScreen: View {
                             talk.press(service, target: model.target, urgent: model.urgent,
                                        from: model.myRoom.isEmpty ? nil : model.myRoom)
                         } release: { talk.release() }
+                        .disabled(echo.active)
                         Text(verbatim: talk.status)
                             .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
                             .accessibilityIdentifier("talk-status")
@@ -115,7 +136,10 @@ struct TalkScreen: View {
                     }
                 }
             }
-            .refreshable { await model.refresh() }
+            .refreshable {
+                await model.refresh()
+                if !echo.active { await model.connectEcho() }
+            }
         }
     }
 }

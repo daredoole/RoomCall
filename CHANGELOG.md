@@ -4,6 +4,49 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.24.0 — 2026-10-27
+
+- Add native iPhone/iPad live Echo calling with microphone consent, incoming
+  Answer/Decline controls, duplex audio, bounded buffering and Hang up.
+- Save the native app's My room as an incoming Echo destination. Local Assist can
+  invite it while the app is closed; the owner's configured Home Assistant Companion
+  notifications open RoomCall's Answer screen. Invitations expire after 60 seconds
+  and require the same authenticated HA user. Opening a link never answers a call.
+- Pair an Echo without typing its IP: RoomCall uses the address ESPHome already
+  knows and follows it after DHCP changes. Pairing lists only TECHO5 speakers, and
+  households without one no longer see an empty Echo section.
+- “RoomCall Kitchen” rings every phone and browser station in the room; the first
+  Answer takes the call and the others stop ringing. Browser Decline releases the
+  invitation everywhere.
+- The Echo shows the signed-in Home Assistant person as the caller, not “iPhone app”.
+- Name a wrong house word, an unanswered or declined call, and a stalled Echo
+  instead of showing internal codes. Explain the 16-character house-word minimum.
+- Keep iPhone calls going through brief Wi-Fi stalls by dropping late audio instead
+  of hanging up, and give browser uploads more headroom on remote connections.
+
+## 0.23.1 — 2026-10-26
+
+- Start Echo browser audio within the Call/Answer button gesture, before loading
+  the audio module. Show the call controls immediately and release microphone
+  capture with an actionable error if playback cannot start.
+- Explain when live calls need HTTPS or localhost, and exercise Firefox capture,
+  playback, hangup and failed audio startup alongside the Chromium checks.
+
+## 0.23.0 — 2026-10-26
+
+- Add answered, live two-way audio between a RoomCall browser and a TECHO5 Echo.
+  Pair a selected native ESPHome speaker under Settings → Room stations using its
+  private LAN IP and the same house word as its official setup page. Calls use
+  encrypted PCM; the Echo's Action button answers incoming calls. Hangup, browser
+  disconnect and integration unload stop microphone capture and close the call.
+- Add local Assist sentences: “announce to Basement that dinner is ready” queues
+  an announcement; “RoomCall Kitchen” spoken at a paired Echo invites the single
+  open browser station in Kitchen. The browser must press Answer. Ordinary speaker
+  announcements and browser-to-browser WebRTC continue to use their existing paths.
+- Keep pairing keys in a separate Home Assistant store, outside discovery, options,
+  diagnostics and events. Pairing requires an administrator; calling respects Home
+  Assistant entity permissions. Calls expire and do not record audio.
+
 ## 0.22.1 — 2026-10-25
 
 - Show audio-capable devices online now or seen within 24 hours in the speaker picker,

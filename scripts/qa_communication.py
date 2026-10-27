@@ -467,6 +467,150 @@ def check_playback_restore(browser, errors) -> None:
         context.close()
 
 
+def check_echo_calls(browser, errors, *, capture=True) -> None:
+    """Real AudioWorklet PCM, consent gating, remote playback and microphone teardown."""
+    for width in (240, 390, 600):
+        context = browser.new_context(viewport={"width": width, "height": 844})
+        if browser.browser_type.name != "firefox":
+            context.grant_permissions(["microphone"], origin=ORIGIN)
+        page = context.new_page()
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        page.add_init_script("""
+          window.qaTracks=[];
+          const capture=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+          navigator.mediaDevices.getUserMedia=async(...args)=>{
+            const stream=await capture(...args);qaTracks.push(...stream.getTracks());return stream;
+          };
+        """)
+        open_card(page, "mobile", "dark")
+        page.evaluate("""() => {
+          const hass=document.querySelector('roomcall-card')._hass;
+          hass.user={is_admin:true};
+          const api=hass.callApi.bind(hass);
+          const subscribe=hass.connection.subscribeMessage.bind(hass.connection);
+          const ws=hass.callWS.bind(hass);
+          window.echoQA={frames:[],closed:0,opened:0};
+          hass.callApi=async(...args)=>{
+            const result=await api(...args);
+            if(args[2]?.operation==='discover') {
+              result.echoes=[{speaker:'media_player.basement',name:'Basement Echo',available:true}];
+              result.echo_candidates=[
+                {speaker:'media_player.kitchen_echo',name:'Kitchen Echo',host_known:true}];
+              result.endpoints[0].route='esphome';
+            }
+            return result;
+          };
+          hass.connection.subscribeMessage=async(cb,msg)=>{
+            if(msg.type!=='roomcall/echo_call')return subscribe(cb,msg);
+            echoQA.opened++;
+            echoQA.cb=cb;cb({type:'ringing',id:'echo-call'});
+            return ()=>echoQA.closed++;
+          };
+          hass.callWS=async(msg)=>{
+            if(msg.type!=='roomcall/echo_audio')return ws(msg);
+            echoQA.frames.push(msg.pcm);
+            echoQA.cb({type:'audio',id:'echo-call',pcm:msg.pcm});return {};
+          };
+        }""")
+        card = page.locator("roomcall-card")
+        card.get_by_role("button", name="Settings", exact=True).click()
+        card.get_by_role("tab", name="Room stations", exact=True).click()
+        expect(card.get_by_role("textbox", name="House word", exact=True)).to_have_count(1)
+        # ESPHome already knows this Echo's address, so nobody is asked to type an IP.
+        expect(card.get_by_role("textbox", name="Echo IP address", exact=True)).to_have_count(0)
+        assert card.get_by_role("dialog").evaluate("e=>e.scrollWidth<=e.clientWidth")
+        card.get_by_role("button", name="Call Echo", exact=True).click()
+        expect(card.locator(".result")).to_contain_text("Action button")
+        expect(card.locator(".destination")).to_be_hidden()
+        expect(card.locator(".recipients")).to_be_hidden()
+        expect(card.locator("button.talk")).to_be_hidden()
+        expect(card.locator(".communication h3").filter(has_text="Basement Echo")).to_be_visible()
+        assert page.evaluate("echoQA.frames.length") == 0
+        if width == 390 and capture:
+            card.locator(".result").scroll_into_view_if_needed()
+            page.screenshot(path=OUT / "ha-echo-call.png")
+        page.evaluate("""() => {
+          echoQA.cb({type:'accepted',id:'echo-call'});
+          const call=document.querySelector('roomcall-card')._communication.echoCall;
+          echoQA.analyser=call.context.createAnalyser();call.node.connect(echoQA.analyser);
+        }""")
+        page.wait_for_function("echoQA.frames.length>3")
+        assert page.evaluate("atob(echoQA.frames[0]).length") == 1280
+        page.wait_for_function("""() => {
+          const samples=new Float32Array(echoQA.analyser.fftSize);
+          echoQA.analyser.getFloatTimeDomainData(samples);
+          return samples.some(value=>Math.abs(value)>.001);
+        }""")
+        card.get_by_role("button", name="Hang up", exact=True).click()
+        page.wait_for_function("qaTracks.length>0&&qaTracks.every(t=>t.readyState==='ended')")
+        assert page.evaluate("echoQA.closed") == 1
+        expect(card.locator(".result")).to_contain_text("ended", ignore_case=True)
+        # A remote hang-up also closes the mic and the socket subscription.
+        card.get_by_role("button", name="Settings", exact=True).click()
+        card.get_by_role("tab", name="Room stations", exact=True).click()
+        card.get_by_role("button", name="Call Echo", exact=True).click()
+        page.wait_for_function("echoQA.opened===2")
+        page.evaluate("echoQA.cb({type:'ended',id:'echo-call',reason:'ended'})")
+        page.wait_for_function("qaTracks.every(t=>t.readyState==='ended')")
+        assert page.evaluate("echoQA.closed") == 2
+        # Closing the card while microphone permission is pending must stop a late stream.
+        page.evaluate("""() => {
+          const capture=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+          navigator.mediaDevices.getUserMedia=async(...args)=>{
+            const stream=await capture(...args);
+            await new Promise(resolve=>echoQA.release=resolve);return stream;
+          };
+        }""")
+        card.get_by_role("button", name="Settings", exact=True).click()
+        card.get_by_role("tab", name="Room stations", exact=True).click()
+        card.get_by_role("button", name="Call Echo", exact=True).click()
+        page.wait_for_function("!!echoQA.release")
+        page.evaluate(
+            "document.querySelector('roomcall-card')._communication.close();echoQA.release()"
+        )
+        page.wait_for_function("qaTracks.every(t=>t.readyState==='ended')")
+        assert page.evaluate("echoQA.opened") == 2
+        context.close()
+
+    # A browser/device that never starts playback must report an actionable
+    # error, close capture, and never ring the Echo with unusable audio.
+    context = browser.new_context()
+    if browser.browser_type.name != "firefox":
+        context.grant_permissions(["microphone"], origin=ORIGIN)
+    page = context.new_page()
+    page.add_init_script("""
+      window.qaTracks=[];
+      AudioContext.prototype.resume=()=>new Promise(()=>{});
+      const capture=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+      navigator.mediaDevices.getUserMedia=async(...args)=>{
+        const stream=await capture(...args);qaTracks.push(...stream.getTracks());return stream;
+      };
+    """)
+    open_card(page, "mobile", "dark")
+    page.evaluate("""() => {
+      const hass=document.querySelector('roomcall-card')._hass;
+      const api=hass.callApi.bind(hass);
+      hass.callApi=async(...args)=>{
+        const result=await api(...args);
+        if(args[2]?.operation==='discover')
+          result.echoes=[{speaker:'media_player.basement',name:'Basement Echo'}];
+        return result;
+      };
+      window.echoOpened=0;
+      hass.connection.subscribeMessage=async()=>{echoOpened++;return ()=>{};};
+    }""")
+    card = page.locator("roomcall-card")
+    card.get_by_role("button", name="Settings", exact=True).click()
+    card.get_by_role("tab", name="Room stations", exact=True).click()
+    card.get_by_role("button", name="Call Echo", exact=True).click()
+    expect(card.get_by_role("dialog")).not_to_be_visible()
+    expect(card.locator(".result")).to_contain_text("Browser audio could not start", timeout=12000)
+    page.wait_for_function("qaTracks.length>0&&qaTracks.every(t=>t.readyState==='ended')")
+    assert page.evaluate("echoOpened") == 0
+    expect(card.get_by_role("button", name="Hang up", exact=True)).to_have_count(0)
+    context.close()
+
+
 def main() -> None:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
@@ -477,6 +621,7 @@ def main() -> None:
             ]
         )
         errors = []
+        check_echo_calls(browser, errors)
         check_layout(browser)
         check_simple(browser)
         check_appearances(browser)

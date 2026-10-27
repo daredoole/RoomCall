@@ -30,12 +30,171 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "roomcall/echo_pair",
+        vol.Required("speaker"): str,
+        vol.Optional("host"): str,
+        vol.Optional("word"): vol.All(str, vol.Length(min=16, max=63)),
+        vol.Optional("remove", default=False): bool,
+    }
+)
+@websocket_api.async_response
+async def ws_echo_pair(hass, connection, msg) -> None:
+    """Only administrators may pair an endpoint or change its shared key."""
+    data = hass.data.get(DOMAIN)
+    if not connection.user or not connection.user.is_admin:
+        connection.send_error(msg["id"], "forbidden", "RoomCall")
+        return
+    if data is None:
+        connection.send_error(msg["id"], "not_ready", "RoomCall")
+        return
+    try:
+        if msg["remove"]:
+            await data.echoes.remove(msg["speaker"])
+        else:
+            await data.echoes.pair(msg["speaker"], msg.get("host", ""), msg.get("word", ""))
+        connection.send_result(msg["id"], {"echoes": data.echoes.list()})
+    except (ValueError, Problem):
+        connection.send_error(msg["id"], "invalid_request", "RoomCall")
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "roomcall/echo_call",
+        vol.Required("speaker"): str,
+        vol.Optional("name"): vol.All(str, vol.Length(min=1, max=40)),
+        vol.Optional("invitation"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_echo_call(hass, connection, msg) -> None:
+    from .communication import permitted
+
+    data = hass.data.get(DOMAIN)
+    if data is None or not connection.user:
+        connection.send_error(msg["id"], "not_ready", "RoomCall")
+        return
+    try:
+        if not await permitted(hass, msg["speaker"], connection.context(msg)):
+            raise Problem("forbidden")
+        call_id = data.echoes.start(
+            msg["speaker"],
+            connection.user.id,
+            # The Echo screen shows who is calling; default to the signed-in person.
+            msg.get("name") or connection.user.name or "RoomCall",
+            lambda event: connection.send_message(websocket_api.event_message(msg["id"], event)),
+            msg.get("invitation"),
+        )
+        connection.subscriptions[msg["id"]] = lambda: data.echoes.end(call_id, "disconnected")
+        connection.send_result(msg["id"], {"id": call_id})
+    except Problem as err:
+        connection.send_error(msg["id"], err.code, err.as_dict(hass)["error"]["message"])
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "roomcall/echo_audio",
+        vol.Required("call_id"): str,
+        vol.Optional("pcm"): vol.All(str, vol.Length(max=1712)),
+        vol.Optional("hangup", default=False): bool,
+    }
+)
+@websocket_api.async_response
+async def ws_echo_audio(hass, connection, msg) -> None:
+    data = hass.data.get(DOMAIN)
+    if data is None or not connection.user:
+        connection.send_error(msg["id"], "not_ready", "RoomCall")
+        return
+    try:
+        data.echoes.owned(msg["call_id"], connection.user.id)
+        if msg["hangup"]:
+            data.echoes.end(msg["call_id"])
+        else:
+            await data.echoes.audio(msg["call_id"], connection.user.id, msg.get("pcm", ""))
+        connection.send_result(msg["id"])
+    except (Problem, OSError, TimeoutError) as err:
+        code = err.code if isinstance(err, Problem) else "station_unavailable"
+        connection.send_error(msg["id"], code, "RoomCall")
+
+
 @callback
 def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_job_events)
     websocket_api.async_register_command(hass, ws_live)
     websocket_api.async_register_command(hass, ws_station)
     websocket_api.async_register_command(hass, ws_session)
+    websocket_api.async_register_command(hass, ws_echo_pair)
+    websocket_api.async_register_command(hass, ws_echo_call)
+    websocket_api.async_register_command(hass, ws_echo_audio)
+    websocket_api.async_register_command(hass, ws_echo_station)
+    websocket_api.async_register_command(hass, ws_echo_decline)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "roomcall/echo_station",
+        vol.Required("station_id"): vol.All(str, vol.Length(min=8, max=64)),
+        vol.Required("room"): str,
+        vol.Optional("name", default="RoomCall"): vol.All(str, vol.Length(min=1, max=80)),
+    }
+)
+@websocket_api.async_response
+async def ws_echo_station(hass, connection, msg) -> None:
+    data = hass.data.get(DOMAIN)
+    if data is None or not connection.user:
+        connection.send_error(msg["id"], "not_ready", "RoomCall")
+        return
+    devices = data.echoes.devices
+    try:
+        await devices.register(msg["station_id"], connection.user.id, msg["room"], msg["name"])
+        if not msg["room"]:
+            for invitation, item in list(data.echoes.invitations.items()):
+                if item["owner"] == connection.user.id and item["station"].id == msg["station_id"]:
+                    data.echoes.cancel_invite(invitation, connection.user.id)
+    except Problem as err:
+        connection.send_error(msg["id"], err.code, "RoomCall")
+        return
+
+    def emit(event):
+        connection.send_message(websocket_api.event_message(msg["id"], event))
+
+    devices.listeners[msg["station_id"]] = emit
+
+    def unsubscribe():
+        if devices.listeners.get(msg["station_id"]) is emit:
+            devices.listeners.pop(msg["station_id"])
+
+    connection.subscriptions[msg["id"]] = unsubscribe
+    from .core import friendly
+
+    invitations = []
+    for invitation, item in data.echoes.invitations.items():
+        if item["owner"] == connection.user.id and item["station"].id == msg["station_id"]:
+            invitations.append(
+                {
+                    "id": invitation,
+                    "speaker": item["speaker"],
+                    "from": friendly(hass, item["speaker"]),
+                }
+            )
+    connection.send_result(msg["id"], {"echoes": data.echoes.list(), "invitations": invitations})
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "roomcall/echo_decline", vol.Required("invitation"): str}
+)
+@websocket_api.async_response
+async def ws_echo_decline(hass, connection, msg) -> None:
+    data = hass.data.get(DOMAIN)
+    if data is None or not connection.user:
+        connection.send_error(msg["id"], "not_ready", "RoomCall")
+        return
+    try:
+        data.echoes.cancel_invite(msg["invitation"], connection.user.id)
+        connection.send_result(msg["id"])
+    except Problem as err:
+        connection.send_error(msg["id"], err.code, "RoomCall")
 
 
 @websocket_api.websocket_command(

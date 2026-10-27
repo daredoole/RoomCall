@@ -197,6 +197,12 @@ latency is guaranteed for either route, especially for Everywhere or repeated ca
 <details>
 <summary><b>Can people talk back through the speaker?</b></summary>
 
+A converted **TECHO5 Echo** supports live two-way microphone and speaker audio with
+the RoomCall dashboard on a phone or tablet. Pair it under **Settings → Room stations**;
+someone answers on the Echo's screen or Action button. The local voice command “RoomCall Kitchen”
+rings every RoomCall phone and browser station in the Kitchen, where someone presses Answer.
+See [Echo live calls](https://daredoole.github.io/RoomCall/communication/#converted-echo-live-calls).
+
 Not through Sonos, HomePod or Nest speakers — their microphones are reserved for their own voice
 assistants. Put a small Assist satellite (Atom Echo, ESP32-S3, Home Assistant Voice) in the room
 and turn on **Hands-free talk-back**: after a call, it listens for a reply and the caller's room

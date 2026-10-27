@@ -107,9 +107,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
       - run: uv venv && uv pip install playwright
-      - name: Install Chromium
+      - name: Install Chromium and Firefox
         timeout-minutes: 5
-        run: uv run playwright install chromium
+        run: uv run playwright install chromium firefox
       - name: Ensure Chromium runtime dependencies
         timeout-minutes: 5
         run: |
@@ -117,6 +117,16 @@ jobs:
             uv run playwright install-deps chromium
           fi
       - run: uv run python scripts/qa_communication.py
+      - name: Check Firefox Echo audio
+        run: |
+          uv run playwright install-deps firefox
+          sudo apt-get update
+          sudo apt-get install -y pulseaudio
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/roomcall-audio"
+          mkdir -p "$XDG_RUNTIME_DIR"
+          chmod 700 "$XDG_RUNTIME_DIR"
+          pulseaudio --start --exit-idle-time=-1
+          uv run python scripts/qa_echo_firefox.py
 
   docs:
     runs-on: ubuntu-latest
