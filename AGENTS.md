@@ -5,6 +5,29 @@
 - The Home Assistant integration is `custom_components/roomcall/`. The `src/roomcall/` package is
   the separate standalone server.
 
+## Who RoomCall is for
+
+The repository owner (GitHub `daredoole`) builds RoomCall and directs agent work. Agents act
+for the owner: physical checks (speakers heard, iPhone audio, Echo hardware) are theirs, so say
+plainly what you could not verify instead of implying it works.
+
+RoomCall serves three kinds of Home Assistant users at once. Every user-visible change must
+work for all three:
+
+- **Simple users** install from HACS, add the card and press buttons. They never need YAML,
+  IP addresses, entity IDs, ports or protocol names. Defaults must work, features the household
+  cannot use stay hidden (no TECHO5 Echo → no Echo section), and every error says what to do
+  next in plain words, never an internal code such as `invalid_request` or `timeout`.
+- **Moderate users** build dashboards, use areas, automations, blueprints and the Companion
+  app. Settings belong in the UI, are discoverable, and explain their effect in one line.
+- **Advanced users** use actions, Assist sentences, the WebSocket API, AI agents, ESPHome,
+  Music Assistant and custom firmware such as TECHO5. Give them the power and the detail, behind
+  progressive disclosure, never as a requirement for the simple path.
+
+In practice: detect from Home Assistant (areas, ESPHome hosts, notify services, users) before
+asking the user to type anything; prefer one obvious primary action per screen; write user docs
+for the simple path first and put advanced detail in `docs/ai.md` and the feature guides.
+
 ## Checks before a pull request
 
 ```bash
