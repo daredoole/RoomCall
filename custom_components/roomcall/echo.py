@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import array
 import asyncio
 import base64
 import contextlib
 import ipaddress
+import logging
+import math
 import secrets
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -18,6 +21,8 @@ from .core import friendly, speaker_area
 from .echo_devices import EchoDevices
 from .echo_transport import FRAME_BYTES, EchoLink, WordRefused
 from .errors import Problem
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -30,6 +35,12 @@ class EchoCall:
     task: asyncio.Task | None = None
     link: EchoLink | None = None
     accepted: bool = False
+    # Audio evidence for diagnosis: frames and summed squares, per direction. Never audibility.
+    heard: list[float] = field(default_factory=lambda: [0, 0.0])
+    said: list[float] = field(default_factory=lambda: [0, 0.0])
+
+    def summary(self) -> str:
+        return f"from Echo {_level(self.heard)}, to Echo {_level(self.said)}"
 
 
 class Echoes:
@@ -157,6 +168,7 @@ class Echoes:
             raise Problem("invalid_request")
         for offset in range(0, len(pcm), FRAME_BYTES):
             await call.link.send(b"S", pcm[offset : offset + FRAME_BYTES])
+        _count(call.said, pcm)
 
     async def _run(self, call: EchoCall, name: str) -> None:
         reason = "ended"
@@ -180,6 +192,7 @@ class Echoes:
                         call.accepted = True
                         call.emit({"type": "accepted", "id": call.id})
                     elif kind == b"S" and call.accepted and len(payload) in (640, 1280):
+                        _count(call.heard, payload)
                         call.emit(
                             {
                                 "type": "audio",
@@ -206,6 +219,7 @@ class Echoes:
             if call.link:
                 with contextlib.suppress(Exception):
                     await asyncio.wait_for(call.link.close(), 1)
+            _LOGGER.info("Echo call %s ended (%s): %s", call.speaker, reason, call.summary())
             if self.calls.pop(call.id, None):
                 call.emit({"type": "ended", "id": call.id, "reason": reason})
 
@@ -273,3 +287,17 @@ def _private(host: str) -> str | None:
         return None
     networks = ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7")
     return str(address) if any(address in ipaddress.ip_network(n) for n in networks) else None
+
+
+def _count(total: list[float], pcm: bytes) -> None:
+    samples = array.array("h", pcm)
+    total[0] += 1
+    total[1] += sum(value * value for value in samples) / len(samples)
+
+
+def _level(total: list[float]) -> str:
+    if not total[0]:
+        return "no audio"
+    mean = total[1] / total[0]
+    level = 10 * math.log10(mean / 32768**2) if mean else -math.inf
+    return f"{int(total[0])} frames at {level:.0f} dBFS"

@@ -10,6 +10,7 @@ import subprocess
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from custom_components.roomcall.echo import EchoCall
 from custom_components.roomcall.echo_transport import PROTOCOL, EchoLink, WordRefused
 from custom_components.roomcall.errors import Problem
 from custom_components.roomcall.stations import Station
@@ -690,3 +691,22 @@ async def test_wrong_house_word_is_named(paired, socket_enabled):
         call_id = manager.start(speaker, "owner", "Phone", events.append)
         await until(lambda: call_id not in manager.calls)
     assert events[-1]["reason"] == "echo_word_mismatch"
+
+
+async def test_call_end_logs_audio_evidence_both_ways(hass, paired, pcm, caplog):
+    import logging
+
+    caplog.set_level(logging.INFO, logger="custom_components.roomcall.echo")
+    manager, speaker, _ = paired
+    link, events = FakeLink(), []
+    with patch("custom_components.roomcall.echo.EchoLink.connect", AsyncMock(return_value=link)):
+        call_id = manager.start(speaker, "owner", "Phone", events.append)
+        await link.queue.put((b"A", b""))
+        await link.queue.put((b"S", pcm))
+        await until(lambda: any(e["type"] == "audio" for e in events))
+        await manager.audio(call_id, "owner", base64.b64encode(bytes(1280)).decode())
+        await link.queue.put((b"X", b""))
+        await until(lambda: call_id not in manager.calls)
+    line = next(r.getMessage() for r in caplog.records if "Echo call" in r.getMessage())
+    assert "from Echo 1 frames at" in line and "to Echo 1 frames at -inf dBFS" in line
+    assert "no audio" in manager.calls.get(call_id, EchoCall("", "", "", None)).summary()
