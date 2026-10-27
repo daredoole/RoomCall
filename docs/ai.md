@@ -8,8 +8,11 @@ agent needs. A machine-readable summary is at [`/llms.txt`](llms.txt).
 
 The built-in Home Assistant conversation agent recognizes “announce to Basement that
 Dinner is ready” and “RoomCall Kitchen”. Announcements use the normal queue and policy.
-A live-call command spoken at a paired TECHO5 Echo invites the single open browser
-station in the destination area; its user must press Answer. Outside a paired Echo,
+A live-call command spoken at a paired TECHO5 Echo invites the single browser or
+saved native iOS station in the destination area; its user must press Answer.
+Native app 0.24.0/build 5 uses Settings → My room and HA Companion notifications
+that open its Answer screen, including when the app is closed. Live Activities
+are not incoming-call notifications. Outside a paired Echo,
 use **Settings → Room stations → Echo calls** to choose and call an Echo.
 See [Echo pairing and live-call consent](communication.md#converted-echo-live-calls).
 Do not report queued messages, returned PCM or device states as confirmed audibility.

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "roomcall"
-version = "0.23.1"
+version = "0.24.0"
 description = "Push-to-talk home intercom for the speakers you already own: Sonos, AirPlay and Chromecast."
 readme = "README.md"
 license = "MIT"

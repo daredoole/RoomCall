@@ -28,6 +28,7 @@ struct RoomCallApp: App {
         default: model.tab = .talk
         }
         if Demo.arguments.contains("-RoomCallDemoTalking") { model.talk.showDemoTalking() }
+        if Demo.arguments.contains("-RoomCallDemoIncoming") { model.echo.showDemoIncoming() }
         #endif
     }
 

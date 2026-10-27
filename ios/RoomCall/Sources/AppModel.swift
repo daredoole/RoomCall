@@ -26,6 +26,12 @@ final class AppModel: ObservableObject {
     private var seenRing: Date?
     let login = OAuthLogin()
     let talk = TalkController()
+    let echo = EchoController()
+
+    func connectEcho() async {
+        guard let client = service as? HAClient else { return }
+        await echo.connect(client, room: myRoom, name: L("ios_phone_station"))
+    }
 
     var rooms: [Room] { [.everywhere] + (overview.rooms ?? []) }
     var people: [Person] { overview.people ?? [] }
@@ -68,6 +74,11 @@ final class AppModel: ObservableObject {
     }
 
     func signOut() async {
+        // Forget the saved incoming destination before revoking this login.
+        if let client = service as? HAClient {
+            await echo.connect(client, room: "", name: L("ios_phone_station"))
+        }
+        echo.disconnect()
         do {
             // Revoke this refresh token before dropping local credentials.
             if let credentials = try SecureStore.load() {
@@ -106,6 +117,12 @@ final class AppModel: ObservableObject {
             }
         case "todo": tab = .tasks
         case "door": if let bell = overview.doorbell { doorbell = bell }
+        case "call":
+            if let invitation = value("invitation"), let station = value("station") {
+                tab = .talk
+                echo.open(invitation, station: station)
+                Task { await connectEcho() }
+            }
         default: break
         }
     }

@@ -126,6 +126,74 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_echo_pair)
     websocket_api.async_register_command(hass, ws_echo_call)
     websocket_api.async_register_command(hass, ws_echo_audio)
+    websocket_api.async_register_command(hass, ws_echo_station)
+    websocket_api.async_register_command(hass, ws_echo_decline)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "roomcall/echo_station",
+        vol.Required("station_id"): vol.All(str, vol.Length(min=8, max=64)),
+        vol.Required("room"): str,
+        vol.Optional("name", default="RoomCall"): vol.All(str, vol.Length(min=1, max=80)),
+    }
+)
+@websocket_api.async_response
+async def ws_echo_station(hass, connection, msg) -> None:
+    data = hass.data.get(DOMAIN)
+    if data is None or not connection.user:
+        connection.send_error(msg["id"], "not_ready", "RoomCall")
+        return
+    devices = data.echoes.devices
+    try:
+        await devices.register(msg["station_id"], connection.user.id, msg["room"], msg["name"])
+        if not msg["room"]:
+            for invitation, item in list(data.echoes.invitations.items()):
+                if item["owner"] == connection.user.id and item["station"].id == msg["station_id"]:
+                    data.echoes.cancel_invite(invitation, connection.user.id)
+    except Problem as err:
+        connection.send_error(msg["id"], err.code, "RoomCall")
+        return
+
+    def emit(event):
+        connection.send_message(websocket_api.event_message(msg["id"], event))
+
+    devices.listeners[msg["station_id"]] = emit
+
+    def unsubscribe():
+        if devices.listeners.get(msg["station_id"]) is emit:
+            devices.listeners.pop(msg["station_id"])
+
+    connection.subscriptions[msg["id"]] = unsubscribe
+    from .core import friendly
+
+    invitations = []
+    for invitation, item in data.echoes.invitations.items():
+        if item["owner"] == connection.user.id and item["station"].id == msg["station_id"]:
+            invitations.append(
+                {
+                    "id": invitation,
+                    "speaker": item["speaker"],
+                    "from": friendly(hass, item["speaker"]),
+                }
+            )
+    connection.send_result(msg["id"], {"echoes": data.echoes.list(), "invitations": invitations})
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "roomcall/echo_decline", vol.Required("invitation"): str}
+)
+@websocket_api.async_response
+async def ws_echo_decline(hass, connection, msg) -> None:
+    data = hass.data.get(DOMAIN)
+    if data is None or not connection.user:
+        connection.send_error(msg["id"], "not_ready", "RoomCall")
+        return
+    try:
+        data.echoes.cancel_invite(msg["invitation"], connection.user.id)
+        connection.send_result(msg["id"])
+    except Problem as err:
+        connection.send_error(msg["id"], err.code, "RoomCall")
 
 
 @websocket_api.websocket_command(

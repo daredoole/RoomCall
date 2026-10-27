@@ -599,7 +599,23 @@
         "voice_calling": "{room} wordt gebeld.",
         "voice_call_help": "Open een RoomCall-kamerstation in {room}, of kies de Echo onder Kamerstations.",
         "echo_secure_required": "Open Home Assistant via HTTPS of localhost om live met de Echo te bellen.",
-        "echo_audio_unavailable": "De browseraudio kon niet starten. Controleer de microfoon- en geluidsrechten en bel de Echo opnieuw."
+        "echo_audio_unavailable": "De browseraudio kon niet starten. Controleer de microfoon- en geluidsrechten en bel de Echo opnieuw.",
+        "ios_incoming_call": "Inkomende RoomCall",
+        "ios_open_call": "Oproep openen",
+        "ios_answer": "Beantwoorden",
+        "ios_decline": "Weigeren",
+        "ios_hang_up": "Ophangen",
+        "ios_live_call": "Livegesprek",
+        "ios_echo": "Echo",
+        "ios_choose_echo": "Kies een Echo",
+        "ios_call_echo": "Echo bellen",
+        "ios_live_call_hint": "Tweerichtingsgesprekken met Echo. Kies Mijn kamer in Instellingen om oproepen te ontvangen. Achtergrondmeldingen gebruiken Home Assistant Companion en openen RoomCall om te antwoorden.",
+        "ios_call_ringing": "Gaat over — beantwoord op de Echo.",
+        "ios_call_live": "Verbonden — jullie kunnen allebei praten.",
+        "ios_call_ended": "Oproep beëindigd.",
+        "ios_call_failed": "Het gesprek kon niet doorgaan. Probeer opnieuw.",
+        "ios_call_expired": "Deze oproep is verlopen. Vraag de beller opnieuw te bellen.",
+        "ios_phone_station": "RoomCall-telefoon"
       }
     },
     "audio_processing": {

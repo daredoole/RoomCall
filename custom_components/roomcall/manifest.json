@@ -30,5 +30,5 @@
     "noiseprotocol==0.3.1"
   ],
   "single_config_entry": true,
-  "version": "0.23.1"
+  "version": "0.24.0"
 }

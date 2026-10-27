@@ -599,7 +599,23 @@
         "voice_calling": "Llamando a {room}.",
         "voice_call_help": "Abre una estación de RoomCall en {room} o selecciona el Echo en Estaciones.",
         "echo_secure_required": "Abre Home Assistant mediante HTTPS o localhost para usar llamadas en directo al Echo.",
-        "echo_audio_unavailable": "No se pudo iniciar el audio del navegador. Revisa los permisos del micrófono y del sonido y vuelve a llamar al Echo."
+        "echo_audio_unavailable": "No se pudo iniciar el audio del navegador. Revisa los permisos del micrófono y del sonido y vuelve a llamar al Echo.",
+        "ios_incoming_call": "Llamada entrante de RoomCall",
+        "ios_open_call": "Abrir llamada",
+        "ios_answer": "Responder",
+        "ios_decline": "Rechazar",
+        "ios_hang_up": "Colgar",
+        "ios_live_call": "Conversación en directo",
+        "ios_echo": "Echo",
+        "ios_choose_echo": "Elige un Echo",
+        "ios_call_echo": "Llamar al Echo",
+        "ios_live_call_hint": "Llamadas bidireccionales con Echo. Para recibir llamadas, elige Mi habitación en Ajustes. Las alertas en segundo plano usan la app Home Assistant Companion y abren RoomCall para responder.",
+        "ios_call_ringing": "Sonando: responde en el Echo.",
+        "ios_call_live": "Conectado: ambos pueden hablar.",
+        "ios_call_ended": "Llamada finalizada.",
+        "ios_call_failed": "La llamada no pudo continuar. Inténtalo de nuevo.",
+        "ios_call_expired": "La llamada ha caducado. Pide que vuelvan a llamar.",
+        "ios_phone_station": "Teléfono RoomCall"
       }
     },
     "audio_processing": {

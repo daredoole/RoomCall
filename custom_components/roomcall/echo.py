@@ -15,6 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.storage import Store
 
 from .core import friendly, speaker_area
+from .echo_devices import EchoDevices
 from .echo_transport import FRAME_BYTES, EchoLink
 from .errors import Problem
 
@@ -40,9 +41,11 @@ class Echoes:
         self.peers: dict[str, dict[str, Any]] = {}
         self.calls: dict[str, EchoCall] = {}
         self.invitations: dict[str, dict[str, Any]] = {}
+        self.devices = EchoDevices(hass, data)
 
     async def load(self) -> None:
         self.peers = await self.store.async_load() or {}
+        await self.devices.load()
 
     def list(self) -> list[dict[str, Any]]:
         return [
@@ -107,8 +110,7 @@ class Echoes:
             invite = self.invitations.get(invitation)
             if not invite or invite["speaker"] != speaker or invite["owner"] != owner:
                 raise Problem("forbidden")
-            invite["timer"]()
-            del self.invitations[invitation]
+            self.cancel_invite(invitation, owner)
         call = EchoCall(secrets.token_urlsafe(24), owner, speaker, emit, invitation)
         self.calls[call.id] = call
         call.task = self.hass.async_create_background_task(self._run(call, name), "RoomCall Echo")
@@ -200,8 +202,9 @@ class Echoes:
         self.invitations[invite_id] = {
             "owner": station.owner,
             "speaker": speaker,
+            "station": station,
             "timer": async_call_later(
-                self.hass, 60, lambda _: self.invitations.pop(invite_id, None)
+                self.hass, 60, lambda _: self.cancel_invite(invite_id, station.owner)
             ),
         }
         station.emit(
@@ -214,6 +217,16 @@ class Echoes:
         )
         return invite_id
 
+    def cancel_invite(self, invitation: str, owner: str) -> None:
+        invite = self.invitations.get(invitation)
+        if not invite:
+            raise Problem("not_found")
+        if invite["owner"] != owner:
+            raise Problem("forbidden")
+        self.invitations.pop(invitation)
+        invite["timer"]()
+        invite["station"].emit({"type": "echo_cancelled", "id": invitation})
+
     async def close(self) -> None:
         tasks = [call.task for call in self.calls.values() if call.task]
         for call_id in list(self.calls):
@@ -221,4 +234,5 @@ class Echoes:
         for invite in self.invitations.values():
             invite["timer"]()
         self.invitations.clear()
+        self.devices.listeners.clear()
         await asyncio.gather(*tasks, return_exceptions=True)

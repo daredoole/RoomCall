@@ -38,7 +38,26 @@ stock Amazon firmware and an ordinary ESPHome media player are insufficient.
 
 ![Echo call waiting for its Action button, with sample data](assets/ha-echo-call.png)
 
-For calls initiated at the Echo, first enable a browser **Room station** in the
+The native iPhone/iPad app **0.24.0 (build 5)** also offers **Live conversation →
+Call Echo** on its Talk tab. Allow its microphone and answer at the Echo's Action
+button. Its separate **Hang up** control ends both audio directions.
+
+For native incoming calls, choose **Settings → My room** in RoomCall. Say
+“Alexa, RoomCall Kitchen” at the paired Echo when My room is Kitchen. The native
+app displays **Answer** and **Decline**; its microphone starts only after Answer.
+The saved destination remains available when the app is closed. Background alerts
+use the Home Assistant Companion app's notifications, with an **Open call** link
+into RoomCall's Answer screen. Select that owner's Companion notify service in
+RoomCall's reply/notification settings and enable HA notifications in iOS. This
+build does not register a separate RoomCall APNs notification service or provide
+CallKit's system incoming-call screen; Live Activities are a separate feature.
+Links require the saved station and authenticated HA user; invitations expire
+after 60 seconds and opening a link does not answer. Set My room to None or sign
+out to forget the saved destination (sign-out requires HA connectivity to forget it).
+With multiple destinations in one room, choose a different My room or disable the
+extra browser station so the voice command has one unambiguous destination.
+
+For browser calls initiated at the Echo, first enable a browser **Room station** in the
 phone's or tablet's current room and leave the page open in the foreground. Say
 “Alexa, RoomCall Kitchen” at the paired Echo. With exactly one open Kitchen station,
 it offers **Answer** on that browser. Pressing Answer opens its microphone and
@@ -58,8 +77,7 @@ playback within the button gesture, including Firefox; if playback cannot start,
 RoomCall releases the microphone and reports an error instead of waiting forever.
 Use trusted HTTPS on a phone or tablet; localhost is also supported on the computer
 running Home Assistant access or a local tunnel. Mobile browsers may
-suspend audio in the background or when the screen locks. Native iOS app builds do
-not include this browser calling interface. Browser-to-browser stations continue to
+suspend audio in the background or when the screen locks. Browser-to-browser stations continue to
 use WebRTC; TECHO5 calls instead use authenticated Home Assistant WebSocket messages
 and one outbound encrypted TCP connection from HA to the Echo on port 8181.
 No SIP server, public port forwarding or router changes are required.

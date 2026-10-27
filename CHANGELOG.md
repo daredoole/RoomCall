@@ -4,6 +4,15 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.24.0 — 2026-10-27
+
+- Add native iPhone/iPad live Echo calling with microphone consent, incoming
+  Answer/Decline controls, duplex audio, bounded buffering and Hang up.
+- Save the native app's My room as an incoming Echo destination. Local Assist can
+  invite it while the app is closed; the owner's configured Home Assistant Companion
+  notifications open RoomCall's Answer screen. Invitations expire after 60 seconds
+  and require the same authenticated HA user. Opening a link never answers a call.
+
 ## 0.23.1 — 2026-10-26
 
 - Start Echo browser audio within the Call/Answer button gesture, before loading

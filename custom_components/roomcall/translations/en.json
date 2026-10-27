@@ -599,7 +599,23 @@
         "voice_calling": "Calling {room}.",
         "voice_call_help": "Open a RoomCall room station in {room}, or select the Echo under Room stations.",
         "echo_secure_required": "Open Home Assistant over HTTPS or localhost to use live Echo calls.",
-        "echo_audio_unavailable": "Browser audio could not start. Check microphone and sound permissions, then try Call Echo again."
+        "echo_audio_unavailable": "Browser audio could not start. Check microphone and sound permissions, then try Call Echo again.",
+        "ios_incoming_call": "Incoming RoomCall",
+        "ios_open_call": "Open call",
+        "ios_answer": "Answer",
+        "ios_decline": "Decline",
+        "ios_hang_up": "Hang up",
+        "ios_live_call": "Live conversation",
+        "ios_echo": "Echo",
+        "ios_choose_echo": "Choose an Echo",
+        "ios_call_echo": "Call Echo",
+        "ios_live_call_hint": "Two-way Echo calls. To receive calls, choose My room in Settings. Background alerts use your Home Assistant Companion app and open RoomCall for you to answer.",
+        "ios_call_ringing": "Ringing — answer on the Echo.",
+        "ios_call_live": "Connected — you can both speak.",
+        "ios_call_ended": "Call ended.",
+        "ios_call_failed": "The call could not continue. Try again.",
+        "ios_call_expired": "This call expired. Ask the caller to try again.",
+        "ios_phone_station": "RoomCall phone"
       }
     },
     "audio_processing": {

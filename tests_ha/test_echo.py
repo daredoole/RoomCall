@@ -464,7 +464,13 @@ async def test_echo_websocket_pairing_call_audio_hangup(hass, paired, hass_ws_cl
 async def test_echo_ws_authorization_and_not_ready(hass, paired):
     from unittest.mock import Mock
 
-    from custom_components.roomcall.ws import ws_echo_audio, ws_echo_call, ws_echo_pair
+    from custom_components.roomcall.ws import (
+        ws_echo_audio,
+        ws_echo_call,
+        ws_echo_decline,
+        ws_echo_pair,
+        ws_echo_station,
+    )
 
     socket = Mock()
     socket.user = Mock(is_admin=False)
@@ -475,7 +481,132 @@ async def test_echo_ws_authorization_and_not_ready(hass, paired):
         await ws_echo_call.__wrapped__(hass, socket, {"id": 1, "speaker": paired[1]})
         assert socket.send_error.call_args.args[1] == "forbidden"
     data = hass.data.pop("roomcall")
-    for handler in (ws_echo_pair, ws_echo_call, ws_echo_audio):
+    for handler in (ws_echo_pair, ws_echo_call, ws_echo_audio, ws_echo_station, ws_echo_decline):
         await handler.__wrapped__(hass, socket, {"id": 1})
         assert socket.send_error.call_args.args[1] == "not_ready"
     hass.data["roomcall"] = data
+
+
+async def test_native_station_ownership_persistence_notifications_and_forget(hass, paired, house):
+    from custom_components.roomcall.echo_devices import EchoDevices
+
+    manager, speaker, _ = paired
+    devices = manager.devices
+    phone = MockConfigEntry(
+        domain="mobile_app", data={"device_name": "Owner phone", "user_id": "owner"}
+    )
+    phone.add_to_hass(hass)
+    other = MockConfigEntry(
+        domain="mobile_app", data={"device_name": "Other phone", "user_id": "other"}
+    )
+    other.add_to_hass(hass)
+    mine = async_mock_service(hass, "notify", "mobile_app_owner_phone")
+    theirs = async_mock_service(hass, "notify", "mobile_app_other_phone")
+    manager.data.notify = [
+        "notify.mobile_app_owner_phone",
+        "notify.mobile_app_other_phone",
+        "notify.absent",
+    ]
+    await devices.register("native-phone", "owner", house["kitchen"], "Phone")
+    with pytest.raises(Problem, match="forbidden"):
+        await devices.register("native-phone", "other", "", "Phone")
+    with pytest.raises(Problem, match="no_targets"):
+        await devices.register("native-phone", "owner", "missing", "Phone")
+    restored = EchoDevices(hass, manager.data)
+    await restored.load()
+    assert restored.items == devices.items
+    assert not restored.targets("missing")
+    events = []
+    devices.listeners["native-phone"] = events.append
+    invitation = manager.invite(speaker, devices.targets(house["kitchen"])[0])
+    await until(lambda: bool(mine))
+    assert len(mine) == 1 and not theirs
+    payload = mine[0].data["data"]
+    assert payload["url"] == payload["actions"][0]["uri"]
+    assert payload["url"].startswith("roomcall://call?station=native-phone&invitation=")
+    assert invitation in payload["url"] and WORD not in str(mine[0].data)
+    assert events[-1]["type"] == "echo_incoming" and not manager.calls
+    with pytest.raises(Problem, match="forbidden"):
+        manager.cancel_invite(invitation, "other")
+    manager.cancel_invite(invitation, "owner")
+    assert events[-1] == {"type": "echo_cancelled", "id": invitation}
+    with pytest.raises(Problem, match="not_found"):
+        manager.cancel_invite(invitation, "owner")
+    await devices.register("native-phone", "owner", "", "Phone")
+    await devices.notify("native-phone", {"id": "stale", "from": "Echo"})
+    assert not devices.items
+    devices.items = {
+        str(i): {"owner": "owner", "room": house["kitchen"], "name": "Phone"} for i in range(64)
+    }
+    with pytest.raises(Problem, match="queue_full"):
+        await devices.register("extra-phone", "owner", house["kitchen"], "Phone")
+
+
+async def test_native_station_websocket_reconnect_pending_decline_and_close(
+    hass, paired, house, hass_ws_client
+):
+    manager, speaker, _ = paired
+    socket = await hass_ws_client(hass)
+    request = {
+        "type": "roomcall/echo_station",
+        "station_id": "native-phone",
+        "room": house["kitchen"],
+    }
+    await socket.send_json({"id": 1, **request})
+    result = await socket.receive_json()
+    assert result["success"] and result["result"]["echoes"][0]["speaker"] == speaker
+    target = manager.devices.targets(house["kitchen"])[0]
+    invitation = manager.invite(speaker, target)
+    event = await socket.receive_json()
+    assert event["event"]["id"] == invitation
+    await socket.close()
+    await hass.async_block_till_done()
+    assert "native-phone" in manager.devices.items
+    assert not manager.devices.listeners and not manager.calls
+    socket = await hass_ws_client(hass)
+    await socket.send_json({"id": 1, **request})
+    result = await socket.receive_json()
+    assert result["result"]["invitations"][0]["id"] == invitation
+    await socket.send_json({"id": 2, "type": "roomcall/echo_decline", "invitation": invitation})
+    messages = [await socket.receive_json(), await socket.receive_json()]
+    assert any(m.get("event", {}).get("type") == "echo_cancelled" for m in messages)
+    assert any(m.get("id") == 2 and m.get("success") for m in messages)
+    assert not manager.invitations and not manager.calls
+    await socket.send_json({"id": 3, "type": "roomcall/echo_decline", "invitation": invitation})
+    assert (await socket.receive_json())["error"]["code"] == "not_found"
+    await socket.send_json({"id": 4, **request, "room": "missing"})
+    assert (await socket.receive_json())["error"]["code"] == "no_targets"
+    await socket.send_json({"id": 5, **request})
+    assert (await socket.receive_json())["success"]
+    await socket.send_json({"id": 6, "type": "unsubscribe_events", "subscription": 1})
+    assert (await socket.receive_json())["success"]
+    assert "native-phone" in manager.devices.listeners  # newer socket subscription survives
+    invitation = manager.invite(speaker, manager.devices.targets(house["kitchen"])[0])
+    assert (await socket.receive_json())["event"]["id"] == invitation
+    await socket.send_json({"id": 7, **request, "room": ""})
+    messages = [await socket.receive_json(), await socket.receive_json()]
+    assert any(m.get("event", {}).get("type") == "echo_cancelled" for m in messages)
+    assert any(m.get("id") == 7 and m.get("success") for m in messages)
+    assert not manager.invitations and not manager.devices.items
+    await socket.close()
+    await hass.async_block_till_done()
+    assert not manager.devices.listeners
+
+
+async def test_voice_can_invite_a_saved_native_station_while_app_is_closed(hass, paired, house):
+    from custom_components.roomcall import voice
+    from homeassistant.core import Context
+
+    manager, speaker, _ = paired
+    registry = er.async_get(hass)
+    device = registry.async_get(speaker).device_id
+    satellite = registry.async_get_or_create(
+        "assist_satellite", "esphome", "native-echo-satellite", device_id=device
+    )
+    await manager.devices.register("native-phone", "owner", house["kitchen"], "Phone")
+    trigger = {"satellite_id": satellite.entity_id, "slots": {"area": "Kitchen"}}
+    with patch("custom_components.roomcall.voice.permitted", AsyncMock(return_value=True)):
+        response = await voice.call(hass, manager.data, trigger, Context(), house["kitchen"], "en")
+    assert "Kitchen" in response
+    assert len(manager.invitations) == 1 and not manager.calls
+    await manager.close()

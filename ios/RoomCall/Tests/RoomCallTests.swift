@@ -3,6 +3,43 @@ import XCTest
 @testable import RoomCall
 
 final class RoomCallTests: XCTestCase {
+    func testEchoProtocolDirectoryInvitationsAudioAndErrors() throws {
+        let pending: [String: Any] = ["id": "invite", "speaker": "media_player.echo", "from": "Basement"]
+        let message: [String: Any] = ["id": 1, "result": [
+            "echoes": [["speaker": "media_player.echo", "name": "Basement", "available": true]],
+            "invitations": [pending, [:]]]]
+        guard case .directory(let peers, let invitations) = try EchoConnection.event(message) else {
+            return XCTFail("Registration must recover the pending incoming call")
+        }
+        XCTAssertEqual(peers.first?.speaker, "media_player.echo")
+        XCTAssertEqual(invitations.first?.id, "invite")
+        guard case .incoming(let invitation) = try EchoConnection.event(["event": pending.merging(["type": "echo_incoming"]) { _, new in new }])
+        else { return XCTFail("Missing incoming invitation") }
+        XCTAssertEqual(invitation.name, "Basement")
+        XCTAssertThrowsError(try EchoConnection.event(["event": ["type": "echo_incoming"]]))
+        XCTAssertThrowsError(try EchoConnection.event(["event": ["type": "calling"]]))
+        XCTAssertThrowsError(try EchoConnection.event(["event": ["type": "audio", "pcm": "?"]]))
+        XCTAssertThrowsError(try EchoConnection.event(["event": ["type": "audio", "pcm": Data([0]).base64EncodedString()]]))
+        let pcm = Data(repeating: 0x40, count: 640)
+        guard case .audio(let decoded) = try EchoConnection.event(["event": ["type": "audio", "pcm": pcm.base64EncodedString()]])
+        else { return XCTFail("Missing audio") }
+        XCTAssertEqual(decoded, pcm)
+        XCTAssertNil(try EchoConnection.event(["type": "result", "id": 4, "success": true]))
+        XCTAssertThrowsError(try EchoConnection.check(["success": false, "error": ["message": "Forbidden"]]))
+    }
+
+    func testEchoPlaybackUsesLittleEndianSignedPCM() throws {
+        var pcm = Data(repeating: 0, count: 640)
+        pcm[0] = 0; pcm[1] = 0x80 // -32768
+        pcm[2] = 0xff; pcm[3] = 0x7f // +32767
+        let buffer = try EchoAudio.playback(pcm)
+        XCTAssertEqual(buffer.format.sampleRate, 16_000)
+        XCTAssertEqual(buffer.frameLength, 320)
+        XCTAssertEqual(buffer.floatChannelData![0][0], -1)
+        XCTAssertEqual(buffer.floatChannelData![0][1], Float(32767) / 32768)
+        XCTAssertThrowsError(try EchoAudio.playback(Data([0])))
+    }
+
     func testServerAddressAndPaths() throws {
         let server = try ServerAddress.parse(" https://ha.example/ha ")
         XCTAssertEqual(LiveConnection.websocketURL(server).absoluteString, "wss://ha.example/ha/api/websocket")

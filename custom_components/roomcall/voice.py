@@ -74,6 +74,7 @@ async def call(hass, data, trigger, context, area: str, language: str) -> str:
         and entity.device_id == satellite.device_id
     ]
     stations = [station for station in data.stations.items.values() if station.room == area]
+    stations.extend(data.echoes.devices.targets(area))
     if len(sources) == 1 and len(stations) == 1:
         if not await permitted(hass, sources[0], context, "conversation"):
             return text(hass, "forbidden", language)
