@@ -2,6 +2,7 @@
 
 RoomCall includes a sideloadable SwiftUI iPhone/iPad app in `ios/RoomCall`.
 It sends live microphone audio and typed announcements through your Home Assistant.
+Version 0.24.0/build 5 adds answered, two-way calls with paired TECHO5 Echo devices.
 It uses an ordinary in-app microphone session; Apple's Push to Talk entitlement is
 not required. The optional [Apple Home camera bridge](apple-home.md) is a separate route.
 
@@ -28,6 +29,12 @@ not required. The optional [Apple Home camera bridge](apple-home.md) is a separa
   if confirmation is lost, inspect history before sending the same message again.
 - Ordered, bounded live WebSocket audio in mono 16 kHz PCM. Releasing while
   connecting sends no recording. Accepted playback remains separate from audibility.
+- **Live conversation:** choose a paired Echo and call it, then answer at its Action
+  button. Choose **My room** to receive Echo-originated calls with **Answer** and
+  **Decline** controls. A saved destination can receive a Home Assistant Companion
+  notification while RoomCall is closed; its **Open call** link opens RoomCall's
+  Answer screen. The same HA user's configured Companion notify targets are used.
+  Opening the link starts no microphone. Invitations expire in 60 seconds.
 - **Message:** type to speak in the selected destination, or ask a compatible Assist
   satellite and read its transcribed response.
 - **Tasks:** complete or snooze announcement tasks; **History:** read and reply to calls.
@@ -117,13 +124,17 @@ remains available for older clients.
 
 ## Platform boundaries
 
-The app broadcasts outbound audio. It does not provide an always-listening background
+The app broadcasts announcements and supports answered Echo conversations. It does not provide an always-listening background
 receiver, join HomePod's built-in Intercom system, make other speakers Siri accessories,
 or register a native Home app Intercom tile. It does not use system Push to Talk channels.
 
 Tasks and doorbells refresh while the app is open. Live Activities and widgets do not
-supply a background push service. Background incoming calls or remotely refreshed
-activities need additional provisioning, a push service and physical-device testing.
+supply a background push service. This build uses HA Companion notifications for
+background Echo invitations, rather than registering RoomCall with APNs. Therefore
+iOS has no separate RoomCall notification switch. It does not implement CallKit's
+system call screen. Enable **Home Assistant** notifications, select the phone's notify
+service in RoomCall's integration settings, and install the updated native app.
+Background delivery, notification links and phone audio still require physical testing.
 The optional camera bridge remains the route for room talk buttons inside Apple Home.
 
 ## Validation

@@ -10,6 +10,13 @@ final class RoomCallUITests: XCTestCase {
         keep("ios-incoming-echo-light")
         app.buttons["echo-decline"].tap()
         XCTAssertFalse(app.buttons["echo-answer"].waitForExistence(timeout: 3))
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["echo-answer"].waitForExistence(timeout: 30))
+        app.buttons["echo-answer"].tap()
+        XCTAssertTrue(app.buttons["echo-hangup"].waitForExistence(timeout: 10))
+        app.buttons["echo-hangup"].tap()
+        XCTAssertFalse(app.buttons["echo-hangup"].waitForExistence(timeout: 3))
     }
 
     func testSignInRequiresAValidServerAtAccessibilityTextSize() {

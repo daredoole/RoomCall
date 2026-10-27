@@ -3,6 +3,26 @@ import XCTest
 @testable import RoomCall
 
 final class RoomCallTests: XCTestCase {
+    @MainActor
+    func testEchoInvitationsNeverStartCaptureAndExpiredLinksCannotAnswer() async throws {
+        let echo = EchoController()
+        let invite = EchoInvitation(id: "current", speaker: "media_player.echo", name: "Basement")
+        try await echo.receive(.incoming(invite))
+        XCTAssertEqual(echo.incoming, invite)
+        XCTAssertEqual(echo.phase, .idle, "Receiving an invitation must not start audio")
+        echo.open("expired", station: echo.stationID)
+        try await echo.receive(.directory([], [invite]))
+        XCTAssertNil(echo.incoming)
+        XCTAssertEqual(echo.phase, .idle)
+        XCTAssertEqual(echo.status, L("ios_call_expired"))
+        try await echo.receive(.incoming(invite))
+        try await echo.receive(.cancelled(invite.id))
+        XCTAssertNil(echo.incoming)
+        XCTAssertEqual(echo.phase, .idle)
+        echo.disconnect()
+        XCTAssertFalse(echo.listening)
+    }
+
     func testEchoProtocolDirectoryInvitationsAudioAndErrors() throws {
         let pending: [String: Any] = ["id": "invite", "speaker": "media_player.echo", "from": "Basement"]
         let message: [String: Any] = ["id": 1, "result": [

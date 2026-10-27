@@ -58,7 +58,7 @@ final class EchoController: ObservableObject {
         wantedInvitation = invitation
     }
 
-    private func receive(_ event: EchoEvent) async throws {
+    func receive(_ event: EchoEvent) async throws {
         switch event {
         case .directory(let peers, let pending):
             self.peers = peers
@@ -115,6 +115,14 @@ final class EchoController: ObservableObject {
     }
     func answer() async {
         guard let invitation = incoming else { return }
+        #if DEBUG
+        if Demo.enabled {
+            incoming = nil
+            phase = .live
+            status = L("ios_call_live")
+            return
+        }
+        #endif
         await call(invitation.speaker, invitation: invitation.id)
     }
     func decline() async {
@@ -143,12 +151,13 @@ final class EchoController: ObservableObject {
                 for try await bytes in stream {
                     pending.append(bytes)
                     while pending.count >= 640 {
+                        try Task.checkCancellation()
                         try await connection.pcm(Data(pending.prefix(640)))
                         pending.removeFirst(640)
                     }
                 }
             } catch {
-                guard generation == self.generation else { return }
+                guard !Task.isCancelled, generation == self.generation else { return }
                 await hangup()
                 status = error.localizedDescription
             }

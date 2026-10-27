@@ -136,7 +136,10 @@ struct TalkScreen: View {
                     }
                 }
             }
-            .refreshable { await model.refresh() }
+            .refreshable {
+                await model.refresh()
+                if !echo.active { await model.connectEcho() }
+            }
         }
     }
 }
