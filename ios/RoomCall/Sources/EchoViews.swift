@@ -40,28 +40,30 @@ struct EchoCallPanel: View {
     @State private var selected = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("ios_live_call", systemImage: "phone.fill").font(.headline)
-            if !echo.peers.isEmpty {
-                Picker("ios_echo", selection: $selected) {
-                    Text("ios_choose_echo").tag("")
-                    ForEach(echo.peers) { peer in
-                        Text(verbatim: peer.name).tag(peer.speaker)
+        if !echo.peers.isEmpty || !echo.status.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("ios_live_call", systemImage: "phone.fill").font(.headline)
+                if !echo.peers.isEmpty {
+                    Picker("ios_echo", selection: $selected) {
+                        Text("ios_choose_echo").tag("")
+                        ForEach(echo.peers) { peer in
+                            Text(verbatim: peer.name).tag(peer.speaker)
+                        }
                     }
+                    Button("ios_call_echo") { Task { await echo.call(selected) } }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(!echo.listening || echo.active || talk.active ||
+                                  !echo.peers.contains { $0.speaker == selected && $0.available })
+                        .accessibilityIdentifier("echo-call")
                 }
-                Button("ios_call_echo") { Task { await echo.call(selected) } }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!echo.listening || echo.active || talk.active ||
-                              !echo.peers.contains { $0.speaker == selected && $0.available })
-                    .accessibilityIdentifier("echo-call")
+                Text("ios_live_call_hint").font(.footnote).foregroundStyle(.secondary)
+                if !echo.status.isEmpty {
+                    Text(verbatim: echo.status).font(.callout)
+                        .accessibilityIdentifier("echo-status")
+                }
             }
-            Text("ios_live_call_hint").font(.footnote).foregroundStyle(.secondary)
-            if !echo.status.isEmpty {
-                Text(verbatim: echo.status).font(.callout)
-                    .accessibilityIdentifier("echo-status")
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding().background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding().background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 }
