@@ -1,13 +1,13 @@
 {
   "schema": 1,
-  "capture_base_commit": "86ac7f127b2798f4437170db70f3f10e29510370",
-  "ios_source_commit": "86ac7f127b2798f4437170db70f3f10e29510370",
-  "ios_run": "https://github.com/daredoole/RoomCall/actions/runs/40547112431",
+  "capture_base_commit": "1ea27fbc192e82edbd9c6c80f7b85be7c279c5d6",
+  "ios_source_commit": "1ea27fbc192e82edbd9c6c80f7b85be7c279c5d6",
+  "ios_run": "https://github.com/daredoole/RoomCall/actions/runs/40577517465",
   "sample_data": true,
   "groups": {
     "home_assistant": {
       "images": {
-        "docs/assets/demo.gif": "0d08b779cca7dbea9a5728e2642fd12f54e66401a0c48b1e61763d46e9c6bf09",
+        "docs/assets/demo.gif": "7b29c0fba496e8f50eeb665c6b971dd96e16eba91978a47f67b86dce44f25bfb",
         "docs/assets/ha-card-ask.png": "3e0838fd223f685b09bd9fc3bf946d0d8d6a5c286b18861289cc85ee82384861",
         "docs/assets/ha-card-compact.png": "fb00518617d208bf1f4ab8b27c8e36a4104a309037014a47d612e9b0897dc35c",
         "docs/assets/ha-card-delivered.png": "6cebc0d0309b4090363df5373a96f7bbd88b1eb5103e1b8cf7ecf4912a2cb57f",
@@ -24,27 +24,27 @@
         "docs/assets/ha-card-type.png": "f38f0d14fe9a2ce11f1e1943fd742c64bdf9ad7cb6728599419ef307b98779f5",
         "docs/assets/ha-dashboard-desktop.png": "2808552d063f0b546a8a2644e6f4824ca361efe29b619c1b94c84818ccfbb40b",
         "docs/assets/ha-device-discovery.png": "446e9ecc0de206a70b57e9ef7470b789b6cfd290561040f679e2e92530a837b1",
-        "docs/assets/ha-echo-call.png": "3845ad98266d415de11580577c48d28feac72ba93920a88be0535c5b7f0e7949",
-        "docs/assets/ha-guided-setup.png": "3b0f7cbe4d3d017be3a29ddab948696851d112b5b849e0fc390b36c3d6987757",
+        "docs/assets/ha-echo-call.png": "7d8a21fa50e25969b74737bc7c94b6bd1aca5f972c3446c4c6497915f2b62f82",
+        "docs/assets/ha-guided-setup.png": "066c73a74349e7172bcba373f1346399b8034020455ed83675f49272c4beccff",
         "docs/assets/ha-playback-preview.png": "10aa5ea03fe0163b4da7f7a87a1b6ba12e8c1247387274398c0ac40df19f9242",
         "docs/assets/ha-playback-restoration.png": "c1d903db1fe3641fa30bdbdb704e459617d9e91305f933bae0d409e196ceb4db",
         "docs/assets/ha-room-listening.png": "ecf732d1bdaa52deb2ab03103c545bb22e3cdbeb137d1906b4474ca0372e7a76",
         "docs/assets/ha-settings-phone.png": "93877bcd40803f6b2f44456fa7f596e3d065998fda7b662a0d5b53a70dd83f0a",
         "docs/assets/ha-settings-shortcuts.png": "1ad4687fb96ded1eb46a108b4d0cf3f064921d22a71e5d5704c9b83407597715",
-        "docs/assets/ha-settings-stations.png": "18cf6ab89ad4afe290c759cdb27487d5c7a89957274ca11ef208d1c8daf31a00",
+        "docs/assets/ha-settings-stations.png": "086eaadba7b2d6dbd6d1390d5b4aa73d051259cb7517f15669d98a3532f10911",
         "docs/assets/ha-settings-voicemail.png": "3fd5b0e62f25551d6e93a5e9755a048e8d3f54bc6f2258bc81da3f5577a077f0",
         "docs/assets/ha-settings.png": "8fe43f9fc5f21e49f23a931e24454cd377d08964a7b606ae2fba0409db3db905",
         "docs/assets/ha-siri-shortcuts.png": "bef6e264a01e69c89913a0f9466642d60cc25d80b9c83e7775d442eff14fa37c"
       },
       "inputs": {
         "custom_components/roomcall/frontend/roomcall-card.js": "90166c6cca9fbc8fbee6fdd08bd460e80f9ebb329277e2eb40b6e3c906b1d893",
-        "custom_components/roomcall/frontend/roomcall-controls.js": "3b5e267182660678693c3c735d9579aca935a19d7c0351119ecb97bac47e6d43",
-        "custom_components/roomcall/frontend/roomcall-echo.js": "7ba61e10327a90faba0de2e7cab7c08954c2737beec523a31cca082535be6e76",
+        "custom_components/roomcall/frontend/roomcall-controls.js": "584c773cfdb0ead2e0bb8ced71a2c0524ff8412e2a5f588ad18b71f5a296ecd2",
+        "custom_components/roomcall/frontend/roomcall-echo.js": "8a6a47c962e5d402a60de6075e9ef96625dfe6906be307452ab096e792381124",
         "custom_components/roomcall/frontend/roomcall-qr.js": "b8fdb1a738c36b7989ebacad214540ab143065b04f6bf270d3ca29d0d5cadc2d",
-        "custom_components/roomcall/strings.json": "37be08652ad863f6701ebb1b57761aa737fc72ec5b30828e064b2d494438d58d",
+        "custom_components/roomcall/strings.json": "df9baf8ca225cbf5896349dd13139ce555e0e269b983bfe783a5c2ebc7507953",
         "scripts/ha_card_harness.html": "a7b769377cf8952cbfa5931df1bdf1fe598aafd6e0f98f0d4026c9160c421b8d",
         "scripts/ha_screenshots.py": "8ea97e6924014f76e81b4e69312b36f2f4f521dee27db46c752ad3483acd2f1c",
-        "scripts/qa_communication.py": "f242acd40412aafd0aa57a00b4d32bbcb464cbd8060711d5feda77f26d0838d3"
+        "scripts/qa_communication.py": "d621d897cfc1c9e7bb63dce6660923975590068934fac76cc0d2b26302077dba"
       }
     },
     "standalone": {
@@ -64,22 +64,22 @@
     },
     "ios": {
       "images": {
-        "docs/assets/ios-doorbell-dark.png": "780a81357ea4390cc884b434671ee7fe3a351b0114e31b8e016a7f2128d4b716",
-        "docs/assets/ios-doorbell-light.png": "dd2ee28c117cd686357ab4bf3953c85793cc800075e297619c11cefbf88428aa",
-        "docs/assets/ios-history-dark.png": "fa2acb9151ff664637854e65d423d041b3181f147dee58fb6ee7bd751976ee21",
-        "docs/assets/ios-history-light.png": "48640f0437fe4225c76e14c3b39da51380da9143b360732f94619f2ea56a2d79",
-        "docs/assets/ios-message-dark.png": "8fb15ad8c419f0a8ba431dd04b19cbccd912b006fc27ad43f23b2a182bdf2d5b",
-        "docs/assets/ios-message-light.png": "d5f4df4e76d8ceda4d45e2e15f9431d6d968da58a733b3922e96ce9ec5646ebc",
-        "docs/assets/ios-rooms-dark.png": "ad6749bd79b28b61513cf691eef12c286360293d8f2cd4e2b9d8e1896f3ef719",
-        "docs/assets/ios-rooms-light.png": "5c5a0f3bd8f36afd619eb0d332a0180556e04d6cd5889d1d552873dec9100d38",
+        "docs/assets/ios-doorbell-dark.png": "8b8173311e26c9f6b6ed36a229e0cab3ab63eb5752211b97b292c0001fd02f55",
+        "docs/assets/ios-doorbell-light.png": "bd43d25cafea4fd42e42e2fada124ce54d6af932a1e2bd85b64b58733867513d",
+        "docs/assets/ios-history-dark.png": "d05a302d37847f5843862591751956f64cc63b13c294cf2379d070607668c628",
+        "docs/assets/ios-history-light.png": "95c724a01c3265cc7fe441f9cfbb1e4b77a5f997ed24b47dabddbaa56eb2ed52",
+        "docs/assets/ios-message-dark.png": "c21ef476715b07616ce44bdd9b9afa75fee9c95a11cc1b0e3e594b7f07781e0b",
+        "docs/assets/ios-message-light.png": "dc7b8670cb75194e8340f8b0432748d79133dff62bc77eb04281fd44c75843b6",
+        "docs/assets/ios-rooms-dark.png": "bb88f67553d0c1fbdcbaf107b0cb077399d62063a066cbef4cb7b3fabfdd289c",
+        "docs/assets/ios-rooms-light.png": "6b6ab268f04e6f1c09d6638a1f696e6eef6ad193cd8d25ff5240b9b51ad6f62f",
         "docs/assets/ios-settings-dark.png": "5dabeb3abf2b9c665e761459d3cea1043e1ab33b7be1c878a5ec07407654e769",
         "docs/assets/ios-settings-light.png": "049014c15140bdb2a7d2966d73cfb28b2696bfbeca36163733e46c65c9c249d5",
         "docs/assets/ios-sign-in-dark.png": "e827fc17b12450d1c0fa51ccc6720d3437be17523a31e787070ef33e2c341f4c",
         "docs/assets/ios-sign-in-light.png": "53445e084cd0d67367752ab7bfc614be2d554245e179c3f95c971ac9d5016bd0",
-        "docs/assets/ios-talking-dark.png": "07f880d77fd76032606d3211de6b6cd798c9febc0d58450029f1e3e990f6650a",
+        "docs/assets/ios-talking-dark.png": "e4b2f4435225024cd74f25f424e06121a7587bfc45302ca3e7ffb65d00aef678",
         "docs/assets/ios-talking-light.png": "a9a6a66876cd83fe0c1cc65290f361e27671d5fe2a881289464b8b5df9332565",
-        "docs/assets/ios-tasks-dark.png": "834b7094c0c5fe41da579e603826e755c018be3d16abe3ca70e9310e8fa501a7",
-        "docs/assets/ios-tasks-light.png": "63f18c8dbeeb44e075bf47f1335322b6a153ffd74993378315b07c9f03cf77f4"
+        "docs/assets/ios-tasks-dark.png": "b34a147e6a6801d4195b1588d5aebe0ed267a010c11b2cebd97c5954b6fd6553",
+        "docs/assets/ios-tasks-light.png": "bfbf5b09d26bfc116e9b60e5f969f179bf6ff3d4264b1112b785b3f7ac34b9a4"
       },
       "inputs": {
         "ios/RoomCall/Controls/RoomCallControls.swift": "2cfef58ea355f4b0e396bfa2c4a791dbd5e99ee8f038c4a194b954f1bc804879",
@@ -110,9 +110,9 @@
         "ios/RoomCall/Sources/AppModel.swift": "517eacc9828441d46ea6c4b13d34d0f1d36c5ec38fc462f4b83d9c791d850211",
         "ios/RoomCall/Sources/AudioCapture.swift": "2327d48cf8f51829bb8e9ff9c165c756f06c9d447d583a473f833f037d2cc4ab",
         "ios/RoomCall/Sources/DemoService.swift": "c42207a64c7faa289898d6641889c11ce3edd3635c71b25744870b57e306af4f",
-        "ios/RoomCall/Sources/EchoAudio.swift": "9d89574aa56fd7381a44e4750f4abe0049a1932628118f2cb85d0b75b226f5fa",
+        "ios/RoomCall/Sources/EchoAudio.swift": "3b04781e165997b6865d570b74e2d8adc6fd0d1930e0c7aa3bbb55493056b09d",
         "ios/RoomCall/Sources/EchoConnection.swift": "3d83605c95faefcfbaa62583fa78e7314684c3803d428dd52a4513bdcf4d717b",
-        "ios/RoomCall/Sources/EchoController.swift": "f54f99676dda7cd02769534c3afd72fdb21dba7033bf7fbee303d05053e3f630",
+        "ios/RoomCall/Sources/EchoController.swift": "6671efdbc05bb4d9e15ea23ef8c99ccd9e3e358ada5693d308f9ffa806b32a4d",
         "ios/RoomCall/Sources/EchoViews.swift": "c4842bfe54e3fadb2d27c5c98622850f1c230a26c80172312b58d600f3d8b9ab",
         "ios/RoomCall/Sources/OAuthLogin.swift": "73ed4b43ecedafb00457be6c9fa87460f464ffad6fff0e94267c8412b7313c58",
         "ios/RoomCall/Sources/RoomCallApp.swift": "3d84c109116b1f393844f0f1d348d02909de1d8dd8d313a1a57cd2d107457346",

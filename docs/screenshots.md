@@ -13,7 +13,7 @@ successful Apple signing. Room names, tasks, people and transcripts are examples
 |---|---|---|
 | `ha-*.png`, `demo.gif` | Current card JavaScript rendered by Playwright Chromium in `scripts/ha_card_harness.html` | HA state, users, devices, API results and microphone input |
 | `screenshot-*.png` | Actual standalone server running `--demo`, captured by Playwright | Speaker discovery and playback backends; microphone input |
-| `ios-*.png` | Actual XCUITest screenshots from [the tested 0.24.0 source run](https://github.com/daredoole/RoomCall/actions/runs/40547112431), framed by `scripts/ios_mockups.py` | Debug-only demo service, rooms, tasks, history and connection results |
+| `ios-*.png` | Actual XCUITest screenshots from [the tested 0.24.0 source run](https://github.com/daredoole/RoomCall/actions/runs/40577517465), framed by `scripts/ios_mockups.py` | Debug-only demo service, rooms, tasks, history and connection results |
 
 The native screen pixels come from the simulator; the surrounding phone frame is
 decorative. Screenshots show selected viewports and states, not every possible
