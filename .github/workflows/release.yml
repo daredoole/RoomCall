@@ -35,7 +35,7 @@ jobs:
           print(f"tag={tag}, versions={versions}")
           assert all(version == tag for version in versions.values()), "Version mismatch"
           PY
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - run: uv build
       - name: Zip the Home Assistant integration for HACS
         run: cd custom_components/roomcall && zip -r "$GITHUB_WORKSPACE/dist/roomcall.zip" . -x '__pycache__/*'
