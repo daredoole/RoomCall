@@ -199,8 +199,8 @@ latency is guaranteed for either route, especially for Everywhere or repeated ca
 
 A converted **TECHO5 Echo** supports live two-way microphone and speaker audio with
 the RoomCall dashboard on a phone or tablet. Pair it under **Settings → Room stations**;
-incoming calls require its Action button. The local voice command “RoomCall Kitchen”
-invites an open Kitchen browser station, where someone must press Answer.
+someone answers on the Echo's screen or Action button. The local voice command “RoomCall Kitchen”
+rings every RoomCall phone and browser station in the Kitchen, where someone presses Answer.
 See [Echo live calls](https://daredoole.github.io/RoomCall/communication/#converted-echo-live-calls).
 
 Not through Sonos, HomePod or Nest speakers — their microphones are reserved for their own voice

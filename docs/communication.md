@@ -26,21 +26,24 @@ stock Amazon firmware and an ordinary ESPHome media player are insufficient.
    Music Assistant mirror, and assign the Echo to its current Home Assistant area.
 2. In the Echo's official setup page, under **Sound & Voice → Announcements**, set
    a private house word of 16–63 characters. Then close its setup page again.
-3. As a Home Assistant administrator, open **Settings → Room stations → Echo calls**.
-   Choose the speaker and enter its private LAN IP and the same house word. Press
-   **Pair Echo**. Reserve that IP in DHCP; edit the pairing if it changes.
+3. As a Home Assistant administrator, open **Settings → Room stations → Pair Echo**.
+   Only speakers with TECHO5's **Answer call** button are listed. Choose the Echo and
+   enter the same house word, then press **Pair Echo**. RoomCall uses the address the
+   ESPHome integration already knows and follows it if DHCP changes it; it asks for a
+   private LAN IP only when ESPHome has none.
 4. On the phone or tablet, open the RoomCall dashboard using trusted HTTPS, choose
-   the Echo and press **Call Echo**. Allow the microphone. The Echo rings until
-   someone presses its **Action** button; only then does live audio flow.
+   the Echo and press **Call Echo**. Allow the microphone. The Echo rings for 30 seconds
+   until someone answers on its screen or with its **Action** button; only then does
+   live audio flow. A wrong house word is reported as such.
 5. Press **Hang up**, close the card, or close the browser to stop the microphone
    and disconnect. No audio is recorded. Calls are limited to 15 minutes and end
    if the connection stops delivering audio for five seconds after acceptance.
 
-![Echo call waiting for its Action button, with sample data](assets/ha-echo-call.png)
+![Echo call waiting for an answer on the Echo, with sample data](assets/ha-echo-call.png)
 
 The native iPhone/iPad app **0.24.0 (build 5)** also offers **Live conversation →
-Call Echo** on its Talk tab. Allow its microphone and answer at the Echo's Action
-button. Its separate **Hang up** control ends both audio directions.
+Call Echo** on its Talk tab. Allow its microphone and answer on the Echo's screen or
+Action button. Its separate **Hang up** control ends both audio directions.
 
 For native incoming calls, choose **Settings → My room** in RoomCall. Say
 “Alexa, RoomCall Kitchen” at the paired Echo when My room is Kitchen. The native
@@ -54,17 +57,16 @@ CallKit's system incoming-call screen; Live Activities are a separate feature.
 Links require the saved station and authenticated HA user; invitations expire
 after 60 seconds and opening a link does not answer. Set My room to None or sign
 out to forget the saved destination (sign-out requires HA connectivity to forget it).
-With multiple destinations in one room, choose a different My room or disable the
-extra browser station so the voice command has one unambiguous destination.
+When several phones or browser stations share a room, all of them ring; the first
+Answer takes the call and the others stop ringing.
 
 For browser calls initiated at the Echo, first enable a browser **Room station** in the
 phone's or tablet's current room and leave the page open in the foreground. Say
-“Alexa, RoomCall Kitchen” at the paired Echo. With exactly one open Kitchen station,
-it offers **Answer** on that browser. Pressing Answer opens its microphone and
+“Alexa, RoomCall Kitchen” at the paired Echo. Every open Kitchen station
+offers **Answer**. Pressing Answer opens its microphone and
 connects to the originating Echo. This explicit voice request and browser answer
 authorize answering that return connection; ordinary incoming Echo calls still
-require its Action button. Always-on Drop In is not enabled. Multiple open stations
-in the same room require choosing a destination from the browser instead.
+require an answer on the Echo. Always-on Drop In is not enabled.
 
 The built-in local Assist agent also understands “announce to Basement that dinner
 is ready”. It queues a normal RoomCall announcement, including normal permissions,

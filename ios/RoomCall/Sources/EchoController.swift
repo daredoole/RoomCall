@@ -141,7 +141,8 @@ final class EchoController: ObservableObject {
         guard let connection else { throw NativeFailure.protocolError }
         let audio = EchoAudio()
         self.audio = audio
-        let stream = AsyncThrowingStream<Data, Error>(bufferingPolicy: .bufferingOldest(25)) {
+        // Keep the newest second of microphone audio through an upload stall; stale speech is dropped.
+        let stream = AsyncThrowingStream<Data, Error>(bufferingPolicy: .bufferingNewest(25)) {
             capture = $0
         }
         let generation = self.generation
@@ -165,10 +166,7 @@ final class EchoController: ObservableObject {
         let continuation = capture!
         try audio.start { result in
             switch result {
-            case .success(let pcm):
-                if case .dropped = continuation.yield(pcm) {
-                    continuation.finish(throwing: NativeFailure.backpressure)
-                }
+            case .success(let pcm): continuation.yield(pcm)
             case .failure(let error): continuation.finish(throwing: error)
             }
         }

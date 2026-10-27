@@ -171,6 +171,7 @@ def discover(hass: HomeAssistant, data: RoomCallData) -> dict[str, Any]:
         "satellites": satellites,
         "stations": data.stations.list() if data.stations else [],
         "echoes": data.echoes.list() if data.echoes else [],
+        "echo_candidates": data.echoes.candidates() if data.echoes else [],
         "adapters": [
             {
                 "id": key,

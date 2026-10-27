@@ -10,7 +10,7 @@ import subprocess
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from custom_components.roomcall.echo_transport import PROTOCOL, EchoLink
+from custom_components.roomcall.echo_transport import PROTOCOL, EchoLink, WordRefused
 from custom_components.roomcall.errors import Problem
 from custom_components.roomcall.stations import Station
 from homeassistant.helpers import device_registry as dr
@@ -376,13 +376,18 @@ async def test_native_voice_echo_to_browser_invitation_and_permissions(hass, pai
     satellite = registry.async_get_or_create(
         "assist_satellite", "esphome", "echo-satellite", device_id=device
     ).entity_id
-    events = []
+    events, partner = [], []
     manager.data.stations.register(Station("browser", "owner", "kitchen", "Kitchen", events.append))
+    manager.data.stations.register(
+        Station("tablet", "partner", "kitchen", "Kitchen", partner.append)
+    )
     result = await async_converse(
         hass, "roomcall Kitchen", None, Context(), language="en", satellite_id=satellite
     )
     assert "Calling" in result.response.as_dict()["speech"]["plain"]["speech"]
-    assert events[-1]["type"] == "echo_incoming"
+    # Every station in the room rings, not only when it is the only one.
+    assert events[-1]["type"] == partner[-1]["type"] == "echo_incoming"
+    assert len({item["group"] for item in manager.invitations.values()}) == 1
     with patch.object(manager, "invite", side_effect=Problem("queue_full")):
         result = await async_converse(
             hass, "roomcall Kitchen", None, Context(), language="en", satellite_id=satellite
@@ -393,10 +398,12 @@ async def test_native_voice_echo_to_browser_invitation_and_permissions(hass, pai
             hass, "roomcall Kitchen", None, Context(), language="en", satellite_id=satellite
         )
         assert "Calling" not in result.response.as_dict()["speech"]["plain"]["speech"]
-    assert len(manager.invitations) == 1
+    assert len(manager.invitations) == 2
 
 
-async def test_echo_websocket_pairing_call_audio_hangup(hass, paired, hass_ws_client, pcm):
+async def test_echo_websocket_pairing_call_audio_hangup(
+    hass, paired, hass_ws_client, hass_admin_user, pcm
+):
     manager, speaker, _ = paired
     socket = await hass_ws_client(hass)
     await socket.send_json(
@@ -411,12 +418,17 @@ async def test_echo_websocket_pairing_call_audio_hangup(hass, paired, hass_ws_cl
     result = await socket.receive_json()
     assert result["success"] and WORD not in str(result)
     link = FakeLink()
-    with patch("custom_components.roomcall.echo.EchoLink.connect", AsyncMock(return_value=link)):
+    with patch(
+        "custom_components.roomcall.echo.EchoLink.connect", AsyncMock(return_value=link)
+    ) as connect:
         await socket.send_json({"id": 2, "type": "roomcall/echo_call", "speaker": speaker})
         messages = [await socket.receive_json(), await socket.receive_json()]
         result = next(message for message in messages if message["type"] == "result")
         assert result["success"]
         call_id = result["result"]["id"]
+        # The Echo's screen shows the signed-in person, not a device label.
+        await until(lambda: connect.await_count)
+        assert connect.await_args.args[3] == hass_admin_user.name
         assert any(message.get("event", {}).get("type") == "calling" for message in messages)
         await link.queue.put((b"A", b""))
         assert (await socket.receive_json())["event"]["type"] == "accepted"
@@ -610,3 +622,71 @@ async def test_voice_can_invite_a_saved_native_station_while_app_is_closed(hass,
     assert "Kitchen" in response
     assert len(manager.invitations) == 1 and not manager.calls
     await manager.close()
+
+
+async def test_esphome_address_fills_pairing_and_follows_dhcp(hass, paired):
+    manager, speaker, _ = paired
+    entity = er.async_get(hass).async_get(speaker)
+    entry = hass.config_entries.async_get_entry(entity.config_entry_id)
+    assert manager.candidates() == []
+    await manager.remove(speaker)
+    # Only the TECHO5 speaker (it has an Answer call button) is offered, never other speakers.
+    assert [(c["speaker"], c["host_known"]) for c in manager.candidates()] == [(speaker, False)]
+    for host in ("", "echo.local"):
+        with pytest.raises(Problem, match="invalid_request"):
+            await manager.pair(speaker, host, WORD)
+    hass.config_entries.async_update_entry(entry, data={"host": "192.168.1.50"})
+    assert manager.candidates()[0]["host_known"]
+    await manager.pair(speaker, "", WORD)
+    assert manager.peers[speaker]["host"] == "192.168.1.50"
+    hass.config_entries.async_update_entry(entry, data={"host": "192.168.1.51"})
+    link, events = FakeLink(), []
+    await link.queue.put((b"X", b""))
+    with patch(
+        "custom_components.roomcall.echo.EchoLink.connect", AsyncMock(return_value=link)
+    ) as connect:
+        call_id = manager.start(speaker, "owner", "Phone", events.append)
+        await until(lambda: call_id not in manager.calls)
+    assert connect.await_args.args[0] == "192.168.1.51"
+
+
+async def test_first_answer_stops_other_stations_ringing(hass, paired):
+    manager, speaker, _ = paired
+    first, second, calls = [], [], []
+    mine = manager.invite(speaker, Station("browser", "owner", "kitchen", "K", first.append), "g")
+    theirs = manager.invite(
+        speaker, Station("phone", "partner", "kitchen", "K", second.append), "g"
+    )
+    with patch(
+        "custom_components.roomcall.echo.EchoLink.connect", AsyncMock(return_value=FakeLink())
+    ):
+        manager.start(speaker, "partner", "Phone", calls.append, theirs)
+        assert not manager.invitations
+        assert first[-1] == {"type": "echo_cancelled", "id": mine}
+        await manager.close()
+
+
+async def test_wrong_house_word_is_named(paired, socket_enabled):
+    async def serve(reader, writer):
+        await reader.readuntil(b"\r\n\r\n")
+        writer.write(
+            b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: techo5-intercom/1\r\n"
+            b"Connection: Upgrade\r\n\r\n"
+        )
+        await read_record(reader)
+        writer.close()
+
+    server = await asyncio.start_server(serve, "127.0.0.1", 0)
+    async with server:
+        with pytest.raises(WordRefused):
+            await EchoLink.connect(
+                "127.0.0.1", server.sockets[0].getsockname()[1], "a-different-house-word", "Phone"
+            )
+    manager, speaker, _ = paired
+    events = []
+    with patch(
+        "custom_components.roomcall.echo.EchoLink.connect", AsyncMock(side_effect=WordRefused)
+    ):
+        call_id = manager.start(speaker, "owner", "Phone", events.append)
+        await until(lambda: call_id not in manager.calls)
+    assert events[-1]["reason"] == "echo_word_mismatch"

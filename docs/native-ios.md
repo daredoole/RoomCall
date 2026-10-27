@@ -29,8 +29,8 @@ not required. The optional [Apple Home camera bridge](apple-home.md) is a separa
   if confirmation is lost, inspect history before sending the same message again.
 - Ordered, bounded live WebSocket audio in mono 16 kHz PCM. Releasing while
   connecting sends no recording. Accepted playback remains separate from audibility.
-- **Live conversation:** choose a paired Echo and call it, then answer at its Action
-  button. Choose **My room** to receive Echo-originated calls with **Answer** and
+- **Live conversation:** choose a paired Echo and call it, then answer on its screen or
+  Action button. Choose **My room** to receive Echo-originated calls with **Answer** and
   **Decline** controls. A saved destination can receive a Home Assistant Companion
   notification while RoomCall is closed; its **Open call** link opens RoomCall's
   Answer screen. The same HA user's configured Companion notify targets are used.

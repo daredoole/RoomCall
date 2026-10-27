@@ -20,6 +20,10 @@ MAX_PAYLOAD = 1280
 FRAME_BYTES = 640
 
 
+class WordRefused(Exception):
+    """The Echo closed the handshake: its house word is not the paired one."""
+
+
 class EchoLink:
     """One encrypted TCP call; only one coroutine may receive at a time."""
 
@@ -55,7 +59,12 @@ class EchoLink:
             noise.start_handshake()
             link = cls(reader, writer, noise)
             await link._write_record(bytes(noise.write_message()))
-            noise.read_message(await asyncio.wait_for(link._read_record(256), 5))
+            try:
+                reply = await asyncio.wait_for(link._read_record(256), 5)
+            except asyncio.IncompleteReadError as err:
+                # TECHO5 hangs up without a reply when the house words differ.
+                raise WordRefused from err
+            noise.read_message(reply)
             caller = "".join(char for char in name if char.isprintable())[:40] or "RoomCall"
             await link.send(b"H", caller.encode())
             return link

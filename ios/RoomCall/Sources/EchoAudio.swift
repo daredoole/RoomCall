@@ -47,7 +47,8 @@ final class EchoAudio {
     func play(_ pcm: Data) throws {
         let buffer = try Self.playback(pcm)
         lock.lock()
-        guard queued < 25 else { lock.unlock(); throw NativeFailure.backpressure }
+        // After a Wi-Fi stall, drop late audio like the Echo does instead of ending the call.
+        guard queued < 25 else { lock.unlock(); return }
         queued += 1
         lock.unlock()
         player.scheduleBuffer(buffer) { [weak self] in

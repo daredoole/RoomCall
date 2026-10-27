@@ -63,7 +63,7 @@ async def ws_echo_pair(hass, connection, msg) -> None:
     {
         vol.Required("type"): "roomcall/echo_call",
         vol.Required("speaker"): str,
-        vol.Optional("name", default="RoomCall"): vol.All(str, vol.Length(min=1, max=40)),
+        vol.Optional("name"): vol.All(str, vol.Length(min=1, max=40)),
         vol.Optional("invitation"): str,
     }
 )
@@ -81,7 +81,8 @@ async def ws_echo_call(hass, connection, msg) -> None:
         call_id = data.echoes.start(
             msg["speaker"],
             connection.user.id,
-            msg["name"],
+            # The Echo screen shows who is calling; default to the signed-in person.
+            msg.get("name") or connection.user.name or "RoomCall",
             lambda event: connection.send_message(websocket_api.event_message(msg["id"], event)),
             msg.get("invitation"),
         )

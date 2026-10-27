@@ -494,6 +494,8 @@ def check_echo_calls(browser, errors, *, capture=True) -> None:
             const result=await api(...args);
             if(args[2]?.operation==='discover') {
               result.echoes=[{speaker:'media_player.basement',name:'Basement Echo',available:true}];
+              result.echo_candidates=[
+                {speaker:'media_player.kitchen_echo',name:'Kitchen Echo',host_known:true}];
               result.endpoints[0].route='esphome';
             }
             return result;
@@ -514,6 +516,8 @@ def check_echo_calls(browser, errors, *, capture=True) -> None:
         card.get_by_role("button", name="Settings", exact=True).click()
         card.get_by_role("tab", name="Room stations", exact=True).click()
         expect(card.get_by_role("textbox", name="House word", exact=True)).to_have_count(1)
+        # ESPHome already knows this Echo's address, so nobody is asked to type an IP.
+        expect(card.get_by_role("textbox", name="Echo IP address", exact=True)).to_have_count(0)
         assert card.get_by_role("dialog").evaluate("e=>e.scrollWidth<=e.clientWidth")
         card.get_by_role("button", name="Call Echo", exact=True).click()
         expect(card.locator(".result")).to_contain_text("Action button")

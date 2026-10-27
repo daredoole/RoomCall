@@ -74,7 +74,8 @@ export class EchoClient {
       this.context.createMediaStreamSource(this.stream).connect(this.node);
       this.node.connect(this.context.destination);
       this.node.port.onmessage=({data})=>{
-        if(!this.accepted||this.inflight>=4)return;
+        // Each message is 40 ms; eight in flight keeps remote (higher-latency) calls whole.
+        if(!this.accepted||this.inflight>=8)return;
         const pcm=btoa(String.fromCharCode(...new Uint8Array(data)));
         this.inflight++;
         this.controls.card._hass.callWS({type:'roomcall/echo_audio',call_id:this.id,pcm})
@@ -83,7 +84,7 @@ export class EchoClient {
       };
       this.unsubscribe=await this.controls.card._hass.connection.subscribeMessage(
         event=>this.event(event),{type:'roomcall/echo_call',speaker,
-          name:this.controls.t('phone'),...(invitation?{invitation}:{})});
+          ...(invitation?{invitation}:{})});
       // A hang-up during async setup must also unsubscribe the late subscription.
       if(this.closed)this.unsubscribe();
     } catch(error) {await this.close();throw error;}
@@ -97,7 +98,8 @@ export class EchoClient {
     } else if(event.type==='accepted') {
       this.accepted=true;this.controls.result.textContent=this.controls.t('connected');
     } else if(event.type==='ended') {
-      this.controls.result.textContent=this.controls.t(event.reason==='ended'?'ended':event.reason);
+      const reason={declined:'echo_declined',timeout:'echo_timeout',disconnected:'echo_disconnected'}[event.reason];
+      this.controls.result.textContent=this.controls.t(reason||event.reason);
       this.close();
     } else {
       this.controls.result.textContent=this.controls.t(event.type==='ringing'?'echo_ringing':'calling');

@@ -16,7 +16,7 @@ from homeassistant.helpers.storage import Store
 
 from .core import friendly, speaker_area
 from .echo_devices import EchoDevices
-from .echo_transport import FRAME_BYTES, EchoLink
+from .echo_transport import FRAME_BYTES, EchoLink, WordRefused
 from .errors import Problem
 
 
@@ -65,31 +65,50 @@ class Echoes:
             if speaker in self.data.speakers
         ]
 
-    async def pair(self, speaker: str, host: str, word: str) -> None:
-        word = word.strip()
-        address = ipaddress.ip_address(host)
-        networks = ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7")
-        if not any(address in ipaddress.ip_network(net) for net in networks):
-            raise Problem("invalid_request")
-        if (
-            speaker not in self.data.speakers
-            or not 16 <= len(word) <= 63
-            or "\n" in word
-            or "\r" in word
-        ):
-            raise Problem("invalid_request")
+    def candidates(self) -> list[dict[str, Any]]:
+        """Unpaired TECHO5 speakers, so setup never offers an ordinary ESPHome speaker."""
+        return [
+            {
+                "speaker": speaker,
+                "name": friendly(self.hass, speaker),
+                "host_known": self._esphome_host(speaker) is not None,
+            }
+            for speaker in self.data.speakers
+            if speaker not in self.peers and self._answer(speaker)
+        ]
+
+    def _answer(self, speaker: str) -> str | None:
         registry = er.async_get(self.hass)
         entity = registry.async_get(speaker)
         if not entity or entity.platform != "esphome" or not entity.device_id:
-            raise Problem("invalid_request")
+            return None
         answers = [
             e.entity_id
             for e in er.async_entries_for_device(registry, entity.device_id)
             if e.domain == "button" and e.original_name == "Answer call"
         ]
-        if len(answers) != 1:
+        return answers[0] if len(answers) == 1 else None
+
+    def _esphome_host(self, speaker: str) -> str | None:
+        # ESPHome keeps its entry's host current after DHCP changes; prefer it to a typed address.
+        entity = er.async_get(self.hass).async_get(speaker)
+        entry = entity and self.hass.config_entries.async_get_entry(entity.config_entry_id or "")
+        return _private(entry.data.get("host", "")) if entry else None
+
+    async def pair(self, speaker: str, host: str, word: str) -> None:
+        word = word.strip()
+        address = _private(host.strip()) if host.strip() else self._esphome_host(speaker)
+        if (
+            address is None
+            or speaker not in self.data.speakers
+            or not 16 <= len(word) <= 63
+            or "\n" in word
+            or "\r" in word
+        ):
             raise Problem("invalid_request")
-        self.peers[speaker] = {"host": str(address), "word": word, "answer": answers[0]}
+        if (answer := self._answer(speaker)) is None:
+            raise Problem("invalid_request")
+        self.peers[speaker] = {"host": address, "word": word, "answer": answer}
         await self.store.async_save(self.peers)
 
     async def remove(self, speaker: str) -> None:
@@ -110,7 +129,10 @@ class Echoes:
             invite = self.invitations.get(invitation)
             if not invite or invite["speaker"] != speaker or invite["owner"] != owner:
                 raise Problem("forbidden")
-            self.cancel_invite(invitation, owner)
+            # The first answer wins: stop ringing every other station in the same room.
+            for other, item in list(self.invitations.items()):
+                if item["group"] == invite["group"]:
+                    self._drop(other)
         call = EchoCall(secrets.token_urlsafe(24), owner, speaker, emit, invitation)
         self.calls[call.id] = call
         call.task = self.hass.async_create_background_task(self._run(call, name), "RoomCall Echo")
@@ -141,8 +163,9 @@ class Echoes:
         try:
             call.emit({"type": "calling", "id": call.id})
             peer = self.peers[call.speaker]
+            host = self._esphome_host(call.speaker) or peer["host"]
             async with asyncio.timeout(900):
-                call.link = await EchoLink.connect(peer["host"], 8181, peer["word"], name)
+                call.link = await EchoLink.connect(host, 8181, peer["word"], name)
                 while True:
                     kind, payload = await asyncio.wait_for(
                         call.link.receive(), 5 if call.accepted else 40
@@ -173,6 +196,8 @@ class Echoes:
                         raise ValueError("unexpected intercom message")
         except TimeoutError:
             reason = "timeout"
+        except WordRefused:
+            reason = "echo_word_mismatch"
         except asyncio.CancelledError:
             raise
         except Exception:  # Do not expose remote errors, addresses, or keys to browser events.
@@ -190,7 +215,7 @@ class Echoes:
                 call.task.cancel()
             call.emit({"type": "ended", "id": call_id, "reason": reason})
 
-    def invite(self, speaker: str, station: Any) -> str:
+    def invite(self, speaker: str, station: Any, group: str | None = None) -> str:
         """A physical voice request invites a browser; Answer is still required there."""
         from homeassistant.helpers.event import async_call_later
 
@@ -203,9 +228,8 @@ class Echoes:
             "owner": station.owner,
             "speaker": speaker,
             "station": station,
-            "timer": async_call_later(
-                self.hass, 60, lambda _: self.cancel_invite(invite_id, station.owner)
-            ),
+            "group": group or invite_id,
+            "timer": async_call_later(self.hass, 60, lambda _: self._drop(invite_id)),
         }
         station.emit(
             {
@@ -223,7 +247,10 @@ class Echoes:
             raise Problem("not_found")
         if invite["owner"] != owner:
             raise Problem("forbidden")
-        self.invitations.pop(invitation)
+        self._drop(invitation)
+
+    def _drop(self, invitation: str) -> None:
+        invite = self.invitations.pop(invitation)
         invite["timer"]()
         invite["station"].emit({"type": "echo_cancelled", "id": invitation})
 
@@ -236,3 +263,13 @@ class Echoes:
         self.invitations.clear()
         self.devices.listeners.clear()
         await asyncio.gather(*tasks, return_exceptions=True)
+
+
+def _private(host: str) -> str | None:
+    """Only a literal private-network address; never a name or a public host."""
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return None
+    networks = ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7")
+    return str(address) if any(address in ipaddress.ip_network(n) for n in networks) else None

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 from typing import Any
 
 from homeassistant.components.conversation.trigger import async_attach_trigger
@@ -75,10 +76,13 @@ async def call(hass, data, trigger, context, area: str, language: str) -> str:
     ]
     stations = [station for station in data.stations.items.values() if station.room == area]
     stations.extend(data.echoes.devices.targets(area))
-    if len(sources) == 1 and len(stations) == 1:
+    if len(sources) == 1 and stations:
         if not await permitted(hass, sources[0], context, "conversation"):
             return text(hass, "forbidden", language)
-        data.echoes.invite(sources[0], stations[0])
+        # Every phone or browser in the room rings; the first to answer takes the call.
+        group = secrets.token_urlsafe(16)
+        for station in stations:
+            data.echoes.invite(sources[0], station, group)
         return text(hass, "voice_calling", language, room=trigger["slots"]["area"])
     # A voice command outside a paired Echo cannot open a browser microphone by itself.
     return text(hass, "voice_call_help", language, room=trigger["slots"]["area"])

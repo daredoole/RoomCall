@@ -12,6 +12,17 @@ All notable changes are listed here. The format follows
   invite it while the app is closed; the owner's configured Home Assistant Companion
   notifications open RoomCall's Answer screen. Invitations expire after 60 seconds
   and require the same authenticated HA user. Opening a link never answers a call.
+- Pair an Echo without typing its IP: RoomCall uses the address ESPHome already
+  knows and follows it after DHCP changes. Pairing lists only TECHO5 speakers, and
+  households without one no longer see an empty Echo section.
+- “RoomCall Kitchen” rings every phone and browser station in the room; the first
+  Answer takes the call and the others stop ringing. Browser Decline releases the
+  invitation everywhere.
+- The Echo shows the signed-in Home Assistant person as the caller, not “iPhone app”.
+- Name a wrong house word, an unanswered or declined call, and a stalled Echo
+  instead of showing internal codes. Explain the 16-character house-word minimum.
+- Keep iPhone calls going through brief Wi-Fi stalls by dropping late audio instead
+  of hanging up, and give browser uploads more headroom on remote connections.
 
 ## 0.23.1 — 2026-10-26
 

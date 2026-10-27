@@ -220,7 +220,8 @@ export class RoomCallControls {
 
   t(key, values = {}) {
     // A frontend-only update can precede the next HA restart/catalog refresh.
-    const fallback = ["echo_secure_required", "echo_audio_unavailable"].includes(key)
+    const fallback = ["echo_secure_required", "echo_audio_unavailable", "echo_declined", "echo_timeout",
+      "echo_disconnected", "echo_word_mismatch", "echo_word_short", "echo_pair_failed"].includes(key)
       ? "provider_failed" : key;
     return Object.entries(values).reduce((value, [name, replacement]) =>
       value.replaceAll(`{${name}}`, String(replacement)), this.strings[key] || this.strings[fallback] || key);
@@ -449,28 +450,37 @@ export class RoomCallControls {
       this.dialog.close();
       await this.startEcho(echoPeer.value);
     });
-    echoCall.disabled = !echoes.length;
-    const echoSection = this.section("echo_calls", echoPeer, echoCall);
-    if (this.card._hass.user?.is_admin) {
-      const speaker = this.select("echo_speaker");
-      speaker.append(...this.capabilities.endpoints.filter(e => e.selected && e.route === "esphome")
-        .map(e => new Option(e.name, e.entity_id)));
-      const host = document.createElement("input");
-      host.type = "text"; host.autocomplete = "off";
-      const word = document.createElement("input");
-      word.type = "password"; word.autocomplete = "new-password"; word.minLength = 16; word.maxLength = 63;
-      echoSection.append(this.note(this.t("echo_pair_help")), this.field("echo_speaker", speaker),
-        this.field("echo_host", host), this.field("echo_word", word), this.button("echo_pair", async () => {
-          await this.card._hass.callWS({type: "roomcall/echo_pair", speaker: speaker.value,
-            host: host.value.trim(), word: word.value});
-          word.value = ""; await this.refresh();
-        }));
-      if (echoes.length) echoSection.append(this.button("echo_remove", async () => {
+    // Only TECHO5 speakers can take live calls; households without one never see this section.
+    const admin = Boolean(this.card._hass.user?.is_admin);
+    const candidates = admin ? this.capabilities.echo_candidates || [] : [];
+    if (echoes.length) {
+      const echoSection = this.section("echo_calls", this.field("echo_paired", echoPeer), echoCall);
+      if (admin) echoSection.append(this.button("echo_remove", async () => {
         await this.card._hass.callWS({type: "roomcall/echo_pair", speaker: echoPeer.value, remove: true});
         await this.refresh();
       }));
+      this.setup.append(echoSection);
     }
-    this.setup.append(echoSection);
+    if (candidates.length) {
+      const speaker = this.select("echo_speaker");
+      speaker.append(...candidates.map(e => new Option(e.name, e.speaker)));
+      const host = document.createElement("input");
+      host.type = "text"; host.autocomplete = "off"; host.inputMode = "decimal";
+      const hostField = this.field("echo_host", host);
+      const known = () => { hostField.hidden = candidates.find(e => e.speaker === speaker.value)?.host_known; };
+      speaker.addEventListener("change", known); known();
+      const word = document.createElement("input");
+      word.type = "password"; word.autocomplete = "new-password"; word.minLength = 16; word.maxLength = 63;
+      this.setup.append(this.section("echo_pair", this.note(this.t("echo_pair_help")),
+        this.field("echo_speaker", speaker), hostField, this.field("echo_word", word),
+        this.button("echo_pair", async () => {
+          if (word.value.trim().length < 16) throw new Error(this.t("echo_word_short"));
+          await this.card._hass.callWS({type: "roomcall/echo_pair", speaker: speaker.value,
+            ...(hostField.hidden ? {} : {host: host.value.trim()}), word: word.value})
+            .catch(() => { throw new Error(this.t("echo_pair_failed")); });
+          word.value = ""; await this.refresh();
+        })));
+    }
     this.settingsTabs.querySelector('[data-panel="voicemail"]').hidden = !this.capabilities.features.voicemail;
     if (this.capabilities.features.voicemail) {
       const mail = await this.command("voicemail");
@@ -946,12 +956,24 @@ class StationClient {
     } catch (error) { await this.hangup(); throw error; }
   }
   async event(event) {
-    if (event.type === "echo_incoming") {
+    if (event.type === "echo_cancelled") {
+      // Answered elsewhere, declined, or expired after a minute.
+      if (this.invitation === event.id) {
+        this.invitation = null; this.panel.replaceChildren(); this.controls.result.textContent = "";
+      }
+    } else if (event.type === "echo_incoming") {
+      this.invitation = event.id;
       this.controls.result.textContent = this.controls.t("incoming", {name: event.from});
       this.panel.replaceChildren(this.controls.button("answer", async () => {
+        this.invitation = null;
         await this.controls.startEcho(event.speaker, event.id);
         this.panel.replaceChildren();
-      }), this.controls.button("cancel", () => this.panel.replaceChildren()));
+      }), this.controls.button("decline", async () => {
+        this.invitation = null; this.panel.replaceChildren();
+        // Release the invitation so it stops ringing on this user's other devices too.
+        await this.controls.card._hass.callWS({type: "roomcall/echo_decline", invitation: event.id})
+          .catch(() => {});
+      }));
     } else if (event.type === "incoming") {
       this.session = event.id;
       this.controls.result.textContent = this.controls.t("incoming", { name: event.from });
