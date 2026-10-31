@@ -97,5 +97,5 @@ Details and limitations: [Communication](communication.md), [Native iOS app](nat
       compatible satellite hardware listens after eligible room-to-room calls and the reply is spoken
       in the caller's room ([#11](https://github.com/daredoole/RoomCall/issues/11))
 - [x] **Answer the door from any room or the watch**: rooms ring, phones and cards get the snapshot and an Answer button that opens the camera's live view, with two-way talk where the camera supports it ([#21](https://github.com/daredoole/RoomCall/issues/21))
-- [ ] Listed in the default HACS store — submission still open at audit time ([hacs/default#12345](https://github.com/hacs/default/pull/12345)); custom-repository installation remains documented
+- [x] Listed in the default HACS store and Home Assistant Marketplace ([hacs/default#12345](https://github.com/hacs/default/pull/12345))
 - [ ] Per-room chimes
