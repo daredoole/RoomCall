@@ -16,6 +16,7 @@ from custom_components.roomcall.calls import CallRequest, prepare_call
 from custom_components.roomcall.communication import execute
 from custom_components.roomcall.core import group_names
 from custom_components.roomcall.errors import Problem
+from custom_components.roomcall.profiles import validate as validate_profiles
 from homeassistant import config_entries
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -366,6 +367,56 @@ async def test_restricted_account_only_discovers_floors_it_fully_controls(
     limited = await execute(hass, "discover", {}, context)
     assert limited["floors"] == []
     assert "Attic" not in str(limited["rooms"])
+    # One speaker in each room is still not the whole floor: Kitchen Hub stays denied.
+    data.agent_policies = AgentPolicies(
+        {owner: {"entities": ["media_player.kitchen_sonos", "media_player.attic"]}}
+    )
+    partial = await execute(hass, "discover", {}, context)
+    assert partial["floors"] == []
+    data.agent_policies = AgentPolicies(
+        {
+            owner: {
+                "entities": [
+                    "media_player.kitchen_sonos",
+                    "media_player.kitchen_hub",
+                    "media_player.attic",
+                ]
+            }
+        }
+    )
+    complete = await execute(hass, "discover", {}, context)
+    assert [f["name"] for f in complete["floors"]] == ["Upstairs"]
+
+
+async def test_household_profile_can_target_a_floor_and_a_room(hass, floors) -> None:
+    data = hass.data[DOMAIN]
+    data.household_profiles = validate_profiles(
+        {
+            "upstairs": {
+                "name": "Upstairs",
+                "defaults": {"floors": ["upstairs"], "areas": ["Basement"], "message": "Hi"},
+            },
+            "floor_only": {
+                "name": "Floor",
+                "defaults": {"floors": ["downstairs"], "message": "Hi"},
+            },
+        }
+    )
+    context = Context()
+    preview = await execute(hass, "preview", {"profile": "upstairs"}, context)
+    assert sorted(preview["endpoints"]) == [
+        "media_player.attic",
+        "media_player.basement_sonos",
+        "media_player.kitchen_hub",
+        "media_player.kitchen_sonos",
+    ]
+    # An explicit floor replaces the profile's destinations, as an explicit room does.
+    override = await execute(
+        hass, "preview", {"profile": "upstairs", "floors": ["downstairs"]}, context
+    )
+    assert override["endpoints"] == ["media_player.basement_sonos"]
+    found = await execute(hass, "discover", {}, context)
+    assert {p["id"] for p in found["profiles"]} == {"upstairs", "floor_only"}
 
 
 async def test_rooms_view_offers_only_useful_floors(hass, floors, hass_client, house) -> None:

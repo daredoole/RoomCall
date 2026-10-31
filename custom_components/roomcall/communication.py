@@ -360,7 +360,12 @@ async def _execute(hass, operation, values, context, *, assistant=None):
             if assistant or context.user_id in data.agent_policies.grants:
                 allowed_areas = {e["area_id"] for e in result["endpoints"]}
                 result["rooms"] = [r for r in result["rooms"] if r["area_id"] in allowed_areas]
-                result["floors"] = [f for f in result["floors"] if set(f["rooms"]) <= allowed_areas]
+                allowed_speakers = {e["entity_id"] for e in result["endpoints"]}
+                result["floors"] = [
+                    f
+                    for f in result["floors"]
+                    if set(resolve(hass, data.speakers, [f["id"]])) <= allowed_speakers
+                ]
                 result["areas"] = [a for a in result["areas"] if a["id"] in allowed_areas]
                 result["adapters"] = []
                 result["stations"] = []
