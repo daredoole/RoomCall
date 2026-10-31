@@ -25,7 +25,8 @@ voice plays on the Sonos speakers in the room you picked, with a short chime fir
 
 ## Set it up in three steps
 
-1. **Install RoomCall** from HACS and restart Home Assistant
+1. **Install RoomCall** from the Marketplace, or HACS before Home Assistant 2026.11, and
+   restart if asked
    ([install options](home-assistant.md#1-install)).
 2. **Add the RoomCall integration** and pick your Sonos media players — one entity per
    speaker, so a call doesn't play twice ([details](home-assistant.md#2-add-the-integration)).

@@ -8,7 +8,7 @@ description: Hold a button, talk, and your voice plays in the room you picked, o
 **A push-to-talk intercom for Home Assistant, on the speakers you already own.** Hold a button,
 talk, and your voice plays in the room you picked — on Sonos, Google Cast or AirPlay.
 
-[![Open your Home Assistant instance and open RoomCall in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=daredoole&repository=RoomCall&category=integration)
+[![Open RoomCall in your Home Assistant Marketplace or HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=daredoole&repository=RoomCall&category=integration)
 
 <div class="grid" markdown>
 ![Pick a room, hold to talk, and it plays live](assets/demo.gif){ width="260" }
@@ -20,7 +20,8 @@ playing ([how screenshots are made](screenshots.md)).
 
 ## Get started in three steps
 
-1. **Install** RoomCall from HACS and restart Home Assistant.
+1. **Install** RoomCall from the Marketplace, or HACS before Home Assistant 2026.11. Restart if
+   asked.
 2. **Add the integration** and pick one media player per speaker.
 3. **Add the RoomCall card** to a dashboard, open it in the Home Assistant app or over HTTPS,
    pick a room and hold to talk.
