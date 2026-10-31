@@ -9,6 +9,15 @@ const THEMES = ["auto", "light", "dark"];
 const NEW_CARD = { title: "Intercom", layout: "simple" };
 // A tapped microphone has no finger holding it open, so it always closes itself.
 const TAP_LIMIT_MS = 120000;
+// English fallbacks; the translated catalog replaces them once it loads.
+const TAP_TEXT = {
+  tap_to_talk: "Tap to talk",
+  tap_to_send: "Tap to send",
+  tap_to_finish: "Tap to finish",
+  tap_hint: "Pick a room, tap the button and speak.",
+  tap_too_short: "Too short — tap, talk, then tap again.",
+  tap_live_unsupported: "Live calls need RoomCall 0.5 or newer in Home Assistant — tap again to send a recording.",
+};
 const cardConfig = (config) => ({
   title: "Intercom",
   layout: "default",
@@ -264,6 +273,7 @@ class RoomCallCard extends HTMLElement {
     try {
       const strings = await this._hass.callApi("GET", `roomcall/locale?language=${encodeURIComponent(this._hass.language || "en")}`);
       this._strings = strings;
+      this._relabelTap();
       this.shadowRoot.querySelector(".recipients-title").textContent = strings.recipients;
       this._renderMore();
       this._renderRooms();
@@ -705,7 +715,7 @@ class RoomCallCard extends HTMLElement {
             <ha-icon icon="mdi:microphone"></ha-icon><span class="label">${this._idleLabel()}</span>
           </button>
         </div>
-        <div class="status muted">Pick a room, ${this._config.tap_to_talk ? "tap" : "hold"} the button and speak.</div>
+        <div class="status muted">${this._config.tap_to_talk ? this._tapText("tap_hint") : "Pick a room, hold the button and speak."}</div>
         </div></div>
         <div class="history" aria-label="Recent calls"></div>
       </ha-card>`;
@@ -900,8 +910,23 @@ class RoomCallCard extends HTMLElement {
     el.className = `status ${cls}`;
   }
 
+  _tapText(key) {
+    return this._strings?.[key] || TAP_TEXT[key];
+  }
+
   _idleLabel() {
-    return this._config.tap_to_talk ? "Tap to talk" : "Hold to talk";
+    return this._config.tap_to_talk ? this._tapText("tap_to_talk") : "Hold to talk";
+  }
+
+  /** The first render can beat the translated catalog, so relabel an idle button once it loads. */
+  _relabelTap() {
+    const root = this.shadowRoot;
+    const talk = root?.querySelector(".talk");
+    if (!talk || !this._config.tap_to_talk || this._recorder || this._live || this._starting) return;
+    talk.setAttribute("aria-label", this._idleLabel());
+    root.querySelector(".label").textContent = this._idleLabel();
+    const status = root.querySelector(".status");
+    if (status.textContent === TAP_TEXT.tap_hint) status.textContent = this._tapText("tap_hint");
   }
 
   _toggle(e) {
@@ -974,7 +999,7 @@ class RoomCallCard extends HTMLElement {
     this._recorder.start();
     this._startedAt = performance.now();
     talk.classList.add("live");
-    this.shadowRoot.querySelector(".label").textContent = this._config.tap_to_talk ? "Tap to send" : "Release to send";
+    this.shadowRoot.querySelector(".label").textContent = this._config.tap_to_talk ? this._tapText("tap_to_send") : "Release to send";
     this._talkOpened(talk);
     const who = this._person
       ? (this._people.find((p) => p.entity_id === this._person) || {}).name
@@ -1007,7 +1032,7 @@ class RoomCallCard extends HTMLElement {
     const live = { handlerId: null, queue: [], done: false, unsub: null };
     this._live = live;
     talk.classList.add("live");
-    this.shadowRoot.querySelector(".label").textContent = this._config.tap_to_talk ? "Tap to finish" : "Release to finish";
+    this.shadowRoot.querySelector(".label").textContent = this._config.tap_to_talk ? this._tapText("tap_to_finish") : "Release to finish";
     this._talkOpened(talk);
     this._setStatus(`${this._urgent ? "Urgent: live" : "Live"} to ${this._talkingTo()}…`);
     const send = (pcm) => {
@@ -1047,7 +1072,9 @@ class RoomCallCard extends HTMLElement {
       this._finishLive(live);
       this._setStatus(
         unknown
-          ? `Live calls need RoomCall 0.5 or newer in Home Assistant — ${this._config.tap_to_talk ? "tap" : "hold"} again to send a recording.`
+          ? (this._config.tap_to_talk
+            ? this._tapText("tap_live_unsupported")
+            : "Live calls need RoomCall 0.5 or newer in Home Assistant — hold again to send a recording.")
           : (err && err.message) || "Could not start the call",
         "err",
       );
@@ -1118,7 +1145,7 @@ class RoomCallCard extends HTMLElement {
     const blob = new Blob(this._chunks, { type });
     this._recorder = null;
     if (performance.now() - this._startedAt < 300) {
-      this._setStatus(this._config.tap_to_talk ? "Too short — tap, talk, then tap again." : "Too short — hold the button while you talk.");
+      this._setStatus(this._config.tap_to_talk ? this._tapText("tap_too_short") : "Too short — hold the button while you talk.");
       return;
     }
     if (this._peak < SILENCE_PEAK) {

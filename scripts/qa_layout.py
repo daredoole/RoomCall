@@ -133,6 +133,19 @@ def check_tap_to_talk(browser) -> None:
     expect(label).to_have_text("Tap to talk")
     page.close()
 
+    # A forgotten microphone closes itself after two minutes.
+    page = browser.new_page(viewport={"width": 390, "height": 820})
+    page.clock.install()
+    open_card(page, "mobile", "dark", "&tap=on")
+    talk = page.locator("roomcall-card").locator("button.talk")
+    talk.click()
+    expect(talk.locator(".label")).to_have_text("Tap to finish")
+    page.clock.run_for(119_000)
+    expect(talk.locator(".label")).to_have_text("Tap to finish")
+    page.clock.run_for(2_000)
+    expect(talk.locator(".label")).to_have_text("Tap to talk")
+    page.close()
+
     # Hold mode is unchanged: a plain click does not leave the microphone open.
     page = browser.new_page(viewport={"width": 390, "height": 820})
     open_card(page, "mobile", "dark")

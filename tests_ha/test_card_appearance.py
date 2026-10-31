@@ -28,6 +28,16 @@ def _run(expression: str):
     return json.loads(result.stdout)
 
 
+def _run_source(expression: str, start: str, end: str):
+    """Evaluate one slice of the card source."""
+    if not NODE:
+        pytest.skip("node is not installed")
+    part = SOURCE[SOURCE.index(start) : SOURCE.index(end)]
+    script = f"{part}\nprocess.stdout.write(JSON.stringify({expression}));"
+    result = subprocess.run([NODE, "-e", script], capture_output=True, text=True, check=True)
+    return json.loads(result.stdout)
+
+
 def test_glass_tokens_follow_the_chosen_colour_and_mode():
     dark, light = _run(
         '[themeTokens("glass", true, "#0a84ff"), themeTokens("glass", false, "#0a84ff")]'
@@ -130,3 +140,93 @@ async def test_locale_api_serves_editor_text(hass, setup_roomcall, hass_client):
     client = await hass_client()
     strings = await (await client.get("/api/roomcall/locale?language=fr")).json()
     assert strings["editor_theme_dark"] == "Sombre"
+
+
+def test_tap_text_is_translated():
+    text = _run_source("TAP_TEXT", "const TAP_TEXT", "const cardConfig")
+    english = catalog("en")
+    assert text == {key: english[key] for key in text}
+    for language in ("es", "de", "fr", "nl"):
+        strings = catalog(language)
+        assert all(strings.get(key) and strings[key] != text[key] for key in text), language
+
+
+def _run_tap(body: str):
+    """Run the card's tap-mode methods on a stub, with timers recorded rather than scheduled."""
+    limit = SOURCE[SOURCE.index("const TAP_LIMIT_MS") : SOURCE.index("const cardConfig")]
+    methods = SOURCE[SOURCE.index("  _tapText(key) {") : SOURCE.index("  async _start(e) {")]
+    script = f"""
+    {limit}
+    const timers = [];
+    const cleared = [];
+    globalThis.setTimeout = (run, delay) => {{ timers.push({{ run, delay }}); return timers.length; }};
+    globalThis.clearTimeout = (id) => cleared.push(id);
+    const element = () => ({{
+      attrs: {{}}, gone: [], textContent: "", classList: {{ remove(name) {{ element.removed = name; }} }},
+      setAttribute(name, value) {{ this.attrs[name] = value; }},
+      removeAttribute(name) {{ delete this.attrs[name]; }},
+    }});
+    const label = element();
+    class Stub {{
+      constructor(config) {{
+        this._config = config; this.starts = 0; this.stops = 0;
+        this.shadowRoot = {{ querySelector: () => label }};
+      }}
+      _start() {{ this.starts += 1; }}
+      _stop() {{ this.stops += 1; }}
+{methods}
+    }}
+    const card = new Stub({{ tap_to_talk: true }});
+    const talk = element();
+    {body}
+    """
+    if not NODE:
+        pytest.skip("node is not installed")
+    result = subprocess.run([NODE, "-e", script], capture_output=True, text=True, check=True)
+    return json.loads(result.stdout)
+
+
+def test_tap_toggles_and_never_doubles_a_finishing_call():
+    assert _run_tap(
+        """
+        const seen = [];
+        const count = () => seen.push([card.starts, card.stops]);
+        card._toggle(); count();
+        card._live = { done: false }; card._toggle(); count();
+        card._live = { done: true }; card._toggle(); count();
+        card._live = null; card._starting = true; card._toggle(); count();
+        card._starting = false; card._recorder = {}; card._toggle(); count();
+        process.stdout.write(JSON.stringify(seen));
+        """
+    ) == [[1, 0], [1, 1], [1, 1], [1, 2], [1, 3]]
+
+
+def test_tapped_microphone_closes_itself_after_two_minutes():
+    delay, stops_before, stops_after, pressed, closed, cleared_ok = _run_tap(
+        """
+        card._talkOpened(talk);
+        const delay = timers[0].delay;
+        const pressed = talk.attrs["aria-pressed"];
+        const before = card.stops;
+        timers[0].run();
+        const after = card.stops;
+        card._talkClosed(talk);
+        process.stdout.write(JSON.stringify(
+          [delay, before, after, pressed, talk.attrs["aria-pressed"] ?? null, cleared.length === 1]));
+        """
+    )
+    assert delay == 120_000
+    assert (stops_before, stops_after) == (0, 1)
+    assert pressed == "true"
+    assert closed is None
+    assert cleared_ok
+
+
+def test_hold_mode_sets_no_timer_and_keeps_its_label():
+    assert _run_tap(
+        """
+        const hold = new Stub({ tap_to_talk: false });
+        hold._talkOpened(talk);
+        process.stdout.write(JSON.stringify([timers.length, hold._idleLabel(), card._idleLabel()]));
+        """
+    ) == [0, "Hold to talk", "Tap to talk"]
