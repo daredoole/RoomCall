@@ -1,6 +1,6 @@
 # RoomCall
 
-> RoomCall is a Home Assistant custom integration (HACS) that turns the speakers Home Assistant
+> RoomCall is a Home Assistant custom integration (Marketplace, or HACS before HA 2026.11) that turns the speakers Home Assistant
 > already controls (Sonos, Google Cast/Nest, AirPlay, HEOS receivers, Android TV boxes) into an
 > intercom and announcement system, organised by Home Assistant areas.
 
@@ -10,7 +10,7 @@ APIs; no extra credentials.
 ## Do things
 
 - Start with `roomcall__catalog`: API version, operation schemas, response envelope and bootstrap recipe.
-- Setup before an entry exists: after HACS installation/restart, start HA's RoomCall user config flow.
+- Setup before an entry exists: after Marketplace or HACS installation (restart if HA asks), start HA's RoomCall user config flow.
   Opening the flow registers tools/card resources; no entry or optional service is created yet.
 - `roomcall__setup` actions discover/plan/apply/test/confirm/verify/list/get/undo share the card's
   guided setup backend. Authenticated HA administrator required. Discovery includes settings_schema.
