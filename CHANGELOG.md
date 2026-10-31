@@ -4,6 +4,11 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- New **Button message** blueprint: press a Zigbee, Matter or other button and your message
+  plays in the rooms you pick. It speaks a fixed message; it doesn't record your voice.
+
 ## 0.22.1 — 2026-10-25
 
 - Show audio-capable devices online now or seen within 24 hours in the speaker picker,

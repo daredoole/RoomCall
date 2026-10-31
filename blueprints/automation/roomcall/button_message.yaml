@@ -1,0 +1,85 @@
+blueprint:
+  name: RoomCall – Button message
+  description: >-
+    Press a button and RoomCall says your message in the rooms you choose. Handy for "Dinner's
+    ready" or "Can someone come here?", including for anyone without a phone nearby. Works with
+    any button that has an event, button or binary sensor entity, such as most Zigbee and
+    Matter buttons.
+  domain: automation
+  source_url: https://github.com/daredoole/RoomCall/blob/main/blueprints/automation/roomcall/button_message.yaml
+  author: daredoole
+  homeassistant:
+    min_version: "2025.6.0"
+  input:
+    button:
+      name: Button
+      description: The button's event, button or binary sensor entity.
+      selector:
+        entity:
+          filter:
+            - domain: [event, button, input_button, binary_sensor]
+    press_type:
+      name: Press type
+      description: >-
+        For event entities only, such as "single" or "double". Check the entity's event type in
+        Developer tools. Leave empty for any press.
+      default: ""
+      selector:
+        text:
+    rooms:
+      name: Rooms
+      description: Where to say it. Leave empty for every RoomCall speaker.
+      default: []
+      selector:
+        area:
+          multiple: true
+    message:
+      name: Message
+      default: Dinner is ready.
+      selector:
+        text:
+    urgent:
+      name: Urgent
+      description: Play even during Do Not Disturb and quiet hours.
+      default: false
+      selector:
+        boolean:
+    cooldown:
+      name: Cooldown
+      description: Ignore repeated presses within this time.
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: s
+
+mode: single
+max_exceeded: silent
+
+variables:
+  urgent: !input urgent
+  press_type: !input press_type
+
+triggers:
+  - trigger: state
+    entity_id: !input button
+
+conditions:
+  # A binary sensor counts when it turns on; buttons and events count on every new state.
+  - condition: template
+    value_template: >-
+      {{ trigger.to_state is not none
+         and trigger.to_state.state not in ['unavailable', 'unknown', 'off']
+         and (trigger.from_state is none
+              or trigger.from_state.state not in ['unavailable', 'unknown'])
+         and (press_type == '' or trigger.to_state.attributes.event_type == press_type) }}
+
+actions:
+  - action: roomcall.broadcast
+    data:
+      areas: !input rooms
+      message: !input message
+      priority: "{{ 'urgent' if urgent else 'normal' }}"
+  - delay:
+      seconds: !input cooldown
