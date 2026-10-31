@@ -11,10 +11,21 @@ import wave
 from pathlib import Path
 
 import pytest
+from custom_components.roomcall.agent_policy import AgentPolicies
+from custom_components.roomcall.calls import CallRequest, prepare_call
+from custom_components.roomcall.communication import execute
+from custom_components.roomcall.core import group_names
+from custom_components.roomcall.errors import Problem
 from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Context, HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import async_mock_service
+from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import floor_registry as fr
+from homeassistant.helpers import label_registry as lr
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
 
 DOMAIN = "roomcall"
 
@@ -216,3 +227,163 @@ async def test_chime_can_be_disabled(hass: HomeAssistant, house) -> None:
     play_calls = async_mock_service(hass, "media_player", "play_media")
     await hass.services.async_call(DOMAIN, "broadcast", {"message": "Hi"}, blocking=True)
     assert play_calls[0].data["media_content_id"].startswith("media-source://tts/")
+
+
+@pytest.fixture
+async def floors(hass: HomeAssistant, setup_roomcall, house) -> dict[str, str]:
+    """Attic joins the kitchen upstairs, so one floor holds two of three speaker rooms."""
+    areas = ar.async_get(hass)
+    registry = er.async_get(hass)
+    upstairs = fr.async_get(hass).async_create("Upstairs", aliases={"Top floor"})
+    downstairs = fr.async_get(hass).async_create("Downstairs")
+    attic = areas.async_create("Attic", floor_id=upstairs.floor_id)
+    areas.async_update(house["kitchen"], floor_id=upstairs.floor_id)
+    areas.async_update(house["basement"], floor_id=downstairs.floor_id)
+    entry = registry.async_get_or_create(
+        "media_player", "test", "attic", suggested_object_id="attic"
+    )
+    registry.async_update_entity(entry.entity_id, area_id=attic.id)
+    hass.states.async_set(entry.entity_id, "idle", {"supported_features": 1048576 | 512})
+    data = hass.data[DOMAIN]
+    data.speakers = [*data.speakers, entry.entity_id]
+    return {"upstairs": upstairs.floor_id, "downstairs": downstairs.floor_id}
+
+
+@pytest.mark.parametrize("floor", ["upstairs", "Upstairs", "top floor"])
+async def test_broadcast_to_a_floor_by_id_name_or_alias(hass, floors, floor) -> None:
+    calls = async_mock_service(hass, "media_player", "play_media")
+    await hass.services.async_call(
+        DOMAIN, "broadcast", {"floors": [floor], "media_url": "http://x/a.mp3"}, blocking=True
+    )
+    assert sorted(c.data["entity_id"] for c in calls) == [
+        "media_player.attic",
+        "media_player.kitchen_hub",
+        "media_player.kitchen_sonos",
+    ]
+
+
+async def test_broadcast_combines_floor_with_a_room(hass, floors, house) -> None:
+    calls = async_mock_service(hass, "media_player", "play_media")
+    await hass.services.async_call(
+        DOMAIN,
+        "broadcast",
+        {"floors": "downstairs", "areas": ["Attic"], "media_url": "http://x/a.mp3"},
+        blocking=True,
+    )
+    assert sorted(c.data["entity_id"] for c in calls) == [
+        "media_player.attic",
+        "media_player.basement_sonos",
+    ]
+
+
+async def test_unknown_floor_or_label_never_means_everywhere(hass, floors) -> None:
+    calls = async_mock_service(hass, "media_player", "play_media")
+    for field in ("floors", "labels"):
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                DOMAIN, "broadcast", {field: ["nope"], "media_url": "http://x/a.mp3"}, blocking=True
+            )
+    assert calls == []
+
+
+async def test_label_on_speaker_device_or_area(hass, floors, house) -> None:
+    labels = lr.async_get(hass)
+    label = labels.async_create("Bedtime").label_id
+    registry = er.async_get(hass)
+    entry = MockConfigEntry(domain="test")
+    entry.add_to_hass(hass)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={("test", "hub")}
+    )
+    dr.async_get(hass).async_update_device(device.id, labels={label})
+    registry.async_update_entity("media_player.kitchen_hub", device_id=device.id)
+    registry.async_update_entity("media_player.attic", labels={label})
+    ar.async_get(hass).async_update(house["basement"], labels={label})
+    calls = async_mock_service(hass, "media_player", "play_media")
+    await hass.services.async_call(
+        DOMAIN, "broadcast", {"labels": ["Bedtime"], "media_url": "http://x/a.mp3"}, blocking=True
+    )
+    assert sorted(c.data["entity_id"] for c in calls) == [
+        "media_player.attic",
+        "media_player.basement_sonos",
+        "media_player.kitchen_hub",
+    ]
+
+
+async def test_agent_policy_still_applies_to_every_speaker_on_a_floor(
+    hass, floors, house, hass_admin_user
+) -> None:
+    data = hass.data[DOMAIN]
+    data.agent_policies = AgentPolicies(
+        {
+            hass_admin_user.id: {
+                "operations": ["send"],
+                "areas": [house["kitchen"]],
+            }
+        }
+    )
+    with pytest.raises(Problem, match="agent_policy_denied"):
+        await prepare_for(hass, data, hass_admin_user.id, "floor:upstairs")
+    await prepare_for(hass, data, hass_admin_user.id, house["kitchen"])
+
+
+async def prepare_for(hass, data, user_id, target):
+    return prepare_call(
+        hass,
+        data,
+        CallRequest(
+            targets=[target],
+            people=None,
+            media_id="http://x/a.mp3",
+            kind="media",
+            priority="normal",
+            volume=None,
+            caller_user_id=user_id,
+        ),
+    )
+
+
+async def test_communicate_preview_and_send_accept_floors(hass, floors, hass_admin_user) -> None:
+    context = Context(user_id=hass_admin_user.id)
+    preview = await execute(hass, "preview", {"floors": ["downstairs"]}, context)
+    assert preview["endpoints"] == ["media_player.basement_sonos"]
+    # An unknown floor stays a failed target; it must not fall through to every speaker.
+    missing = await execute(hass, "preview", {"floors": ["nope"]}, context)
+    assert missing.get("endpoints", []) == []
+    assert missing["ok"] is False
+
+
+async def test_restricted_account_only_discovers_floors_it_fully_controls(
+    hass, floors, house, hass_admin_user
+) -> None:
+    data = hass.data[DOMAIN]
+    owner = hass_admin_user.id
+    context = Context(user_id=owner)
+    everything = await execute(hass, "discover", {}, context)
+    assert [f["name"] for f in everything["floors"]] == ["Upstairs"]
+    # The kitchen alone is not all of Upstairs, so the floor and its speakers stay hidden.
+    data.agent_policies = AgentPolicies({owner: {"areas": [house["kitchen"]]}})
+    limited = await execute(hass, "discover", {}, context)
+    assert limited["floors"] == []
+    assert "Attic" not in str(limited["rooms"])
+
+
+async def test_rooms_view_offers_only_useful_floors(hass, floors, hass_client, house) -> None:
+    client = await hass_client()
+    body = await (await client.get("/api/roomcall/rooms")).json()
+    # Downstairs has one speaker room, which the room chip already covers.
+    assert [f["name"] for f in body["floors"]] == ["Upstairs"]
+    assert set(body["floors"][0]["rooms"]) == {house["kitchen"], "attic"}
+    assert body["floors"][0]["id"] == f"floor:{floors['upstairs']}"
+    ar.async_get(hass).async_update(house["basement"], floor_id=floors["upstairs"])
+    body = await (await client.get("/api/roomcall/rooms")).json()
+    # One floor holding every room would repeat Everywhere.
+    assert body["floors"] == []
+
+
+async def test_group_names_for_notifications(hass, floors) -> None:
+    lr.async_get(hass).async_create("Bedtime")
+    names = group_names(hass)
+    assert names[f"floor:{floors['upstairs']}"] == "Upstairs"
+    assert names["floor:Upstairs"] == "Upstairs"
+    assert names["label:Bedtime"] == "Bedtime"

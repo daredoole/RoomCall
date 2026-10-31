@@ -67,6 +67,8 @@ API_HISTORY_CLIP = "/api/roomcall/history/{call_id}"
 
 SERVICE_BROADCAST = "broadcast"
 ATTR_TARGET_AREAS = "areas"
+FLOOR_TARGET = "floor:"
+LABEL_TARGET = "label:"
 ATTR_TARGET_PEOPLE = "people"
 ATTR_TARGET_SPEAKERS = "speakers"
 ATTR_MESSAGE = "message"

@@ -16,7 +16,7 @@ from homeassistant.util import dt as dt_util
 from .calls import CallError, CallRequest, prepare_call
 from .capabilities import discover
 from .const import DOMAIN
-from .core import resolve
+from .core import expand_group_targets, resolve
 from .errors import Problem
 from .protocol import API_VERSION, SETUP_KEY
 from .schema import vol
@@ -24,6 +24,8 @@ from .schema import vol
 TARGETS = {
     vol.Optional("profile"): vol.All(cv.string, vol.Length(min=1, max=40)),
     vol.Optional("areas"): vol.All(cv.ensure_list, [cv.string]),
+    vol.Optional("floors"): vol.All(cv.ensure_list, [cv.string]),
+    vol.Optional("labels"): vol.All(cv.ensure_list, [cv.string]),
     vol.Optional("speakers"): cv.entity_ids,
     vol.Optional("people"): cv.entity_ids,
     vol.Optional("everywhere", default=False): cv.boolean,
@@ -276,6 +278,7 @@ async def _execute(hass, operation, values, context, *, assistant=None):
     try:
         if operation not in SCHEMAS:
             raise Problem("invalid_request")
+        values = expand_group_targets(values)
         if operation in {"preview", "send"} and values.get("profile"):
             from .profiles import expand
 
@@ -357,6 +360,7 @@ async def _execute(hass, operation, values, context, *, assistant=None):
             if assistant or context.user_id in data.agent_policies.grants:
                 allowed_areas = {e["area_id"] for e in result["endpoints"]}
                 result["rooms"] = [r for r in result["rooms"] if r["area_id"] in allowed_areas]
+                result["floors"] = [f for f in result["floors"] if set(f["rooms"]) <= allowed_areas]
                 result["areas"] = [a for a in result["areas"] if a["id"] in allowed_areas]
                 result["adapters"] = []
                 result["stations"] = []

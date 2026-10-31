@@ -1000,7 +1000,9 @@ class ShortcutBuilder {
     controls.dialog.addEventListener("close", () => { this.key.value = ""; this.consent.checked = false; });
   }
   rooms(rooms) {
-    const selected = this.room.value || this.controls.card._target;
+    // A shortcut targets one room, so a selected floor falls back to asking each time.
+    const target = this.controls.card._target;
+    const selected = this.room.value || (target?.startsWith("floor:") ? "" : target);
     this.room.replaceChildren(new Option(this.controls.t("shortcut_choose_room"), ""),
       new Option(this.controls.t("shortcut_ask_each_time"), "ask"),
       ...rooms.map(room => new Option(room.name, room.area_id)));

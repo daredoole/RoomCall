@@ -97,6 +97,10 @@ matching room names alone do not establish that they are the same box.
     an area remain available through **Everywhere** or an explicit speaker ID,
     but have no room button — assign them in *Settings → Areas*.
 
+    If you use Home Assistant floors, the card also offers a floor when it holds two or
+    more RoomCall rooms and is not your whole house. A card limited to some rooms shows
+    a floor only when all of that floor's rooms are on the card.
+
 ## Music Assistant speakers
 
 Music Assistant players can receive recorded voice clips and generated speech through
@@ -366,6 +370,8 @@ Speak a message (text-to-speech) or play an audio URL in rooms or wherever peopl
 action: roomcall.broadcast
 data:
   areas: [kitchen, basement]   # omit for every RoomCall speaker
+  floors: [upstairs]           # optional, id or name
+  labels: [bedrooms]           # optional, on the speaker, its device or its room
   message: Dinner is ready
   volume: 0.4                  # optional, Sonos
 ```

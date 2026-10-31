@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from ha_screenshots import open_card
 from playwright.sync_api import expect
 
@@ -62,6 +64,39 @@ def check_layout(browser) -> None:
             assert_contained(page, fixed=True)
             page.keyboard.press("Escape")
         page.close()
+
+
+def check_floors(browser) -> None:
+    """A floor chip targets its rooms; a card hiding one of those rooms does not offer it."""
+    floor = {
+        "id": "floor:downstairs",
+        "name": "Downstairs",
+        "icon": None,
+        "rooms": ["basement", "garage"],
+        "speakers": ["Basement", "Garage AirPlay"],
+    }
+    page = browser.new_page(viewport={"width": 688, "height": 900})
+    page.add_init_script(f"window.roomcallFloors = {json.dumps([floor])}")
+    open_card(page, "mobile", "dark")
+    card = page.locator("roomcall-card")
+    chip = card.locator(".rooms .chip", has_text="Downstairs")
+    expect(chip).to_have_count(1)
+    expect(chip).to_have_attribute("title", "Basement, Garage AirPlay")
+    chip.click()
+    expect(card.locator(".destination")).to_have_text("To: Downstairs")
+    assert page.evaluate("document.querySelector('roomcall-card')._target") == floor["id"]
+    # History shows the floor's name, and a floor outside this house still reads cleanly.
+    assert page.evaluate(
+        """() => { const c = document.querySelector('roomcall-card');
+        return [c._roomName('floor:downstairs'), c._roomName('floor:gone')]; }"""
+    ) == ["Downstairs", "gone"]
+    page.evaluate(
+        """async () => { const c = document.querySelector('roomcall-card');
+        c._config = { ...c._config, rooms: ['basement'] };
+        await c._load(); c._renderRooms(); }"""
+    )
+    expect(card.locator(".rooms .chip", has_text="Downstairs")).to_have_count(0)
+    page.close()
 
 
 def check_simple(browser) -> None:
