@@ -654,6 +654,14 @@
           "name": "Räume",
           "description": "Bereiche für die Durchsage. Leer lassen (und keine Personen) für alle RoomCall-Lautsprecher."
         },
+        "floors": {
+          "name": "Etagen",
+          "description": "Alle RoomCall-Lautsprecher in den Räumen dieser Etagen."
+        },
+        "labels": {
+          "name": "Labels",
+          "description": "RoomCall-Lautsprecher mit diesen Labels, am Lautsprecher, seinem Gerät oder seinem Raum."
+        },
         "people": {
           "name": "Personen",
           "description": "Spielt in dem Raum, in dem die Person gerade ist (benötigt Raumerkennung, z. B. Bermuda)."

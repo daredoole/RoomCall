@@ -23,6 +23,7 @@ from .core import (
     call_finished,
     fan_out,
     friendly,
+    group_names,
     mp3_seconds,
     resolve,
     to_playable,
@@ -251,6 +252,7 @@ async def place_call(
     if data.notify and request.notify:
         names = {a.id: a.name for a in ar.async_get(hass).async_list_areas()}
         names[ALL_ROOMS] = "Everywhere"
+        names.update(group_names(hass))
         try:
             await notify_call(
                 hass,

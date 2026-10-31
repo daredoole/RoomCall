@@ -62,6 +62,8 @@ The legacy intent has these slots:
 action: roomcall.broadcast
 data:
   areas: [kitchen]                 # area ids or names
+  floors: [upstairs]               # floor ids or names
+  labels: [bedrooms]               # label ids or names
   speakers: [media_player.office]  # specific media players
   people: [person.alex]            # wherever they are (room presence)
   message: Dinner is ready         # or media_url: http://…/clip.mp3

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .core import expand_group_targets
 from .errors import Problem
 from .schema import vol
 
@@ -34,7 +35,7 @@ def validate(profiles: dict) -> dict:
         if "profile" in item["defaults"]:
             raise vol.Invalid("Recursive profile")
         normalized = vol.Schema(MESSAGE)(item["defaults"])
-        item["defaults"] = {key: normalized[key] for key in item["defaults"]}
+        item["defaults"] = expand_group_targets({key: normalized[key] for key in item["defaults"]})
         if not any(item["defaults"].get(k) for k in ("areas", "speakers", "people", "everywhere")):
             raise vol.Invalid("A profile needs explicit destinations")
         result[key] = item

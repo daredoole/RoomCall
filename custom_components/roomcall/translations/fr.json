@@ -654,6 +654,14 @@
           "name": "Pièces",
           "description": "Zones où diffuser. Laissez vide (sans personnes) pour toutes les enceintes RoomCall."
         },
+        "floors": {
+          "name": "Étages",
+          "description": "Toutes les enceintes RoomCall des pièces de ces étages."
+        },
+        "labels": {
+          "name": "Étiquettes",
+          "description": "Enceintes RoomCall portant ces étiquettes, sur l'enceinte, son appareil ou sa pièce."
+        },
         "people": {
           "name": "Personnes",
           "description": "Joue dans la pièce où se trouve chaque personne (nécessite la présence par pièce, par exemple Bermuda)."
