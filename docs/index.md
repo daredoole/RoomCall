@@ -37,6 +37,8 @@ Then check each room once with **More → Settings → Setup and sound tests**.
   camera with an **Answer** button ([details](communication.md#answer-the-door)).
 - **Siri to any speaker** — "Hey Siri, run RoomCall Basement", no HomePod needed
   ([Siri](siri-announce.md)), or a talk button in the [Apple Home app](apple-home.md).
+- **Android** — hold to talk in the Home Assistant app, plus one-tap widgets, Quick Settings tiles
+  and Wear OS ([Android guide](android.md)).
 - **Reminders that wait until it's done** — "The laundry is done" repeats until someone taps
   *Took out the dry clothes* ([announcements and tasks](announcements.md)).
 - **Talk back** — a **Reply** button on the call notification, or a small Assist satellite

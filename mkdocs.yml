@@ -32,6 +32,7 @@ nav:
       - Home Assistant intercom: home-assistant-intercom.md
       - Sonos intercom: sonos-intercom.md
       - Announce from Siri: siri-announce.md
+      - Use on Android: android.md
   - Set up and use:
       - Home Assistant: home-assistant.md
       - Siri and Shortcuts: siri-shortcuts.md

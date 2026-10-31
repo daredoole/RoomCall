@@ -143,5 +143,5 @@ an explicitly configured fallback room.
 
 ## Android
 
-Use the Home Assistant app's **Assist** or a Tasker / Google Assistant routine
-that performs `roomcall.broadcast` with the same data.
+See [Use RoomCall on Android](android.md) for the card, widgets, Quick Settings tiles, Wear OS
+and Assist.
