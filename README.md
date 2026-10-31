@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.png" alt="RoomCall logo" width="96">
+  <img src="https://raw.githubusercontent.com/daredoole/RoomCall/main/docs/assets/logo.png" alt="RoomCall logo" width="96">
 </p>
 
 <h1 align="center">RoomCall</h1>
@@ -10,37 +10,40 @@
 </p>
 
 <p align="center">
-  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=daredoole&repository=RoomCall&category=integration"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open RoomCall in HACS"></a>
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=daredoole&repository=RoomCall&category=integration"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open RoomCall in your Home Assistant Marketplace or HACS"></a>
 </p>
 
 <p align="center">
-  <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg" alt="HACS Custom"></a>
+  <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Default-41BDF5.svg" alt="Listed in the HACS default store"></a>
   <a href="https://github.com/daredoole/RoomCall/releases"><img src="https://img.shields.io/github/v/release/daredoole/RoomCall" alt="Latest release"></a>
   <a href="https://github.com/daredoole/RoomCall/actions/workflows/ci.yml"><img src="https://github.com/daredoole/RoomCall/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://daredoole.github.io/RoomCall/"><img src="https://img.shields.io/badge/docs-online-4f8cff" alt="Documentation"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/daredoole/RoomCall" alt="MIT license"></a>
+  <a href="https://github.com/daredoole/RoomCall/blob/main/LICENSE"><img src="https://img.shields.io/github/license/daredoole/RoomCall" alt="MIT license"></a>
 </p>
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="Pick a room, hold to talk, and it plays live" width="300">
+  <img src="https://raw.githubusercontent.com/daredoole/RoomCall/main/docs/assets/demo.gif" alt="Pick a room, hold to talk, and it plays live" width="300">
   &nbsp;&nbsp;
-  <img src="docs/assets/ha-card-simple.png" alt="The RoomCall card: rooms, a big talk button and the latest call" width="260">
+  <img src="https://raw.githubusercontent.com/daredoole/RoomCall/main/docs/assets/ha-card-simple.png" alt="The RoomCall card: rooms, a big talk button and the latest call" width="260">
 </p>
 
 <p align="center"><sub>The real card in a test harness with sample rooms; it shows the interface, not a speaker playing
-(<a href="docs/screenshots.md">how screenshots are made</a>).</sub></p>
+(<a href="https://daredoole.github.io/RoomCall/screenshots/">how screenshots are made</a>).</sub></p>
 
 ## Get started in three steps
 
-You need Home Assistant 2025.6 or newer with [HACS](https://hacs.xyz/docs/use/), and speakers
-that Home Assistant can already play to.
+You need Home Assistant 2025.6 or newer and speakers that Home Assistant can already play to.
+Home Assistant 2026.11 and newer include the Marketplace; older versions use
+[HACS](https://hacs.xyz/docs/use/).
 
-1. **Install.** Click the HACS button above, then **Download**, then restart Home Assistant.
-   <details><summary>No button, or no HACS?</summary>
+1. **Install.** Click the button above, then **Install** in the Marketplace, or **Download** in
+   HACS. The Marketplace continues to setup when it can; restart Home Assistant if it asks
+   you to. HACS always needs a restart.
+   <details><summary>No button?</summary>
 
-   - HACS → ⋮ → **Custom repositories** → add `https://github.com/daredoole/RoomCall` as
-     **Integration** → search **RoomCall** → **Download** → restart.
-   - Without HACS: unzip `roomcall.zip` from the
+   - Marketplace: **Settings → Marketplace** → search **RoomCall** → **Install**.
+   - HACS: search **RoomCall** → **Download** → restart.
+   - Neither: unzip `roomcall.zip` from the
      [latest release](https://github.com/daredoole/RoomCall/releases/latest) into
      `/config/custom_components/roomcall/` and restart.
 
@@ -68,7 +71,7 @@ presence such as [Bermuda](https://github.com/agittins/bermuda)).
 
 ### Answer the door from any room
 
-<img src="docs/assets/ha-card-doorbell.png" alt="Doorbell banner on the card with a camera snapshot and an Answer button" width="260" align="right">
+<img src="https://raw.githubusercontent.com/daredoole/RoomCall/main/docs/assets/ha-card-doorbell.png" alt="Doorbell banner on the card with a camera snapshot and an Answer button" width="260" align="right">
 
 When the doorbell is pressed, the rooms you pick hear *"Someone is at the Front Door."*
 Every RoomCall card, and the phones you've set up for notifications, show the camera snapshot
@@ -88,7 +91,7 @@ speakers — no HomePod needed. The card builds the shortcut steps for you
 
 ### Reminders that wait until it's done
 
-<img src="docs/assets/ha-card-tasks.png" alt="The card's To do list: Laundry, with a Took out the dry clothes button" width="240" align="right">
+<img src="https://raw.githubusercontent.com/daredoole/RoomCall/main/docs/assets/ha-card-tasks.png" alt="The card's To do list: Laundry, with a Took out the dry clothes button" width="240" align="right">
 
 "The laundry is done" keeps reminding until someone taps **Took out the dry clothes** on their
 phone or the card. Swiping the notification away doesn't count. Schedule announcements
@@ -116,7 +119,7 @@ Two wall tablets can also call each other live as
   Glass, Material or your dashboard's own theme.
 - **Receivers and TV boxes** — Denon/HEOS receivers and Android/Google TV boxes can be woken
   for the call and put back afterwards, where the device allows it
-  ([limits](docs/communication.md#playback-device-routes)).
+  ([limits](https://daredoole.github.io/RoomCall/communication/#playback-device-routes)).
 - **Automations** — `roomcall.broadcast`, a notify entity per room and ready-made blueprints.
 - **Repairs** — Home Assistant warns about addresses speakers usually can't use (for example
   `localhost` or a `.local` name) and offers to switch to your network address after you confirm.
@@ -218,7 +221,7 @@ See [Troubleshooting](https://daredoole.github.io/RoomCall/troubleshooting/).
 Accepted is not the same as heard. Check the room, volume and anything already playing. The
 most common cause is a Home Assistant address the speakers can't reach: look in
 **Settings → System → Repairs**, and make sure **Settings → System → Network → Local network**
-is an address like `http://192.168.1.10:8123`. See [troubleshooting](docs/troubleshooting.md).
+is an address like `http://192.168.1.10:8123`. See [troubleshooting](https://daredoole.github.io/RoomCall/troubleshooting/).
 </details>
 
 ## Standalone server (no Home Assistant)
@@ -247,8 +250,8 @@ Sponsorship never buys feature priority, private support or early access to secu
 ## Contributing
 
 Bug reports, speaker compatibility notes and pull requests are welcome — see
-[CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
-Security issues: please follow [SECURITY.md](SECURITY.md).
+[CONTRIBUTING.md](https://github.com/daredoole/RoomCall/blob/main/CONTRIBUTING.md) and the [Code of Conduct](https://github.com/daredoole/RoomCall/blob/main/CODE_OF_CONDUCT.md).
+Security issues: please follow [SECURITY.md](https://github.com/daredoole/RoomCall/blob/main/SECURITY.md).
 
 ## License
 
