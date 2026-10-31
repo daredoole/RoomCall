@@ -67,12 +67,17 @@ triggers:
 
 conditions:
   # A binary sensor counts when it turns on; buttons and events count on every new state.
+  # A never-pressed button starts as unknown, so its first press counts. A binary sensor leaving
+  # unknown, or anything returning from unavailable, is startup rather than a press.
   - condition: template
     value_template: >-
       {{ trigger.to_state is not none
+         and trigger.from_state is not none
+         and trigger.to_state.state != trigger.from_state.state
          and trigger.to_state.state not in ['unavailable', 'unknown', 'off']
-         and (trigger.from_state is none
-              or trigger.from_state.state not in ['unavailable', 'unknown'])
+         and trigger.from_state.state != 'unavailable'
+         and (trigger.from_state.state != 'unknown'
+              or trigger.to_state.domain != 'binary_sensor')
          and (press_type == '' or trigger.to_state.attributes.event_type == press_type) }}
 
 actions:

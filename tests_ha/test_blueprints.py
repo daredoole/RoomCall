@@ -97,3 +97,28 @@ async def test_button_message_ignores_startup_and_release(hass: HomeAssistant):
     await hass.async_block_till_done()
     assert len(calls) == 1
     assert calls[0].data["priority"] == "urgent"
+
+
+async def test_button_message_ignores_attribute_updates(hass: HomeAssistant):
+    calls = await _button_automation(hass, "event.hall")
+    hass.states.async_set("event.hall", "2026-01-01", {"battery": 80})
+    await hass.async_block_till_done()
+    assert calls == []
+
+
+async def test_button_message_counts_the_first_press_of_a_new_button(hass: HomeAssistant):
+    calls = await _button_automation(hass, "button.hall")
+    hass.states.async_set("button.hall", "unknown")
+    await hass.async_block_till_done()
+    hass.states.async_set("button.hall", "2026-01-02")
+    await hass.async_block_till_done()
+    assert len(calls) == 1
+
+
+async def test_button_message_ignores_a_binary_sensor_leaving_unknown(hass: HomeAssistant):
+    calls = await _button_automation(hass, "binary_sensor.hall")
+    hass.states.async_set("binary_sensor.hall", "unknown")
+    await hass.async_block_till_done()
+    hass.states.async_set("binary_sensor.hall", "on")
+    await hass.async_block_till_done()
+    assert calls == []
