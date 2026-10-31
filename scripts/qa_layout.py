@@ -126,6 +126,15 @@ def check_tap_to_talk(browser) -> None:
     page.keyboard.press("Enter")
     expect(label).to_have_text("Tap to talk")
 
+    # Holding Enter is one activation, not a stream of toggles.
+    page.keyboard.down("Enter")
+    page.keyboard.down("Enter")
+    page.keyboard.down("Enter")
+    page.keyboard.up("Enter")
+    expect(label).to_have_text("Tap to finish")
+    page.keyboard.press("Enter")
+    expect(label).to_have_text("Tap to talk")
+
     # Leaving the window closes the microphone, the same as letting go of the button.
     talk.click()
     expect(label).to_have_text("Tap to finish")

@@ -741,7 +741,12 @@ class RoomCallCard extends HTMLElement {
     talk.addEventListener("contextmenu", (e) => e.preventDefault());
     talk.addEventListener("blur", (e) => this._stop(e));
     talk.addEventListener("keydown", (e) => {
-      if (!this._config.tap_to_talk && [" ", "Enter"].includes(e.key) && !e.repeat) this._start(e);
+      if (this._config.tap_to_talk) {
+        // A held key repeats native clicks, which would flip the microphone on and off.
+        if (e.repeat && [" ", "Enter"].includes(e.key)) e.preventDefault();
+        return;
+      }
+      if ([" ", "Enter"].includes(e.key) && !e.repeat) this._start(e);
     });
     talk.addEventListener("keyup", (e) => {
       if (!this._config.tap_to_talk && [" ", "Enter"].includes(e.key)) this._stop(e);
