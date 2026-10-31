@@ -159,10 +159,15 @@ def _run_tap(body: str):
     {limit}
     const timers = [];
     const cleared = [];
-    globalThis.setTimeout = (run, delay) => {{ timers.push({{ run, delay }}); return timers.length; }};
+    globalThis.setTimeout = (run, delay) => {{
+      timers.push({{ run, delay }});
+      return timers.length;
+    }};
     globalThis.clearTimeout = (id) => cleared.push(id);
     const element = () => ({{
-      attrs: {{}}, gone: [], textContent: "", classList: {{ remove(name) {{ element.removed = name; }} }},
+      attrs: {{}},
+      textContent: "",
+      classList: {{ remove() {{}} }},
       setAttribute(name, value) {{ this.attrs[name] = value; }},
       removeAttribute(name) {{ delete this.attrs[name]; }},
     }});
@@ -212,7 +217,8 @@ def test_tapped_microphone_closes_itself_after_two_minutes():
         const after = card.stops;
         card._talkClosed(talk);
         process.stdout.write(JSON.stringify(
-          [delay, before, after, pressed, talk.attrs["aria-pressed"] ?? null, cleared.length === 1]));
+          [delay, before, after, pressed, talk.attrs["aria-pressed"] ?? null, cleared.length === 1]
+        ));
         """
     )
     assert delay == 120_000
