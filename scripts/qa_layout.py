@@ -99,6 +99,52 @@ def check_floors(browser) -> None:
     page.close()
 
 
+def check_tap_to_talk(browser) -> None:
+    """Tap mode toggles from pointer or keyboard, and moving away does not end the call."""
+    page = browser.new_page(viewport={"width": 390, "height": 820})
+    open_card(page, "mobile", "dark", "&tap=on")
+    card = page.locator("roomcall-card")
+    talk = card.locator("button.talk")
+    label = talk.locator(".label")
+    expect(label).to_have_text("Tap to talk")
+    assert talk.get_attribute("aria-label") == "Tap to talk"
+    expect(card.locator(".status")).to_contain_text("tap the button")
+
+    talk.click()
+    expect(label).to_have_text("Tap to finish")
+    expect(talk).to_have_attribute("aria-pressed", "true")
+    page.mouse.move(2, 2)
+    page.wait_for_timeout(200)
+    expect(label).to_have_text("Tap to finish")
+    talk.click()
+    expect(label).to_have_text("Tap to talk")
+    assert talk.get_attribute("aria-pressed") is None
+
+    talk.focus()
+    page.keyboard.press("Enter")
+    expect(label).to_have_text("Tap to finish")
+    page.keyboard.press("Enter")
+    expect(label).to_have_text("Tap to talk")
+
+    # Leaving the window closes the microphone, the same as letting go of the button.
+    talk.click()
+    expect(label).to_have_text("Tap to finish")
+    page.evaluate("window.dispatchEvent(new Event('blur'))")
+    expect(label).to_have_text("Tap to talk")
+    page.close()
+
+    # Hold mode is unchanged: a plain click does not leave the microphone open.
+    page = browser.new_page(viewport={"width": 390, "height": 820})
+    open_card(page, "mobile", "dark")
+    talk = page.locator("roomcall-card").locator("button.talk")
+    expect(talk.locator(".label")).to_have_text("Hold to talk")
+    talk.click()
+    page.wait_for_timeout(300)
+    expect(talk.locator(".label")).to_have_text("Hold to talk")
+    assert talk.get_attribute("aria-pressed") is None
+    page.close()
+
+
 def check_simple(browser) -> None:
     """Simple shows rooms, talk and the latest call; More reveals and Less hides the rest."""
     hidden_when_collapsed = (".toggles", ".people", "[data-toolbar]")
