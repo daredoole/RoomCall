@@ -4,7 +4,7 @@ All notable changes are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.23.0 — 2026-11-03
 
 - Target a whole floor or label: `floors` and `labels` on `roomcall.broadcast` and the
   communicate operations, by id, name or alias. Labels match the speaker, its device
