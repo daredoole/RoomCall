@@ -15,6 +15,8 @@ All notable changes are listed here. The format follows
 - New card option **Tap to start and stop** (`tap_to_talk`), for anyone who finds holding
   a button hard. Off by default. The microphone closes itself after 2 minutes, or when
   you leave the page or window.
+- New **Button message** blueprint: press a Zigbee, Matter or other button and your message
+  plays in the rooms you pick. It speaks a fixed message; it doesn't record your voice.
 
 ## 0.22.1 — 2026-10-25
 
