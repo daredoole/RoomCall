@@ -12,6 +12,9 @@ All notable changes are listed here. The format follows
   agent restrictions apply to each speaker reached.
 - The card offers a floor when it holds two or more RoomCall rooms and is not the
   whole house. Nothing to configure, and no change if you do not use floors.
+- New card option **Tap to start and stop** (`tap_to_talk`), for anyone who finds holding
+  a button hard. Off by default. The microphone closes itself after 2 minutes, or when
+  you leave the page or window.
 - New **Button message** blueprint: press a Zigbee, Matter or other button and your message
   plays in the rooms you pick. It speaks a fixed message; it doesn't record your voice.
 

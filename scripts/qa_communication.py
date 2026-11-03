@@ -14,6 +14,7 @@ from qa_layout import (
     check_large_text,
     check_layout,
     check_simple,
+    check_tap_to_talk,
 )
 
 
@@ -486,6 +487,7 @@ def main() -> None:
         check_layout(browser)
         check_simple(browser)
         check_floors(browser)
+        check_tap_to_talk(browser)
         check_appearances(browser)
         check_large_text(browser)
         check_guided_setup(browser, errors)

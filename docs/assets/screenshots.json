@@ -1,13 +1,13 @@
 {
   "schema": 1,
-  "capture_base_commit": "ca78ce1db900bca5f1e344483d6901cf3480f836",
+  "capture_base_commit": "d78ec7afd03ac76be86fd3680de2875e31a8e1b3",
   "ios_source_commit": "7f1a3069bb4b89d89ebc63404dd3c3d663e20758",
   "ios_run": "https://github.com/daredoole/RoomCall/actions/runs/40035013972",
   "sample_data": true,
   "groups": {
     "home_assistant": {
       "images": {
-        "docs/assets/demo.gif": "d1c86779a2e3b260cdc45567bb8bfbc93694c36f1b80196c5669b27dcb4469ad",
+        "docs/assets/demo.gif": "dd7fe468e00d7b09b3ab75b0d7e770772a36cad8520d2588a87b3fd895ee5e53",
         "docs/assets/ha-card-ask.png": "3e0838fd223f685b09bd9fc3bf946d0d8d6a5c286b18861289cc85ee82384861",
         "docs/assets/ha-card-compact.png": "fb00518617d208bf1f4ab8b27c8e36a4104a309037014a47d612e9b0897dc35c",
         "docs/assets/ha-card-delivered.png": "6cebc0d0309b4090363df5373a96f7bbd88b1eb5103e1b8cf7ecf4912a2cb57f",
@@ -24,7 +24,7 @@
         "docs/assets/ha-card-type.png": "f38f0d14fe9a2ce11f1e1943fd742c64bdf9ad7cb6728599419ef307b98779f5",
         "docs/assets/ha-dashboard-desktop.png": "2808552d063f0b546a8a2644e6f4824ca361efe29b619c1b94c84818ccfbb40b",
         "docs/assets/ha-device-discovery.png": "446e9ecc0de206a70b57e9ef7470b789b6cfd290561040f679e2e92530a837b1",
-        "docs/assets/ha-guided-setup.png": "31152589261d0390d5efab4d9f5ba631e67212a4cd4ecc48720a99c4954775a1",
+        "docs/assets/ha-guided-setup.png": "30214dd8a288772c13722ae5f9639d7bdb6c8da63990a959186a9ef0690d5802",
         "docs/assets/ha-playback-preview.png": "10aa5ea03fe0163b4da7f7a87a1b6ba12e8c1247387274398c0ac40df19f9242",
         "docs/assets/ha-playback-restoration.png": "c1d903db1fe3641fa30bdbdb704e459617d9e91305f933bae0d409e196ceb4db",
         "docs/assets/ha-room-listening.png": "ecf732d1bdaa52deb2ab03103c545bb22e3cdbeb137d1906b4474ca0372e7a76",
@@ -36,18 +36,18 @@
         "docs/assets/ha-siri-shortcuts.png": "bef6e264a01e69c89913a0f9466642d60cc25d80b9c83e7775d442eff14fa37c"
       },
       "inputs": {
-        "custom_components/roomcall/frontend/roomcall-card.js": "291f57672196bc1a2346e841738385f7d282bd285bb2b7e25f8f151b8f7047d0",
+        "custom_components/roomcall/frontend/roomcall-card.js": "9132bd63c00329dd9379f8f39acfc19379c4551424ebbcd4ccaf717593e75a1d",
         "custom_components/roomcall/frontend/roomcall-controls.js": "9f01d1e0285a94bbac3338cec27f0457fd157b9d1069af3bb97d74e26d81e44c",
         "custom_components/roomcall/frontend/roomcall-qr.js": "b8fdb1a738c36b7989ebacad214540ab143065b04f6bf270d3ca29d0d5cadc2d",
-        "custom_components/roomcall/strings.json": "bd22861a5efc25c0ce3bc0cc764922bc7bb7ca4062e10e57f5cb8d23819f4744",
-        "scripts/ha_card_harness.html": "03669d17325f5dfb867f4e229f6faef882f1d44bb9232f49f427bd60e0d45ff6",
+        "custom_components/roomcall/strings.json": "d3d11c52ee12f9461a2ef90c8111571b09593c7a1dabef4dc638176d084d9937",
+        "scripts/ha_card_harness.html": "d71c06ee32aba1b985872a1c82cc6c9a1a5845463a414f482a8da84e5697fe2b",
         "scripts/ha_screenshots.py": "56ab0002fc6ba0872a5676bcf041f3d19de029122de23688cb99bb338a47815f",
-        "scripts/qa_communication.py": "209e1948ed11121c6bc611e4b09a3695e7a64e5aa7e0389879e6d476c4015104"
+        "scripts/qa_communication.py": "a3260a194b8a5aed5a33a5e7b0f354de70f0eed82ebf0aaf61f85aca51ad9a6d"
       }
     },
     "standalone": {
       "images": {
-        "docs/assets/screenshot-delivered.png": "90ac5fd24c85b6d6c93bd338e84444f9a702c29630be8acfde6e15a3e92f76b0",
+        "docs/assets/screenshot-delivered.png": "3e5348abcd762cf40c98d59fb4acc7ab47f94c35d7e1871eb439121e892c15eb",
         "docs/assets/screenshot-desktop.png": "6ac364f4e4356e2bff9b863a0ba62fc70976c0eaae72e912add62037a993f71e",
         "docs/assets/screenshot-mobile-light.png": "8491c47997449169b26639c052aeb377d69cfa8abbff0572096637094a66f1f5",
         "docs/assets/screenshot-mobile.png": "ef78b8e9f6291dbf2e0e1e5d283f4baa8e86fb555f1a0c8c0e1aca28adfd5a71",

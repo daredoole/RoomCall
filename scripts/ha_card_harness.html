@@ -279,6 +279,7 @@
   const look = {};
   if (params.get("appearance")) look.appearance = params.get("appearance");
   if (params.get("color")) look.color = `#${params.get("color")}`;
+  if (params.get("tap") === "on") look.tap_to_talk = true;
   if (layout) look.layout = layout;
   card.setConfig({ title: "Intercom", default_room: "kitchen", room: "kitchen", ...look });
   card.hass = hass;
