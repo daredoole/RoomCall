@@ -5,8 +5,9 @@ description: Hold a button, talk, and your voice plays in the room you picked, o
 
 # RoomCall
 
-**A push-to-talk intercom for Home Assistant, on the speakers you already own.** Hold a button,
-talk, and your voice plays in the room you picked — on Sonos, Google Cast or AirPlay.
+**A push-to-talk intercom for Home Assistant, on the speakers you already own.** Hold a button and
+your voice streams to the room you picked while you talk, on Sonos, Google Cast or AirPlay. They
+can answer from their phone.
 
 [![Open RoomCall in your Home Assistant Marketplace or HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=daredoole&repository=RoomCall&category=integration)
 
