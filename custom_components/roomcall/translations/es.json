@@ -654,6 +654,14 @@
           "name": "Habitaciones",
           "description": "Áreas donde difundir. Déjalo vacío (y sin personas) para todos los altavoces de RoomCall."
         },
+        "floors": {
+          "name": "Plantas",
+          "description": "Todos los altavoces de RoomCall en las habitaciones de estas plantas."
+        },
+        "labels": {
+          "name": "Etiquetas",
+          "description": "Altavoces de RoomCall con estas etiquetas, en el altavoz, su dispositivo o su habitación."
+        },
         "people": {
           "name": "Personas",
           "description": "Suena en la habitación donde está cada persona ahora (requiere presencia por habitación, por ejemplo Bermuda)."

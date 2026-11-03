@@ -26,8 +26,11 @@ from homeassistant.components.media_player import (
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import floor_registry as fr
+from homeassistant.helpers import label_registry as lr
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.util import dt as dt_util
 
@@ -35,8 +38,10 @@ from . import chimes
 from .const import (
     ALL_ROOMS,
     CLIP_TTL_SECONDS,
+    FLOOR_TARGET,
     HISTORY_SIZE,
     HISTORY_TTL_SECONDS,
+    LABEL_TARGET,
     PRIORITY_NORMAL,
     SIGNAL_CALL_FINISHED,
 )
@@ -226,8 +231,88 @@ def area_id_for(hass: HomeAssistant, value: str) -> str | None:
     return None
 
 
+def _named_id(items: Any, value: str, id_key: str) -> str | None:
+    """Registry id for an id, name or alias (case-insensitive)."""
+    lowered = value.strip().lower()
+    for item in items:
+        if (
+            getattr(item, id_key) == value
+            or item.name.lower() == lowered
+            or lowered in (alias.lower() for alias in getattr(item, "aliases", ()))
+        ):
+            return str(getattr(item, id_key))
+    return None
+
+
+def expand_group_targets(values: dict[str, Any]) -> dict[str, Any]:
+    """Move ``floors`` and ``labels`` into ``areas`` so one target list reaches ``resolve``."""
+    groups = [
+        f"{prefix}{value}"
+        for key, prefix in (("floors", FLOOR_TARGET), ("labels", LABEL_TARGET))
+        for value in cv.ensure_list(values.get(key))
+    ]
+    if "floors" not in values and "labels" not in values:
+        return values
+    rest = {k: v for k, v in values.items() if k not in {"floors", "labels"}}
+    return {**rest, "areas": [*cv.ensure_list(values.get("areas")), *groups]}
+
+
+def _speaker_floor(hass: HomeAssistant, entity_id: str) -> str | None:
+    area = ar.async_get(hass).async_get_area(speaker_area(hass, entity_id) or "")
+    return area.floor_id if area else None
+
+
+def _speaker_labels(hass: HomeAssistant, entity_id: str) -> set[str]:
+    """Labels on the speaker, its device or its area."""
+    labels: set[str] = set()
+    if entry := er.async_get(hass).async_get(entity_id):
+        labels |= entry.labels
+        if entry.device_id and (device := dr.async_get(hass).async_get(entry.device_id)):
+            labels |= device.labels
+    if area := ar.async_get(hass).async_get_area(speaker_area(hass, entity_id) or ""):
+        labels |= area.labels
+    return labels
+
+
+def floor_groups(hass: HomeAssistant, speakers: list[str]) -> list[dict[str, Any]]:
+    """Floors worth offering: two or more speaker rooms, and not every room in the house."""
+    all_rooms = rooms(hass, speakers)
+    areas = ar.async_get(hass)
+    out = []
+    for floor in fr.async_get(hass).async_list_floors():
+        members = [
+            r
+            for r in all_rooms
+            if (area := areas.async_get_area(r["area_id"])) and area.floor_id == floor.floor_id
+        ]
+        if len(members) < 2 or len(members) == len(all_rooms):
+            continue
+        out.append(
+            {
+                "id": f"{FLOOR_TARGET}{floor.floor_id}",
+                "name": floor.name,
+                "icon": floor.icon,
+                "rooms": [r["area_id"] for r in members],
+                "speakers": [s for r in members for s in r["speakers"]],
+            }
+        )
+    return sorted(out, key=lambda f: f["name"].lower())
+
+
+def group_names(hass: HomeAssistant) -> dict[str, str]:
+    """Display names for floor and label targets, by id and by name."""
+    names: dict[str, str] = {}
+    for floor in fr.async_get(hass).async_list_floors():
+        names[f"{FLOOR_TARGET}{floor.floor_id}"] = floor.name
+        names[f"{FLOOR_TARGET}{floor.name}"] = floor.name
+    for label in lr.async_get(hass).async_list_labels():
+        names[f"{LABEL_TARGET}{label.label_id}"] = label.name
+        names[f"{LABEL_TARGET}{label.name}"] = label.name
+    return names
+
+
 def resolve(hass: HomeAssistant, speakers: list[str], targets: list[str]) -> list[str]:
-    """Speaker entity ids for area ids, area names, speaker entity ids, or ``all``."""
+    """Speaker entity ids for areas, ``floor:``/``label:`` groups, speakers, or ``all``."""
     if not targets or ALL_ROOMS in targets:
         return list(speakers)
     # A media player named directly plays even if it is not one of the intercom speakers.
@@ -237,12 +322,29 @@ def resolve(hass: HomeAssistant, speakers: list[str], targets: list[str]) -> lis
         if t.startswith("media_player.") and t not in speakers and hass.states.get(t) is not None
     ]
     wanted: set[str] = set()
+    floors: set[str] = set()
+    labels: set[str] = set()
     for target in targets:
-        if target in speakers:
+        if target.startswith(FLOOR_TARGET):
+            registry = fr.async_get(hass).async_list_floors()
+            if floor_id := _named_id(registry, target[len(FLOOR_TARGET) :], "floor_id"):
+                floors.add(floor_id)
+        elif target.startswith(LABEL_TARGET):
+            registry = lr.async_get(hass).async_list_labels()
+            if label_id := _named_id(registry, target[len(LABEL_TARGET) :], "label_id"):
+                labels.add(label_id)
+        elif target in speakers:
             wanted.add(f"entity:{target}")
         elif area_id := area_id_for(hass, target):
             wanted.add(area_id)
-    chosen = [e for e in speakers if speaker_area(hass, e) in wanted or f"entity:{e}" in wanted]
+    chosen = [
+        e
+        for e in speakers
+        if speaker_area(hass, e) in wanted
+        or f"entity:{e}" in wanted
+        or (floors and _speaker_floor(hass, e) in floors)
+        or (labels and labels & _speaker_labels(hass, e))
+    ]
     return chosen + direct
 
 

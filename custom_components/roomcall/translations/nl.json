@@ -654,6 +654,14 @@
           "name": "Ruimtes",
           "description": "Gebieden om naar om te roepen. Leeg laten (en geen personen) voor alle RoomCall-speakers."
         },
+        "floors": {
+          "name": "Verdiepingen",
+          "description": "Alle RoomCall-speakers in de ruimtes op deze verdiepingen."
+        },
+        "labels": {
+          "name": "Labels",
+          "description": "RoomCall-speakers met deze labels, op de speaker, het apparaat of de ruimte."
+        },
         "people": {
           "name": "Personen",
           "description": "Speelt in de ruimte waar iemand nu is (vereist aanwezigheid per ruimte, bijvoorbeeld Bermuda)."

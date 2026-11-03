@@ -30,7 +30,7 @@ from .const import (
     PRIORITIES,
     PRIORITY_NORMAL,
 )
-from .core import friendly, mp3_seconds, render_chime, rooms
+from .core import floor_groups, friendly, mp3_seconds, render_chime, rooms
 from .doorbell import info as doorbell_info
 from .errors import Problem
 from .localization import catalog
@@ -81,6 +81,7 @@ class RoomsView(HomeAssistantView):
         return self.json(
             {
                 "rooms": rooms(hass, data.speakers),
+                "floors": floor_groups(hass, data.speakers),
                 "speakers": len(data.speakers),
                 "people": [
                     {"entity_id": p, "name": friendly(hass, p)}

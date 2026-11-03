@@ -240,6 +240,8 @@ class RoomCallCard extends HTMLElement {
       const res = await this._hass.callApi("GET", "roomcall/rooms");
       const only = this._config.rooms;
       this._rooms = only ? res.rooms.filter((r) => only.includes(r.area_id) || only.includes(r.name)) : res.rooms;
+      // A floor would also reach any room this card hides, so it needs all of its rooms visible.
+      this._floors = (res.floors || []).filter((f) => f.rooms.every((id) => this._rooms.some((r) => r.area_id === id)));
       this._count = res.speakers;
       this._configured = res.configured !== false;
       this.shadowRoot.querySelector(".talk").disabled = !this._configured;
@@ -457,7 +459,9 @@ class RoomCallCard extends HTMLElement {
 
   _roomName(id) {
     if (!id || id === "all") return "Everywhere";
-    return (this._rooms || []).find((r) => r.area_id === id)?.name || id;
+    return (this._rooms || []).find((r) => r.area_id === id)?.name
+      || (this._floors || []).find((f) => f.id === id)?.name
+      || id.replace(/^(floor|label):/, "");
   }
 
   _render() {
@@ -767,7 +771,11 @@ class RoomCallCard extends HTMLElement {
     reply.classList.toggle("on", Boolean(this._replyTo));
     root.querySelector(".reply-text").textContent = this._replyTo ? `Replying to ${this._roomName(this._replyTo)}` : "";
     box.replaceChildren();
-    const entries = [{ area_id: "all", name: "Everywhere", icon: "mdi:home-sound-out" }, ...this._rooms];
+    const entries = [
+      { area_id: "all", name: "Everywhere", icon: "mdi:home-sound-out" },
+      ...(this._floors || []).map((f) => ({ ...f, area_id: f.id, icon: f.icon || "mdi:floor-plan" })),
+      ...this._rooms,
+    ];
     for (const room of entries) {
       const chip = this._chip(room.icon, room.name, !this._person && room.area_id === this._target, () => {
         if (this._communication) this._communication.profileTargetOverride = true;

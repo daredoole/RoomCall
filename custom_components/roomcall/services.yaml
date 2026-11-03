@@ -5,6 +5,16 @@ broadcast:
       selector:
         area:
           multiple: true
+    floors:
+      example: ["upstairs"]
+      selector:
+        floor:
+          multiple: true
+    labels:
+      example: ["bedrooms"]
+      selector:
+        label:
+          multiple: true
     people:
       example: ["person.alex"]
       selector:

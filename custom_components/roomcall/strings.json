@@ -654,6 +654,14 @@
           "name": "Rooms",
           "description": "Areas to broadcast to. Leave empty (and no people) for every RoomCall speaker."
         },
+        "floors": {
+          "name": "Floors",
+          "description": "Every RoomCall speaker in the rooms on these floors."
+        },
+        "labels": {
+          "name": "Labels",
+          "description": "RoomCall speakers with these labels, on the speaker, its device or its room."
+        },
         "people": {
           "name": "People",
           "description": "Play in the room each person is in right now (needs room presence, for example Bermuda)."
