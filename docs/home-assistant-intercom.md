@@ -31,13 +31,31 @@ your Home Assistant areas.
 
 ## Set it up in three steps
 
-1. **Install RoomCall** from HACS and restart Home Assistant
+1. **Install RoomCall** from the Marketplace, or HACS before Home Assistant 2026.11, and
+   restart if asked
    ([install options](home-assistant.md#1-install)).
 2. **Add the RoomCall integration** and pick one media player per physical speaker
    ([details](home-assistant.md#2-add-the-integration)). Each speaker's room is its area.
 3. **Add the RoomCall card** to a dashboard. Open it in the Home Assistant app or over
    HTTPS, pick a room and hold to talk
    ([card options](home-assistant.md#3-add-the-push-to-talk-card)).
+
+## Is RoomCall the right tool?
+
+If you only want to send the odd spoken message and already use
+[Music Assistant](https://www.music-assistant.io/), try its announcements first. Recent versions
+let you hold a button in its web interface and speak, and your message plays after you let go.
+
+RoomCall is for using it as a household intercom:
+
+- **Your voice streams while you talk**, on speakers that support it, instead of playing after
+  you let go. Live streaming to Music Assistant players is
+  [unverified](home-assistant.md#music-assistant-speakers), so use recorded calls there if it misbehaves.
+- **Rooms follow your Home Assistant areas**, and you can call a person wherever they are.
+- **People can answer**, from their phone or an Assist satellite in the room.
+- **Quiet nights and urgent calls**, with Do Not Disturb, quiet hours and an override.
+- **Beyond talking**: reminders that wait until a chore is done, doorbell answering, Siri, Apple
+  Home, and AI agent tools with per-account limits.
 
 ## Limits
 

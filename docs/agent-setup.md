@@ -7,7 +7,7 @@ tools keep their existing entity permissions and assistant exposure checks.
 
 ## Start before a configuration exists
 
-Install RoomCall with HACS and restart HA first. An agent needs HA's normal
+Install RoomCall from the Marketplace (HACS before HA 2026.11) first, and restart HA if asked. An agent needs HA's normal
 integration configuration capability to start a RoomCall user configuration flow:
 
 ```http
@@ -19,7 +19,7 @@ Opening that flow registers RoomCall's tools and card resources before an entry
 exists. It does not select speakers or enable optional services. An installed
 integration that has never been opened cannot register its own tools automatically.
 If the agent cannot start HA configuration flows, a person opens **Add integration
-→ RoomCall** once. Installation and permissions remain managed by HA/HACS.
+→ RoomCall** once. Installation and permissions remain managed by HA and its Marketplace or HACS.
 
 On current HA, tools are contributed to HA's LLM platform. Older supported HA uses
 the selectable **RoomCall** LLM API. External clients use HA's configured MCP

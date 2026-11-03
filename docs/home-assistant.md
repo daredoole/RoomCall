@@ -11,7 +11,8 @@ harness. See [capture sources and validation limits](screenshots.md).
 
 ## Before you start
 
-- **Home Assistant 2025.6** or newer, with [HACS](https://hacs.xyz/docs/use/) installed.
+- **Home Assistant 2025.6** or newer. Version 2026.11 and newer include the Marketplace; older
+  versions use [HACS](https://hacs.xyz/docs/use/).
 - **HTTPS or the companion app** for the microphone. Browsers only allow the mic on secure pages,
   so open Home Assistant through Nabu Casa, a reverse proxy, Tailscale, or the mobile app.
 - **A reachable internal URL.** Speakers download each clip from Home Assistant. Check
@@ -23,19 +24,21 @@ The [native app](native-ios.md) requires HA 2026.10 or later for PKCE sign-in.
 
 ## 1. Install
 
-=== "HACS (one click)"
+=== "One click"
 
-    [![Open your Home Assistant instance and open RoomCall in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=daredoole&repository=RoomCall&category=integration)
+    [![Open RoomCall in your Home Assistant Marketplace or HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=daredoole&repository=RoomCall&category=integration)
 
-    Click **Download**, then restart Home Assistant.
+    Click **Install** in the Marketplace, or **Download** in HACS. The Marketplace continues to
+    setup when it can; restart Home Assistant if it asks you to. HACS always needs a restart.
 
-=== "HACS (manual)"
+=== "Search"
 
-    1. HACS → ⋮ → **Custom repositories**.
-    2. Add `https://github.com/daredoole/RoomCall` as type **Integration**.
-    3. Search **RoomCall** → **Download** → restart Home Assistant.
+    - **Marketplace (2026.11 and newer):** **Settings → Marketplace** → search **RoomCall** →
+      **Install**. The first install asks you to accept that community projects are not
+      reviewed by the Home Assistant project.
+    - **HACS (older versions):** search **RoomCall** → **Download** → restart Home Assistant.
 
-=== "Without HACS"
+=== "Manual"
 
     Download `roomcall.zip` from the
     [latest release](https://github.com/daredoole/RoomCall/releases/latest), unzip it into
