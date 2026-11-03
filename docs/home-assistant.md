@@ -100,6 +100,10 @@ matching room names alone do not establish that they are the same box.
     an area remain available through **Everywhere** or an explicit speaker ID,
     but have no room button — assign them in *Settings → Areas*.
 
+    If you use Home Assistant floors, the card also offers a floor when it holds two or
+    more RoomCall rooms and is not your whole house. A card limited to some rooms shows
+    a floor only when all of that floor's rooms are on the card.
+
 ## Music Assistant speakers
 
 Music Assistant players can receive recorded voice clips and generated speech through
@@ -182,6 +186,7 @@ appearance: glass              # glass (Apple-like), material, or home-assistant
 theme: auto                    # auto (follows Home Assistant), light or dark
 color: "#0a84ff"               # talk button colour; Material builds its whole palette from it
 live: true                     # stream while you talk (false: record, then send)
+tap_to_talk: false             # true: tap to start, tap again to stop
 ```
 
 <div class="grid" markdown>
@@ -195,6 +200,11 @@ you hold the button. Speaker startup, buffering and queues determine when playba
 begins and ends; release ends capture, not necessarily speaker playback. Set
 `live: false` to record the whole message first and then send it. The card reports
 playback-request acceptance and separate device evidence, not whether anyone heard it.
+
+If holding a button is hard, turn on **Tap to start and stop** in the card editor. The
+microphone stays on after you tap, so it also closes itself after 2 minutes, or when you
+leave the page or window. Keyboard users press Space or Enter once to start and again
+to stop.
 If your microphone records silence (wrong input
 selected), the card says so instead of sending an empty clip.
 
@@ -369,6 +379,8 @@ Speak a message (text-to-speech) or play an audio URL in rooms or wherever peopl
 action: roomcall.broadcast
 data:
   areas: [kitchen, basement]   # omit for every RoomCall speaker
+  floors: [upstairs]           # optional, id or name
+  labels: [bedrooms]           # optional, on the speaker, its device or its room
   message: Dinner is ready
   volume: 0.4                  # optional, Sonos
 ```

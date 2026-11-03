@@ -21,7 +21,7 @@ APIs; no extra credentials.
   revisions for changes, confirm:true for delete, bounded persistent create idempotency.
 - `roomcall__doctor`: diagnose setup failures, or action:plan_route for an identified physical
   alternate endpoint. Returns a draft; never silently changes policy/network/cloud/retention.
-- Speak or play audio now: action `roomcall.broadcast` with `areas`, `speakers`, `people`,
+- Speak or play audio now: action `roomcall.broadcast` with `areas`, `floors`, `labels`, `speakers`, `people`,
   `message` or `media_url`, `priority` (`normal`|`urgent`), `volume`. Returns
   `{ok, id, results[], skipped}`.
 - Assist / LLM agents: intent `RoomCallAnnounce` (slots `message`, `area`, `urgent`).
@@ -36,7 +36,7 @@ APIs; no extra credentials.
 - HA action: `roomcall.communicate` with `{operation,request}` and return_response.
 - Success means playback request acceptance, not audible playback. Inspect separate
   audio_fetched_ms/playback_reported_ms evidence; human acknowledgment is explicit.
-- New send operations require areas/speakers/people or everywhere:true, directly or through a household profile.
+- New send operations require areas/floors/labels/speakers/people or everywhere:true, directly or through a household profile.
   HA permissions and assistant exposure apply. Ordinary jobs/keys are bounded and in memory.
 - Durable text jobs: durable:true requires an explicit idempotency_key. Queued/unexpired work
   resumes with current policy after HA startup. Potentially dispatched work becomes interrupted;

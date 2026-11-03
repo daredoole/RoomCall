@@ -70,8 +70,10 @@ response_variable: message
 ```
 
 Unlike the legacy broadcast action, new messages require an explicit target:
-`areas`, `speakers`, `people`, or `everywhere: true`. Do not send both `message`
-and `media_url`.
+`areas`, `floors`, `labels`, `speakers`, `people`, or `everywhere: true`. Do not send
+both `message` and `media_url`. A floor or label that matches no speaker fails; it
+never falls back to every room. Agent restrictions apply to each speaker a floor or
+label reaches, so a grant must cover all of them.
 
 | Operation | Request |
 |---|---|

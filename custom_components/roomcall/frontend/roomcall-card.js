@@ -7,6 +7,17 @@ const APPEARANCES = ["glass", "material", "home-assistant"];
 const THEMES = ["auto", "light", "dark"];
 // Cards added from the card picker start simple; a saved card without `layout` keeps "default".
 const NEW_CARD = { title: "Intercom", layout: "simple" };
+// A tapped microphone has no finger holding it open, so it always closes itself.
+const TAP_LIMIT_MS = 120000;
+// English fallbacks; the translated catalog replaces them once it loads.
+const TAP_TEXT = {
+  tap_to_talk: "Tap to talk",
+  tap_to_send: "Tap to send",
+  tap_to_finish: "Tap to finish",
+  tap_hint: "Pick a room, tap the button and speak.",
+  tap_too_short: "Too short — tap, talk, then tap again.",
+  tap_live_unsupported: "Live calls need RoomCall 0.5 or newer in Home Assistant — tap again to send a recording.",
+};
 const cardConfig = (config) => ({
   title: "Intercom",
   layout: "default",
@@ -240,6 +251,8 @@ class RoomCallCard extends HTMLElement {
       const res = await this._hass.callApi("GET", "roomcall/rooms");
       const only = this._config.rooms;
       this._rooms = only ? res.rooms.filter((r) => only.includes(r.area_id) || only.includes(r.name)) : res.rooms;
+      // A floor would also reach any room this card hides, so it needs all of its rooms visible.
+      this._floors = (res.floors || []).filter((f) => f.rooms.every((id) => this._rooms.some((r) => r.area_id === id)));
       this._count = res.speakers;
       this._configured = res.configured !== false;
       this.shadowRoot.querySelector(".talk").disabled = !this._configured;
@@ -260,6 +273,7 @@ class RoomCallCard extends HTMLElement {
     try {
       const strings = await this._hass.callApi("GET", `roomcall/locale?language=${encodeURIComponent(this._hass.language || "en")}`);
       this._strings = strings;
+      this._relabelTap();
       this.shadowRoot.querySelector(".recipients-title").textContent = strings.recipients;
       this._renderMore();
       this._renderRooms();
@@ -274,6 +288,7 @@ class RoomCallCard extends HTMLElement {
     clearTimeout(this._doorbellRetry);
     this._doorbellRetry = null;
     window.removeEventListener("blur", this._windowBlur);
+    clearTimeout(this._tapTimer);
     this._communication?.close();
     this._communication = null;
     this._stream?.getTracks().forEach((track) => track.stop());
@@ -457,7 +472,9 @@ class RoomCallCard extends HTMLElement {
 
   _roomName(id) {
     if (!id || id === "all") return "Everywhere";
-    return (this._rooms || []).find((r) => r.area_id === id)?.name || id;
+    return (this._rooms || []).find((r) => r.area_id === id)?.name
+      || (this._floors || []).find((f) => f.id === id)?.name
+      || id.replace(/^(floor|label):/, "");
   }
 
   _render() {
@@ -694,11 +711,11 @@ class RoomCallCard extends HTMLElement {
         <div class="composer">
         <div class="destination" aria-live="polite"></div>
         <div class="wrap">
-          <button class="talk" type="button" aria-label="Hold to talk">
-            <ha-icon icon="mdi:microphone"></ha-icon><span class="label">Hold to talk</span>
+          <button class="talk" type="button" aria-label="${this._idleLabel()}">
+            <ha-icon icon="mdi:microphone"></ha-icon><span class="label">${this._idleLabel()}</span>
           </button>
         </div>
-        <div class="status muted">Pick a room, hold the button and speak.</div>
+        <div class="status muted">${this._config.tap_to_talk ? this._tapText("tap_hint") : "Pick a room, hold the button and speak."}</div>
         </div></div>
         <div class="history" aria-label="Recent calls"></div>
       </ha-card>`;
@@ -716,15 +733,23 @@ class RoomCallCard extends HTMLElement {
     });
     this._renderMore();
     const talk = this.shadowRoot.querySelector(".talk");
-    talk.addEventListener("pointerdown", (e) => this._start(e));
-    for (const ev of ["pointerup", "pointerleave", "pointercancel"]) talk.addEventListener(ev, (e) => this._stop(e));
+    talk.addEventListener("pointerdown", (e) => { if (!this._config.tap_to_talk) this._start(e); });
+    for (const ev of ["pointerup", "pointerleave", "pointercancel"]) {
+      talk.addEventListener(ev, (e) => { if (!this._config.tap_to_talk) this._stop(e); });
+    }
+    talk.addEventListener("click", (e) => { if (this._config.tap_to_talk) this._toggle(e); });
     talk.addEventListener("contextmenu", (e) => e.preventDefault());
     talk.addEventListener("blur", (e) => this._stop(e));
     talk.addEventListener("keydown", (e) => {
+      if (this._config.tap_to_talk) {
+        // A held key repeats native clicks, which would flip the microphone on and off.
+        if (e.repeat && [" ", "Enter"].includes(e.key)) e.preventDefault();
+        return;
+      }
       if ([" ", "Enter"].includes(e.key) && !e.repeat) this._start(e);
     });
     talk.addEventListener("keyup", (e) => {
-      if ([" ", "Enter"].includes(e.key)) this._stop(e);
+      if (!this._config.tap_to_talk && [" ", "Enter"].includes(e.key)) this._stop(e);
     });
     this.shadowRoot.querySelector(".reply button").addEventListener("click", () => {
       this._replyTo = null;
@@ -767,7 +792,11 @@ class RoomCallCard extends HTMLElement {
     reply.classList.toggle("on", Boolean(this._replyTo));
     root.querySelector(".reply-text").textContent = this._replyTo ? `Replying to ${this._roomName(this._replyTo)}` : "";
     box.replaceChildren();
-    const entries = [{ area_id: "all", name: "Everywhere", icon: "mdi:home-sound-out" }, ...this._rooms];
+    const entries = [
+      { area_id: "all", name: "Everywhere", icon: "mdi:home-sound-out" },
+      ...(this._floors || []).map((f) => ({ ...f, area_id: f.id, icon: f.icon || "mdi:floor-plan" })),
+      ...this._rooms,
+    ];
     for (const room of entries) {
       const chip = this._chip(room.icon, room.name, !this._person && room.area_id === this._target, () => {
         if (this._communication) this._communication.profileTargetOverride = true;
@@ -886,6 +915,44 @@ class RoomCallCard extends HTMLElement {
     el.className = `status ${cls}`;
   }
 
+  _tapText(key) {
+    return this._strings?.[key] || TAP_TEXT[key];
+  }
+
+  _idleLabel() {
+    return this._config.tap_to_talk ? this._tapText("tap_to_talk") : "Hold to talk";
+  }
+
+  /** The first render can beat the translated catalog, so relabel an idle button once it loads. */
+  _relabelTap() {
+    const root = this.shadowRoot;
+    const talk = root?.querySelector(".talk");
+    if (!talk || !this._config.tap_to_talk || this._recorder || this._live || this._starting) return;
+    talk.setAttribute("aria-label", this._idleLabel());
+    root.querySelector(".label").textContent = this._idleLabel();
+    const status = root.querySelector(".status");
+    if (status.textContent === TAP_TEXT.tap_hint) status.textContent = this._tapText("tap_hint");
+  }
+
+  _toggle(e) {
+    if (this._live?.done) return;
+    if (this._recorder || this._live || this._starting) this._stop(e);
+    else this._start(e);
+  }
+
+  _talkOpened(talk) {
+    if (!this._config.tap_to_talk) return;
+    talk.setAttribute("aria-pressed", "true");
+    this._tapTimer = setTimeout(() => this._stop({ preventDefault() {} }), TAP_LIMIT_MS);
+  }
+
+  _talkClosed(talk) {
+    clearTimeout(this._tapTimer);
+    talk.removeAttribute("aria-pressed");
+    talk.classList.remove("live");
+    this.shadowRoot.querySelector(".label").textContent = this._idleLabel();
+  }
+
   async _start(e) {
     e.preventDefault();
     if (this._recorder || this._live || this._starting) return;
@@ -937,7 +1004,8 @@ class RoomCallCard extends HTMLElement {
     this._recorder.start();
     this._startedAt = performance.now();
     talk.classList.add("live");
-    this.shadowRoot.querySelector(".label").textContent = "Release to send";
+    this.shadowRoot.querySelector(".label").textContent = this._config.tap_to_talk ? this._tapText("tap_to_send") : "Release to send";
+    this._talkOpened(talk);
     const who = this._person
       ? (this._people.find((p) => p.entity_id === this._person) || {}).name
       : this._target === "all" ? "everywhere" : this._roomName(this._target);
@@ -955,9 +1023,7 @@ class RoomCallCard extends HTMLElement {
     this._recorder.stop();
     cancelAnimationFrame(this._raf);
     this._stream.getTracks().forEach((t) => t.stop());
-    const talk = this.shadowRoot.querySelector(".talk");
-    talk.classList.remove("live");
-    this.shadowRoot.querySelector(".label").textContent = "Hold to talk";
+    this._talkClosed(this.shadowRoot.querySelector(".talk"));
   }
 
   _talkingTo() {
@@ -971,7 +1037,8 @@ class RoomCallCard extends HTMLElement {
     const live = { handlerId: null, queue: [], done: false, unsub: null };
     this._live = live;
     talk.classList.add("live");
-    this.shadowRoot.querySelector(".label").textContent = "Release to finish";
+    this.shadowRoot.querySelector(".label").textContent = this._config.tap_to_talk ? this._tapText("tap_to_finish") : "Release to finish";
+    this._talkOpened(talk);
     this._setStatus(`${this._urgent ? "Urgent: live" : "Live"} to ${this._talkingTo()}…`);
     const send = (pcm) => {
       const frame = new Uint8Array(1 + pcm.byteLength);
@@ -1010,7 +1077,9 @@ class RoomCallCard extends HTMLElement {
       this._finishLive(live);
       this._setStatus(
         unknown
-          ? "Live calls need RoomCall 0.5 or newer in Home Assistant — hold again to send a recording."
+          ? (this._config.tap_to_talk
+            ? this._tapText("tap_live_unsupported")
+            : "Live calls need RoomCall 0.5 or newer in Home Assistant — hold again to send a recording.")
           : (err && err.message) || "Could not start the call",
         "err",
       );
@@ -1072,9 +1141,7 @@ class RoomCallCard extends HTMLElement {
     cancelAnimationFrame(this._raf);
     this._stream && this._stream.getTracks().forEach((t) => t.stop());
     this._ctx && this._ctx.close();
-    const talk = this.shadowRoot.querySelector(".talk");
-    talk.classList.remove("live");
-    this.shadowRoot.querySelector(".label").textContent = "Hold to talk";
+    this._talkClosed(this.shadowRoot.querySelector(".talk"));
   }
 
   async _send() {
@@ -1083,7 +1150,7 @@ class RoomCallCard extends HTMLElement {
     const blob = new Blob(this._chunks, { type });
     this._recorder = null;
     if (performance.now() - this._startedAt < 300) {
-      this._setStatus("Too short — hold the button while you talk.");
+      this._setStatus(this._config.tap_to_talk ? this._tapText("tap_too_short") : "Too short — hold the button while you talk.");
       return;
     }
     if (this._peak < SILENCE_PEAK) {
@@ -1140,6 +1207,7 @@ const EDITOR_TEXT = {
   rooms: "Only show these rooms",
   layout: "Layout",
   live: "Live calls (play while you talk)",
+  tap_to_talk: "Tap to start and stop",
   people: "Show people buttons",
   history: "Recent calls to show",
   appearance: "Appearance",
@@ -1160,6 +1228,7 @@ const EDITOR_TEXT = {
   help_room: "Where this dashboard is (for example a wall tablet). Replies to its calls come back here.",
   help_rooms: "Leave empty for every room with a RoomCall speaker.",
   help_live: "Turn off to record the whole message first, then send it.",
+  help_tap_to_talk: "For anyone who finds holding a button hard. The microphone stays on until you tap again, for up to 2 minutes.",
   help_layout: "Simple puts typing, asking, people, Urgent, Do Not Disturb, settings and older calls behind More.",
 };
 const select = (t, name, values) => ({
@@ -1188,6 +1257,7 @@ const editorSchema = (t) => [
     name: "",
     schema: [
       { name: "live", selector: { boolean: {} } },
+      { name: "tap_to_talk", selector: { boolean: {} } },
       { name: "people", selector: { boolean: {} } },
     ],
   },

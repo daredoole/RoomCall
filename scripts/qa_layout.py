@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from ha_screenshots import open_card
 from playwright.sync_api import expect
 
@@ -62,6 +64,107 @@ def check_layout(browser) -> None:
             assert_contained(page, fixed=True)
             page.keyboard.press("Escape")
         page.close()
+
+
+def check_floors(browser) -> None:
+    """A floor chip targets its rooms; a card hiding one of those rooms does not offer it."""
+    floor = {
+        "id": "floor:downstairs",
+        "name": "Downstairs",
+        "icon": None,
+        "rooms": ["basement", "garage"],
+        "speakers": ["Basement", "Garage AirPlay"],
+    }
+    page = browser.new_page(viewport={"width": 688, "height": 900})
+    page.add_init_script(f"window.roomcallFloors = {json.dumps([floor])}")
+    open_card(page, "mobile", "dark")
+    card = page.locator("roomcall-card")
+    chip = card.locator(".rooms .chip", has_text="Downstairs")
+    expect(chip).to_have_count(1)
+    expect(chip).to_have_attribute("title", "Basement, Garage AirPlay")
+    chip.click()
+    expect(card.locator(".destination")).to_have_text("To: Downstairs")
+    assert page.evaluate("document.querySelector('roomcall-card')._target") == floor["id"]
+    # History shows the floor's name, and a floor outside this house still reads cleanly.
+    assert page.evaluate(
+        """() => { const c = document.querySelector('roomcall-card');
+        return [c._roomName('floor:downstairs'), c._roomName('floor:gone')]; }"""
+    ) == ["Downstairs", "gone"]
+    page.evaluate(
+        """async () => { const c = document.querySelector('roomcall-card');
+        c._config = { ...c._config, rooms: ['basement'] };
+        await c._load(); c._renderRooms(); }"""
+    )
+    expect(card.locator(".rooms .chip", has_text="Downstairs")).to_have_count(0)
+    page.close()
+
+
+def check_tap_to_talk(browser) -> None:
+    """Tap mode toggles from pointer or keyboard, and moving away does not end the call."""
+    page = browser.new_page(viewport={"width": 390, "height": 820})
+    open_card(page, "mobile", "dark", "&tap=on")
+    card = page.locator("roomcall-card")
+    talk = card.locator("button.talk")
+    label = talk.locator(".label")
+    expect(label).to_have_text("Tap to talk")
+    assert talk.get_attribute("aria-label") == "Tap to talk"
+    expect(card.locator(".status")).to_contain_text("tap the button")
+
+    talk.click()
+    expect(label).to_have_text("Tap to finish")
+    expect(talk).to_have_attribute("aria-pressed", "true")
+    page.mouse.move(2, 2)
+    page.wait_for_timeout(200)
+    expect(label).to_have_text("Tap to finish")
+    talk.click()
+    expect(label).to_have_text("Tap to talk")
+    assert talk.get_attribute("aria-pressed") is None
+
+    talk.focus()
+    page.keyboard.press("Enter")
+    expect(label).to_have_text("Tap to finish")
+    page.keyboard.press("Enter")
+    expect(label).to_have_text("Tap to talk")
+
+    # Holding Enter is one activation, not a stream of toggles.
+    page.keyboard.down("Enter")
+    page.keyboard.down("Enter")
+    page.keyboard.down("Enter")
+    page.keyboard.up("Enter")
+    expect(label).to_have_text("Tap to finish")
+    page.keyboard.press("Enter")
+    expect(label).to_have_text("Tap to talk")
+
+    # Leaving the window closes the microphone, the same as letting go of the button.
+    talk.click()
+    expect(label).to_have_text("Tap to finish")
+    page.evaluate("window.dispatchEvent(new Event('blur'))")
+    expect(label).to_have_text("Tap to talk")
+    page.close()
+
+    # A forgotten microphone closes itself after two minutes.
+    page = browser.new_page(viewport={"width": 390, "height": 820})
+    page.clock.install()
+    open_card(page, "mobile", "dark", "&tap=on")
+    talk = page.locator("roomcall-card").locator("button.talk")
+    talk.click()
+    expect(talk.locator(".label")).to_have_text("Tap to finish")
+    page.clock.run_for(119_000)
+    expect(talk.locator(".label")).to_have_text("Tap to finish")
+    page.clock.run_for(2_000)
+    expect(talk.locator(".label")).to_have_text("Tap to talk")
+    page.close()
+
+    # Hold mode is unchanged: a plain click does not leave the microphone open.
+    page = browser.new_page(viewport={"width": 390, "height": 820})
+    open_card(page, "mobile", "dark")
+    talk = page.locator("roomcall-card").locator("button.talk")
+    expect(talk.locator(".label")).to_have_text("Hold to talk")
+    talk.click()
+    page.wait_for_timeout(300)
+    expect(talk.locator(".label")).to_have_text("Hold to talk")
+    assert talk.get_attribute("aria-pressed") is None
+    page.close()
 
 
 def check_simple(browser) -> None:

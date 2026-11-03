@@ -1,7 +1,7 @@
 # Screenshots and validation
 
-Browser captures were refreshed from **RoomCall 0.22.1** on
-2026-10-25. Native captures retain the compatible **native 0.20.0 / build 4** client.
+Browser captures were refreshed after **RoomCall 0.22.1** on
+2026-10-31. Native captures retain the compatible **native 0.20.0 / build 4** client.
 Home Assistant captures include
 the Glass interface and receiver/TV interruption previews and restoration status. The captures illustrate real rendered interfaces with sample data;
 they do not demonstrate a particular household, physical speaker delivery or

@@ -83,7 +83,7 @@ from .const import (
     SIGNAL_CALL_FINISHED,
     URL_STATIC,
 )
-from .core import CallRecord, ClipStore, History
+from .core import CallRecord, ClipStore, History, expand_group_targets
 from .errors import Problem
 from .http import (
     ChimeView,
@@ -118,16 +118,19 @@ PLATFORMS = [Platform.BUTTON, Platform.NOTIFY, Platform.SENSOR, Platform.SWITCH]
 _KEPT = f"{DOMAIN}_kept"
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-BROADCAST_SCHEMA = vol.Schema(
+BROADCAST_SCHEMA = vol.All(
     {
         vol.Optional(ATTR_TARGET_AREAS): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional("floors"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional("labels"): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(ATTR_TARGET_PEOPLE): cv.entity_ids,
         vol.Optional(ATTR_TARGET_SPEAKERS): cv.entity_ids,
         vol.Exclusive(ATTR_MESSAGE, "content"): cv.string,
         vol.Exclusive(ATTR_MEDIA_URL, "content"): cv.string,
         vol.Optional(ATTR_VOLUME): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
         vol.Optional(ATTR_PRIORITY, default=PRIORITY_NORMAL): vol.In(PRIORITIES),
-    }
+    },
+    expand_group_targets,
 )
 
 

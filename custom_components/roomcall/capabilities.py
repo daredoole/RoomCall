@@ -11,7 +11,7 @@ from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
-from .core import friendly, rooms, speaker_area, supports_announce
+from .core import floor_groups, friendly, rooms, speaker_area, supports_announce
 
 if TYPE_CHECKING:
     from . import RoomCallData
@@ -179,6 +179,7 @@ def discover(hass: HomeAssistant, data: RoomCallData) -> dict[str, Any]:
             for key, value in data.adapters.items()
         ],
         "areas": [{"id": a.id, "name": a.name} for a in ar.async_get(hass).async_list_areas()],
+        "floors": floor_groups(hass, selected),
         "people": [
             {
                 "entity_id": state.entity_id,
