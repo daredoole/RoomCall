@@ -89,6 +89,12 @@ speakers — no HomePod needed. The card builds the shortcut steps for you
 **Apple Home** app as a camera tile and tap its microphone to talk
 ([Apple Home](https://daredoole.github.io/RoomCall/apple-home/)).
 
+
+### Android
+
+Hold to talk in the Home Assistant app, or send one-tap announcements from a home-screen widget,
+Quick Settings tile or Wear OS watch ([Android guide](https://daredoole.github.io/RoomCall/android/)).
+
 ### Reminders that wait until it's done
 
 <img src="https://raw.githubusercontent.com/daredoole/RoomCall/main/docs/assets/ha-card-tasks.png" alt="The card's To do list: Laundry, with a Took out the dry clothes button" width="240" align="right">
