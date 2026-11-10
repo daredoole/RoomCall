@@ -95,7 +95,7 @@ jobs:
           ls -la /tmp/ios-screenshots
       - name: Package simulator app
         run: ditto -c -k --sequesterRsrc --keepParent /tmp/roomcall-ios-build/Build/Products/Debug-iphonesimulator/RoomCall.app /tmp/RoomCall-simulator.zip
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: roomcall-ios-simulator
@@ -131,7 +131,7 @@ jobs:
           test -d /tmp/ipa/Payload/RoomCall.app/PlugIns/RoomCallControls.appex
           (cd /tmp/ipa && zip -qry RoomCall-unsigned.ipa Payload)
           ls -la /tmp/ipa/RoomCall-unsigned.ipa
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: roomcall-ios-unsigned-ipa
           path: /tmp/ipa/RoomCall-unsigned.ipa
